@@ -2429,6 +2429,8 @@ dialog::backdrop {
       this.initialState = JSON.parse(JSON.stringify(initialState));
       this.state = JSON.parse(JSON.stringify(initialState));
       this.subscribers = [];
+      this._notificationFrame = null;
+      this._memoCache = new Map();
     }
 
     subscribe(callback) {
@@ -2439,7 +2441,12 @@ dialog::backdrop {
     }
 
     _notify(path, newValue) {
-      this.subscribers.forEach(callback => callback({ path, newValue, state: this.state }));
+      if (!this._notificationFrame) {
+        this._notificationFrame = requestAnimationFrame(() => {
+          this.subscribers.forEach(callback => callback({ path, newValue, state: this.state }));
+          this._notificationFrame = null;
+        });
+      }
     }
 
     getState() { return this.state; }
@@ -2455,9 +2462,23 @@ dialog::backdrop {
     getSettings() { return this.state.settings; }
     getSetting(key) { return this.state.settings[key]; }
 
+    getAttachments() {
+      return this.state.attachments || [];
+    }
+
+    getAttachment(id) {
+      return (this.state.attachments || []).find(a => a.id === id) || null;
+    }
+
+    getAttachmentCount() {
+      return (this.state.attachments || []).length;
+    }
+
     setConversationId(id) {
-      this.state.conversation_id = id;
-      this._notify("conversation_id", id);
+      if (this.state.conversation_id !== id) {
+        this.state.conversation_id = id;
+        this._notify("conversation_id", id);
+      }
     }
 
     setMessages(messages) {
@@ -2471,28 +2492,40 @@ dialog::backdrop {
     }
 
     clearMessages() {
-      this.state.messages = [];
-      this._notify("messages.clear", []);
+      if (this.state.messages.length > 0) {
+        this.state.messages = [];
+        this._notify("messages.clear", []);
+      }
     }
 
     setModel(model) {
-      this.state.model = model;
-      this._notify("model", model);
+      if (this.state.model !== model) {
+        this.state.model = model;
+        this._notify("model", model);
+      }
     }
 
     setMode(mode) {
-      this.state.mode = mode;
-      this._notify("mode", mode);
+      if (this.state.mode !== mode) {
+        this.state.mode = mode;
+        this._notify("mode", mode);
+      }
     }
 
     setLoading(isLoading) {
-      this.state.loading = Boolean(isLoading);
-      this._notify("loading", this.state.loading);
+      const value = Boolean(isLoading);
+      if (this.state.loading !== value) {
+        this.state.loading = value;
+        this._notify("loading", this.state.loading);
+      }
     }
 
     setStreaming(isStreaming) {
-      this.state.streaming = Boolean(isStreaming);
-      this._notify("streaming", this.state.streaming);
+      const value = Boolean(isStreaming);
+      if (this.state.streaming !== value) {
+        this.state.streaming = value;
+        this._notify("streaming", this.state.streaming);
+      }
     }
 
     toggleSidebar() {
@@ -2501,13 +2534,19 @@ dialog::backdrop {
     }
 
     setSidebarOpen(isOpen) {
-      this.state.sidebar.open = Boolean(isOpen);
-      this._notify("sidebar.open", this.state.sidebar.open);
+      const value = Boolean(isOpen);
+      if (this.state.sidebar.open !== value) {
+        this.state.sidebar.open = value;
+        this._notify("sidebar.open", this.state.sidebar.open);
+      }
     }
 
     setSidebarSearch(query) {
-      this.state.sidebar.searchQuery = String(query || "");
-      this._notify("sidebar.searchQuery", this.state.sidebar.searchQuery);
+      const value = String(query || "");
+      if (this.state.sidebar.searchQuery !== value) {
+        this.state.sidebar.searchQuery = value;
+        this._notify("sidebar.searchQuery", this.state.sidebar.searchQuery);
+      }
     }
 
     toggleTools() {
@@ -2516,14 +2555,20 @@ dialog::backdrop {
     }
 
     setToolsOpen(isOpen) {
-      this.state.tools.open = Boolean(isOpen);
-      this._notify("tools.open", this.state.tools.open);
+      const value = Boolean(isOpen);
+      if (this.state.tools.open !== value) {
+        this.state.tools.open = value;
+        this._notify("tools.open", this.state.tools.open);
+      }
     }
 
     setTool(key, value) {
       if (key in this.state.tools && key !== "open") {
-        this.state.tools[key] = Boolean(value);
-        this._notify(`tools.${key}`, this.state.tools[key]);
+        const boolValue = Boolean(value);
+        if (this.state.tools[key] !== boolValue) {
+          this.state.tools[key] = boolValue;
+          this._notify(`tools.${key}`, this.state.tools[key]);
+        }
       }
     }
 
@@ -2536,37 +2581,67 @@ dialog::backdrop {
 
     setSetting(key, value) {
       if (key in this.state.settings) {
-        this.state.settings[key] = Boolean(value);
-        this._notify(`settings.${key}`, this.state.settings[key]);
+        const boolValue = Boolean(value);
+        if (this.state.settings[key] !== boolValue) {
+          this.state.settings[key] = boolValue;
+          this._notify(`settings.${key}`, this.state.settings[key]);
+        }
       }
     }
 
     updateSettings(updates) {
+      let hasChanges = false;
       Object.keys(updates).forEach(key => {
-        if (key in this.state.settings) this.state.settings[key] = updates[key];
+        if (key in this.state.settings && this.state.settings[key] !== updates[key]) {
+          this.state.settings[key] = updates[key];
+          hasChanges = true;
+        }
       });
-      this._notify("settings", this.state.settings);
+      if (hasChanges) {
+        this._notify("settings", this.state.settings);
+      }
     }
 
     addAttachment(attachment) {
+      if (!this.state.attachments) {
+        this.state.attachments = [];
+      }
       this.state.attachments.push(attachment);
       this._notify("attachments.add", attachment);
     }
 
     updateAttachment(id, patch) {
+      if (!this.state.attachments) return false;
+      
       const attachment = this.state.attachments.find(item => item.id === id);
-      if (attachment) Object.assign(attachment, patch);
-      this._notify("attachments.update", attachment);
+      if (attachment) {
+        Object.assign(attachment, patch);
+        this._notify("attachments.update", attachment);
+        return true;
+      }
+      return false;
     }
 
     removeAttachment(id) {
+      if (!this.state.attachments || this.state.attachments.length === 0) {
+        return false;
+      }
+      
+      const before = this.state.attachments.length;
       this.state.attachments = this.state.attachments.filter(item => item.id !== id);
-      this._notify("attachments.remove", id);
+      
+      if (this.state.attachments.length !== before) {
+        this._notify("attachments.remove", id);
+        return true;
+      }
+      return false;
     }
 
     clearAttachments() {
-      this.state.attachments = [];
-      this._notify("attachments.clear", []);
+      if (this.state.attachments && this.state.attachments.length > 0) {
+        this.state.attachments = [];
+        this._notify("attachments.clear", []);
+      }
     }
 
     reset() {
@@ -2579,10 +2654,24 @@ dialog::backdrop {
     }
 
     batchUpdate(updates) {
+      let hasChanges = false;
       Object.keys(updates).forEach(key => {
-        if (key in this.state) this.state[key] = updates[key];
+        if (key in this.state && this.state[key] !== updates[key]) {
+          this.state[key] = updates[key];
+          hasChanges = true;
+        }
       });
-      this._notify("batch", updates);
+      if (hasChanges) {
+        this._notify("batch", updates);
+      }
+    }
+
+    destroy() {
+      if (this._notificationFrame) {
+        cancelAnimationFrame(this._notificationFrame);
+        this._notificationFrame = null;
+      }
+      this._memoCache.clear();
     }
   }
 
@@ -2595,6 +2684,9 @@ dialog::backdrop {
       this.store = store;
       this.conversations = new Map();
       this.listeners = [];
+      this._groupedCache = null;
+      this._groupedCacheTime = 0;
+      this._cacheDuration = 1000; // 1 second cache
     }
 
     subscribe(callback) {
@@ -2651,6 +2743,7 @@ dialog::backdrop {
       this.conversations.set(id, conversation);
       this.store.setConversationId(id);
       this.store.setMessages(conversation.messages);
+      this._invalidateCache();
       this._notify();
       return id;
     }
@@ -2751,6 +2844,7 @@ dialog::backdrop {
 
       conversation.title = String(newTitle || "").trim() || "Untitled Chat";
       conversation.updated_at = new Date();
+      this._invalidateCache();
       this._notify();
       return true;
     }
@@ -2772,6 +2866,7 @@ dialog::backdrop {
         }
       }
 
+      this._invalidateCache();
       this._notify();
       return true;
     }
@@ -2782,6 +2877,7 @@ dialog::backdrop {
 
       conversation.pinned = !conversation.pinned;
       conversation.updated_at = new Date();
+      this._invalidateCache();
       this._notify();
       return true;
     }
@@ -2798,34 +2894,57 @@ dialog::backdrop {
         .sort((a, b) => b.updated_at - a.updated_at);
     }
 
+    _invalidateCache() {
+      this._groupedCache = null;
+      this._groupedCacheTime = 0;
+    }
+
     getGroupedConversations() {
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      // Check cache validity
+      const now = Date.now();
+      if (this._groupedCache && (now - this._groupedCacheTime) < this._cacheDuration) {
+        return this._groupedCache;
+      }
+
+      const dateNow = new Date();
+      const today = new Date(dateNow.getFullYear(), dateNow.getMonth(), dateNow.getDate()).getTime();
       const yesterday = today - 86400000;
       const all = Array.from(this.conversations.values());
 
       const grouped = {
-        pinned: all.filter(c => c.pinned).sort((a, b) => b.updated_at - a.updated_at),
+        pinned: [],
         today: [],
         yesterday: [],
         older: []
       };
 
-      all
-        .filter(c => !c.pinned)
-        .sort((a, b) => b.updated_at - a.updated_at)
-        .forEach(conversation => {
-          const day = new Date(
-            conversation.updated_at.getFullYear(),
-            conversation.updated_at.getMonth(),
-            conversation.updated_at.getDate()
-          ).getTime();
+      // Separate pinned first
+      const unpinned = [];
+      all.forEach(c => {
+        if (c.pinned) grouped.pinned.push(c);
+        else unpinned.push(c);
+      });
 
-          if (day === today) grouped.today.push(conversation);
-          else if (day === yesterday) grouped.yesterday.push(conversation);
-          else grouped.older.push(conversation);
-        });
+      // Sort unpinned by date
+      unpinned.sort((a, b) => b.updated_at - a.updated_at);
+      grouped.pinned.sort((a, b) => b.updated_at - a.updated_at);
 
+      // Categorize by date
+      unpinned.forEach(conversation => {
+        const day = new Date(
+          conversation.updated_at.getFullYear(),
+          conversation.updated_at.getMonth(),
+          conversation.updated_at.getDate()
+        ).getTime();
+
+        if (day === today) grouped.today.push(conversation);
+        else if (day === yesterday) grouped.yesterday.push(conversation);
+        else grouped.older.push(conversation);
+      });
+
+      // Cache result
+      this._groupedCache = grouped;
+      this._groupedCacheTime = now;
       return grouped;
     }
 

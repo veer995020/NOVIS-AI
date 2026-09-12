@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Selector — Chatify AI</title>
+    <style>
+        :root {
+            --cyan: #00d9ff;
+            --purple: #b024ff;
+            --pink: #ff006e;
+            --blue: #0080ff;
+            --lime: #39ff14;
+            --bg-0: #0a0a16;
+            --bg-1: #12121f;
+            --bg-2: #191929;
+            --ink-0: #f5f6fb;
+            --ink-1: #c6cae0;
+            --ink-2: #8b90ab;
+            --line: #2a2b42;
+            --glass: rgba(20, 20, 36, 0.55);
+            --sp-2: 0.8rem;
+            --sp-3: 1.2rem;
+            --sp-4: 1.6rem;
+            --sp-5: 2.4rem;
+            --radius-s: 0.6rem;
+            --radius-m: 1rem;
+            --radius-l: 1.4rem;
+            --font-display: "Space Grotesk", "Inter", sans-serif;
+            --font-body: "Inter", -apple-system, sans-serif;
+            --ease: cubic-bezier(0.16, 1, 0.3, 1);
+            --fast: 140ms var(--ease);
+            --base: 240ms var(--ease);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-0);
+            color: var(--ink-0);
+            line-height: 1.55;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: radial-gradient(60vw 40vh at 85% -5%, rgba(176, 36, 255, 0.10), transparent 60%), radial-gradient(50vw 35vh at -5% 10%, rgba(0, 217, 255, 0.08), transparent 60%);
+            pointer-events: none;
+        }
+
+        .page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--sp-5);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-family: var(--font-display);
+            font-weight: 600;
+            margin-bottom: var(--sp-4);
+            letter-spacing: -0.01em;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-family: var(--font-display);
+            font-weight: 600;
+            margin-bottom: var(--sp-3);
+            margin-top: var(--sp-5);
+            letter-spacing: -0.01em;
+        }
+
+        p {
+            color: var(--ink-2);
+            margin-bottom: var(--sp-3);
+            line-height: 1.7;
+        }
+
+        .section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--sp-5);
+            margin-bottom: var(--sp-5);
+        }
+
+        @media (max-width: 900px) {
+            .section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ====== MODEL SELECTOR ====== */
+        .model-selector {
+            background: var(--bg-1);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-l);
+            padding: var(--sp-5);
+        }
+
+        .selector-header {
+            margin-bottom: var(--sp-4);
+        }
+
+        .selector-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--ink-2);
+            letter-spacing: 0.05em;
+            margin-bottom: var(--sp-2);
+            display: block;
+        }
+
+        .active-model {
+            display: flex;
+            align-items: center;
+            gap: var(--sp-3);
+            padding: var(--sp-4);
+            background: var(--bg-2);
+            border-radius: var(--radius-m);
+            border: 1px solid var(--line);
+            margin-bottom: var(--sp-4);
+        }
+
+        .model-icon {
+            font-size: 2rem;
+        }
+
+        .model-info h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            font-family: var(--font-display);
+            margin-bottom: 4px;
+        }
+
+        .model-tier {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--cyan);
+            letter-spacing: 0.05em;
+        }
+
+        .model-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: var(--sp-3);
+        }
+
+        .tag {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            background: var(--bg-2);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            color: var(--ink-1);
+        }
+
+        .model-description {
+            font-size: 0.9rem;
+            color: var(--ink-2);
+            padding: var(--sp-3);
+            background: var(--bg-2);
+            border-radius: var(--radius-m);
+            border-left: 2px solid var(--cyan);
+            margin-bottom: var(--sp-4);
+        }
+
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--sp-3);
+        }
+
+        @media (max-width: 600px) {
+            .model-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .model-card {
+            padding: var(--sp-4);
+            background: var(--bg-2);
+            border: 2px solid var(--line);
+            border-radius: var(--radius-m);
+            cursor: pointer;
+            transition: all var(--fast);
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-2);
+        }
+
+        .model-card:hover {
+            border-color: var(--cyan);
+            transform: translateY(-2px);
+        }
+
+        .model-card.active {
+            border-color: var(--cyan);
+            background: var(--bg-1);
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.2);
+        }
+
+        .model-card-header {
+            display: flex;
+            align-items: center;
+            gap: var(--sp-2);
+        }
+
+        .model-card-icon {
+            font-size: 1.5rem;
+        }
+
+        .model-card-name {
+            font-weight: 600;
+            font-family: var(--font-display);
+        }
+
+        .model-card-tier {
+            font-size: 0.75rem;
+            color: var(--ink-2);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .model-card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .model-card-tag {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            background: var(--bg-2);
+            border-radius: 4px;
+            color: var(--cyan);
+            border: 1px solid rgba(0, 217, 255, 0.3);
+        }
+
+        .model-card.active .model-card-tag {
+            background: rgba(0, 217, 255, 0.1);
+            border-color: var(--cyan);
+        }
+
+        .checkmark {
+            margin-left: auto;
+            font-size: 1.2rem;
+            color: var(--cyan);
+            opacity: 0;
+            transition: opacity var(--fast);
+        }
+
+        .model-card.active .checkmark {
+            opacity: 1;
+        }
+
+        /* ====== CURRENT STATE ====== */
+        .state-display {
+            background: var(--bg-1);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-l);
+            padding: var(--sp-5);
+        }
+
+        .state-item {
+            margin-bottom: var(--sp-4);
+            padding-bottom: var(--sp-4);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .state-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .state-key {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--ink-2);
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .state-value {
+            font-family: 'Menlo', monospace;
+            font-size: 0.9rem;
+            background: var(--bg-2);
+            padding: var(--sp-3);
+            border-radius: var(--radius-s);
+            border: 1px solid var(--line);
+            color: var(--lime);
+            word-break: break-all;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .log {
+            background: var(--bg-1);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-l);
+            padding: var(--sp-5);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            font-family: 'Menlo', monospace;
+            font-size: 0.85rem;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--line);
+            color: var(--ink-1);
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+        }
+
+        .log-timestamp {
+            color: var(--ink-2);
+            margin-right: var(--sp-2);
+        }
+
+        .log-model {
+            color: var(--cyan);
+            font-weight: 600;
+        }
+
+        .mode-selector {
+            margin-top: var(--sp-5);
+            padding-top: var(--sp-5);
+            border-top: 1px solid var(--line);
+        }
+
+        .mode-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--sp-3);
+        }
+
+        @media (max-width: 600px) {
+            .mode-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .mode-card {
+            padding: var(--sp-3);
+            background: var(--bg-2);
+            border: 2px solid var(--line);
+            border-radius: var(--radius-m);
+            cursor: pointer;
+            transition: all var(--fast);
+            text-align: center;
+        }
+
+        .mode-card:hover {
+            border-color: var(--cyan);
+        }
+
+        .mode-card.active {
+            border-color: var(--cyan);
+            background: var(--bg-1);
+        }
+
+        .mode-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .mode-name {
+            font-weight: 600;
+            font-family: var(--font-display);
+            font-size: 0.95rem;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--line);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--ink-2);
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <h1>🤖 Model Selector</h1>
+        <p>Switch between AI models instantly. No reload required.</p>
+
+        <div class="section">
+            <!-- MODEL SELECTOR -->
+            <div class="model-selector">
+                <div class="selector-header">
+                    <span class="selector-label">Active Model</span>
+                </div>
+
+                <div class="active-model" id="activeModelCard">
+                    <div class="model-icon" id="activeIcon">⚡</div>
+                    <div class="model-info">
+                        <h3 id="activeName">Rapid</h3>
+                        <div class="model-tier" id="activeTier">Fast</div>
+                    </div>
+                </div>
+
+                <div class="model-description" id="activeDescription">
+                    Fast and efficient for everyday conversations.
+                </div>
+
+                <div class="model-tags" id="activeTagsContainer"></div>
+
+                <div style="margin-top: var(--sp-4); padding-top: var(--sp-4); border-top: 1px solid var(--line);">
+                    <span class="selector-label">Select Model</span>
+                    <div class="model-grid" id="modelGrid"></div>
+                </div>
+
+                <!-- MODE SELECTOR -->
+                <div class="mode-selector">
+                    <span class="selector-label">Mode</span>
+                    <div class="mode-grid" id="modeGrid"></div>
+                </div>
+            </div>
+
+            <!-- STATE DISPLAY -->
+            <div class="state-display">
+                <span class="selector-label">Current State</span>
+
+                <div class="state-item">
+                    <div class="state-key">Model ID</div>
+                    <div class="state-value" id="stateModelId">RAPID</div>
+                </div>
+
+                <div class="state-item">
+                    <div class="state-key">Model Name</div>
+                    <div class="state-value" id="stateModelName">Rapid</div>
+                </div>
+
+                <div class="state-item">
+                    <div class="state-key">Tier</div>
+                    <div class="state-value" id="stateModelTier">Fast</div>
+                </div>
+
+                <div class="state-item">
+                    <div class="state-key">Mode ID</div>
+                    <div class="state-value" id="stateModeId">GENERAL</div>
+                </div>
+
+                <div class="state-item">
+                    <div class="state-key">Mode Name</div>
+                    <div class="state-value" id="stateModeName">General</div>
+                </div>
+
+                <div class="state-item">
+                    <div class="state-key">Full State</div>
+                    <div class="state-value" id="stateJson" style="max-height: 200px;">{ ... }</div>
+                </div>
+            </div>
+        </div>
+
+        <h2>Change Log</h2>
+        <div class="log" id="changeLog">
+            <div class="log-item">
+                <span class="log-timestamp">00:00:00</span>
+                Initialized with <span class="log-model">RAPID</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * STATE STORE (from StateStore.js)
+         */
+        class StateStore {
+            constructor() {
+                this.models = {
+                    BRAINSTORMER: {
+                        id: 'BRAINSTORMER',
+                        name: 'Brainstormer',
+                        tier: 'Flagship',
+                        tags: ['Deep Research', 'Multi-path Analysis', 'Exploration'],
+                        description: 'Advanced model for comprehensive research and multi-angle exploration.',
+                        icon: '🧠',
+                        color: '#b024ff'
+                    },
+                    MYTHICAL: {
+                        id: 'MYTHICAL',
+                        name: 'Mythical',
+                        tier: 'Premium',
+                        tags: ['Reasoning', 'Coding', 'Engineering'],
+                        description: 'Premium model for complex reasoning, code generation, and engineering.',
+                        icon: '⚡',
+                        color: '#ff006e'
+                    },
+                    SONNET: {
+                        id: 'SONNET',
+                        name: 'Sonnet',
+                        tier: 'Balanced',
+                        tags: ['Productivity', 'Learning', 'Balanced'],
+                        description: 'Balanced performance for productivity and learning tasks.',
+                        icon: '📚',
+                        color: '#00d9ff'
+                    },
+                    RAPID: {
+                        id: 'RAPID',
+                        name: 'Rapid',
+                        tier: 'Fast',
+                        tags: ['Fast', 'Default', 'Everyday Chat'],
+                        description: 'Fast and efficient for everyday conversations.',
+                        icon: '⚡',
+                        color: '#39ff14'
+                    }
+                };
+
+                this.modes = {
+                    GENERAL: {
+                        id: 'GENERAL',
+                        name: 'General',
+                        icon: '💬',
+                        description: 'Everyday assistance and general questions.'
+                    },
+                    RESEARCH: {
+                        id: 'RESEARCH',
+                        name: 'Research',
+                        icon: '🔬',
+                        description: 'Deep research and analysis mode.'
+                    },
+                    CODE: {
+                        id: 'CODE',
+                        name: 'Code',
+                        icon: '💻',
+                        description: 'Programming and coding assistance.'
+                    }
+                };
+
+                this.state = {
+                    conversation_id: null,
+                    messages: [],
+                    model: this.models.RAPID,
+                    mode: this.modes.GENERAL,
+                    loading: false,
+                    streaming: false,
+                    sidebar: { open: true, searchQuery: '' },
+                    tools: { open: false },
+                    settings: {
+                        markdown: true,
+                        codeHighlight: true,
+                        autoScroll: true,
+                        streaming: false
+                    }
+                };
+
+                this.subscribers = [];
+            }
+
+            subscribe(callback) {
+                this.subscribers.push(callback);
+                return () => {
+                    this.subscribers = this.subscribers.filter(cb => cb !== callback);
+                };
+            }
+
+            _notify(path, newValue) {
+                this.subscribers.forEach(callback => {
+                    callback({ path, newValue, state: this.state });
+                });
+            }
+
+            getModels() {
+                return Object.values(this.models);
+            }
+
+            getModelById(id) {
+                return this.models[id] || this.models.RAPID;
+            }
+
+            getModel() {
+                return this.state.model;
+            }
+
+            getModes() {
+                return Object.values(this.modes);
+            }
+
+            getModeById(id) {
+                return this.modes[id] || this.modes.GENERAL;
+            }
+
+            getMode() {
+                return this.state.mode;
+            }
+
+            setModel(modelId) {
+                const model = this.getModelById(modelId);
+                this.state.model = model;
+                this._notify('model', model);
+            }
+
+            setMode(modeId) {
+                const mode = this.getModeById(modeId);
+                this.state.mode = mode;
+                this._notify('mode', mode);
+            }
+
+            getState() {
+                return this.state;
+            }
+        }
+
+        // INITIALIZE
+        const store = new StateStore();
+        let changeLogCount = 0;
+
+        // RENDER MODEL GRID
+        function renderModelGrid() {
+            const grid = document.getElementById('modelGrid');
+            grid.innerHTML = store.getModels().map(model => `
+                <div class="model-card ${model.id === store.getModel().id ? 'active' : ''}" onclick="selectModel('${model.id}')">
+                    <div class="model-card-header">
+                        <div class="model-card-icon">${model.icon}</div>
+                        <div style="flex: 1;">
+                            <div class="model-card-name">${model.name}</div>
+                            <div class="model-card-tier">${model.tier}</div>
+                        </div>
+                        <div class="checkmark">✓</div>
+                    </div>
+                    <div class="model-card-tags">
+                        ${model.tags.map(tag => `<span class="model-card-tag">${tag}</span>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // RENDER MODE GRID
+        function renderModeGrid() {
+            const grid = document.getElementById('modeGrid');
+            grid.innerHTML = store.getModes().map(mode => `
+                <div class="mode-card ${mode.id === store.getMode().id ? 'active' : ''}" onclick="selectMode('${mode.id}')">
+                    <div class="mode-icon">${mode.icon}</div>
+                    <div class="mode-name">${mode.name}</div>
+                </div>
+            `).join('');
+        }
+
+        // UPDATE ACTIVE MODEL DISPLAY
+        function updateActiveModel() {
+            const model = store.getModel();
+            document.getElementById('activeIcon').textContent = model.icon;
+            document.getElementById('activeName').textContent = model.name;
+            document.getElementById('activeTier').textContent = model.tier;
+            document.getElementById('activeDescription').textContent = model.description;
+            
+            const tagsContainer = document.getElementById('activeTagsContainer');
+            tagsContainer.innerHTML = model.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
+        }
+
+        // UPDATE STATE DISPLAY
+        function updateStateDisplay() {
+            const model = store.getModel();
+            const mode = store.getMode();
+            
+            document.getElementById('stateModelId').textContent = model.id;
+            document.getElementById('stateModelName').textContent = model.name;
+            document.getElementById('stateModelTier').textContent = model.tier;
+            document.getElementById('stateModeId').textContent = mode.id;
+            document.getElementById('stateModeName').textContent = mode.name;
+            
+            const state = store.getState();
+            document.getElementById('stateJson').textContent = JSON.stringify({
+                model: { id: state.model.id, name: state.model.name, tier: state.model.tier },
+                mode: { id: state.mode.id, name: state.mode.name },
+                conversation_id: state.conversation_id,
+                messages: state.messages.length
+            }, null, 2);
+        }
+
+        // SELECT MODEL
+        function selectModel(modelId) {
+            store.setModel(modelId);
+            addLog(`Switched to ${store.getModel().name}`);
+        }
+
+        // SELECT MODE
+        function selectMode(modeId) {
+            store.setMode(modeId);
+            addLog(`Mode changed to ${store.getMode().name}`);
+        }
+
+        // ADD LOG ENTRY
+        function addLog(message) {
+            const log = document.getElementById('changeLog');
+            const model = store.getModel();
+            const time = new Date().toLocaleTimeString();
+            
+            const entry = document.createElement('div');
+            entry.className = 'log-item';
+            entry.innerHTML = `
+                <span class="log-timestamp">${time}</span>
+                ${message} (<span class="log-model">${model.id}</span>)
+            `;
+            
+            log.insertBefore(entry, log.firstChild);
+            
+            // Keep only last 20 entries
+            while (log.children.length > 20) {
+                log.removeChild(log.lastChild);
+            }
+        }
+
+        // SUBSCRIBE TO CHANGES
+        store.subscribe(({ path, newValue }) => {
+            if (path === 'model' || path === 'mode') {
+                renderModelGrid();
+                renderModeGrid();
+                updateActiveModel();
+                updateStateDisplay();
+            }
+        });
+
+        // INITIAL RENDER
+        renderModelGrid();
+        renderModeGrid();
+        updateActiveModel();
+        updateStateDisplay();
+    </script>
+</body>
+</html>
