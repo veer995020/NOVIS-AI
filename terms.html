@@ -3,148 +3,1156 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="C:\Users\Renewfy\Links\CHATIFY\STATIC\CSS\SizeAdjuster.css">
-<meta name="description" content="Chatify AI Terms of Service">
-<meta name="theme-color" content="#0a0a16">
-<title>Terms of Service — Chatify AI</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>Terms of Service — Chatify AI by Legend Inc.</title>
+<meta name="description" content="Terms governing your use of Chatify AI — accounts, acceptable use, AI-generated content, privacy, availability and more.">
+<meta property="og:title" content="Terms of Service — Chatify AI">
+<meta property="og:description" content="Terms governing your use of Chatify AI by Legend Inc.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://chatify.example/term.html">
+<meta property="og:image" content="og-chatify.png">
+<meta name="theme-color" content="#06080f">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Crect x='1' y='1' width='34' height='34' rx='10' fill='%237c5cff'/%3E%3Cpath d='M11 14c0-2.2 1.8-4 4-4h6c2.2 0 4 1.8 4 4v5c0 2.2-1.8 4-4 4h-5.2L11 28z' fill='%2306080f'/%3E%3Ccircle cx='23.4' cy='13.2' r='2.1' fill='%235ee7df'/%3E%3C/svg%3E">
 <style>
-:root {
-    --cyan: #00d9ff;
-    --purple: #b024ff;
-    --bg-0: #f6f7fb;
-    --bg-1: #ffffff;
-    --bg-2: #eef0f7;
-    --ink-0: #10101c;
-    --ink-1: #464a5e;
-    --ink-2: #6b7184;
-    --line: #dfe2ef;
-    --glass: rgba(255, 255, 255, 0.6);
-    --sp-1: 0.4rem;
-    --sp-2: 0.8rem;
-    --sp-3: 1.2rem;
-    --sp-4: 1.6rem;
-    --sp-5: 2.4rem;
-    --sp-6: 3.2rem;
-    --font-display: "Space Grotesk", "Inter", sans-serif;
-    --font-body: "Inter", -apple-system, sans-serif;
-    --ease: cubic-bezier(0.16, 1, 0.3, 1);
-    --fast: 140ms var(--ease);
-    --base: 240ms var(--ease);
+/* ============ TOKENS ============ */
+:root{
+--bg:#06080f;
+--bg-2:#0a0d1a;
+--panel:rgba(255,255,255,.032);
+--panel-2:rgba(124,92,255,.07);
+--line:rgba(139,149,255,.16);
+--line-soft:rgba(139,149,255,.09);
+--text:#e8ecf8;
+--text-2:#aab3cf;
+--text-3:#7f89a8;
+--indigo:#7c8cff;
+--purple:#a06bff;
+--cyan:#5ee7df;
+--cyan-2:#22d3ee;
+--amber:#ffcf7d;
+--font-display:"Space Grotesk","Avenir Next","Segoe UI Variable Display",Futura,"Trebuchet MS",sans-serif;
+--font-body:"Inter","SF Pro Text","Segoe UI",system-ui,-apple-system,sans-serif;
+--font-mono:"JetBrains Mono","SF Mono","Cascadia Code","Fira Code",Consolas,monospace;
+--head-h:68px;
+--radius:16px;
+--shadow:0 18px 50px -18px rgba(3,5,14,.9);
 }
-html.dark {
-    --bg-0: #0a0a16;
-    --bg-1: #12121f;
-    --bg-2: #191929;
-    --ink-0: #f5f6fb;
-    --ink-1: #c6cae0;
-    --ink-2: #8b90ab;
-    --line: #2a2b42;
-    --glass: rgba(20, 20, 36, 0.55);
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--head-h) + 84px)}
+body{
+background:var(--bg);
+color:var(--text);
+font-family:var(--font-body);
+font-size:16px;
+line-height:1.65;
+overflow-x:hidden;
+-webkit-font-smoothing:antialiased;
 }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; }
-body { font-family: var(--font-body); background: var(--bg-0); color: var(--ink-0); line-height: 1.55; transition: background-color var(--base), color var(--base); }
-body::before { content: ''; position: fixed; inset: 0; z-index: -1; background: radial-gradient(60vw 40vh at 85% -5%, rgba(176, 36, 255, 0.10), transparent 60%), radial-gradient(50vw 35vh at -5% 10%, rgba(0, 217, 255, 0.08), transparent 60%); pointer-events: none; }
-h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
-h1 { font-size: 2.5rem; margin-bottom: var(--sp-3); }
-h2 { font-size: 1.3rem; margin-top: var(--sp-5); margin-bottom: var(--sp-2); }
-h3 { font-size: 1rem; margin-top: var(--sp-3); margin-bottom: 8px; }
-p { color: var(--ink-2); line-height: 1.7; margin-bottom: var(--sp-3); }
-.shell { min-height: 100vh; display: flex; flex-direction: column; }
-.topbar { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) var(--sp-5); background: var(--glass); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
-.brand { display: flex; align-items: center; gap: var(--sp-2); font-family: var(--font-display); font-weight: 600; font-size: 1rem; color: var(--ink-0); text-decoration: none; }
-.brand-mark { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: linear-gradient(135deg, var(--cyan), var(--purple)); color: #05050a; font-weight: 700; }
-.topbar-actions { display: flex; gap: var(--sp-2); }
-.theme-switch { display: inline-flex; padding: 3px; gap: 2px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 999px; }
-.theme-switch button { border: none; background: transparent; color: var(--ink-2); width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; transition: background var(--fast), color var(--fast); }
-.theme-switch button.active { background: var(--bg-1); color: var(--cyan); }
-.main { flex: 1; width: 100%; max-width: 800px; margin: 0 auto; padding: var(--sp-6) var(--sp-4); }
-.meta { font-size: 0.85rem; color: var(--ink-2); margin-bottom: var(--sp-4); }
-@media (max-width: 768px) {
-    .main { padding: var(--sp-4) var(--sp-3); }
-}
+[hidden]{display:none!important}
+::selection{background:rgba(124,92,255,.4);color:#fff}
+a{color:#9db4ff;text-decoration:none;transition:color .2s ease}
+a:hover{color:#c9b8ff}
+img,svg{display:block}
+:focus-visible{outline:2px solid var(--cyan-2);outline-offset:3px;border-radius:6px}
 
-        .logo-img {
-            width: 32px;
-            height: 32px;
-            object-fit: contain;
-            display: block;
-        }
-        </style>
+/* ambient background */
+.bg-glow{position:fixed;inset:0;z-index:-2;pointer-events:none;
+background:
+radial-gradient(900px 520px at 12% -6%, rgba(124,92,255,.20), transparent 60%),
+radial-gradient(760px 480px at 88% 4%, rgba(34,211,238,.10), transparent 60%),
+radial-gradient(1000px 700px at 55% 118%, rgba(90,70,220,.16), transparent 62%);
+}
+.bg-grid{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;
+background-image:radial-gradient(rgba(148,163,255,.08) 1px, transparent 1px);
+background-size:30px 30px;
+-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.9),transparent 70%);
+mask-image:linear-gradient(180deg,rgba(0,0,0,.9),transparent 70%);
+}
+.bg-noise{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.05;
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.wrap{width:min(1200px,100% - 40px);margin-inline:auto}
+.skip-link{position:absolute;left:16px;top:-60px;z-index:200;background:#141a33;color:#fff;padding:.6rem 1rem;border-radius:10px;border:1px solid var(--line);transition:top .2s ease}
+.skip-link:focus{top:14px}
+/* ============ HEADER ============ */
+.site-head{
+position:sticky;top:0;z-index:60;
+background:rgba(6,8,15,.72);
+backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+border-bottom:1px solid var(--line-soft);
+transition:background .3s ease, box-shadow .3s ease;
+}
+.site-head.scrolled{background:rgba(6,8,15,.9);box-shadow:0 10px 40px -18px rgba(0,0,0,.8)}
+.head-inner{
+width:min(1320px,100% - 32px);margin-inline:auto;
+height:var(--head-h);display:flex;align-items:center;gap:1.5rem;
+}
+.brand{display:flex;align-items:center;gap:.65rem;flex-shrink:0}
+.brand-mark{width:34px;height:34px;filter:drop-shadow(0 4px 14px rgba(124,92,255,.45));transition:transform .3s ease}
+.brand:hover .brand-mark{transform:rotate(-6deg) scale(1.05)}
+.brand-name{font-family:var(--font-display);font-weight:700;font-size:1.12rem;letter-spacing:-.01em;color:#fff}
+.brand-name em{font-style:normal;background:linear-gradient(92deg,#8ea2ff,#b48cff 55%,#5ee7df);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand-sub{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3);border-left:1px solid var(--line);padding-left:.65rem;margin-left:.15rem}
+.main-nav{margin-left:auto}
+.nav-list{display:flex;list-style:none;gap:.25rem}
+.nav-list a{
+display:block;padding:.45rem .75rem;border-radius:9px;
+font-size:.85rem;font-weight:500;color:var(--text-2);
+position:relative;transition:color .2s ease,background .2s ease;
+}
+.nav-list a:hover{color:#fff;background:rgba(139,149,255,.09)}
+.nav-list a[aria-current="page"]{color:#fff;background:rgba(124,92,255,.14)}
+.nav-list a[aria-current="page"]::after{
+content:"";position:absolute;left:.75rem;right:.75rem;bottom:2px;height:2px;border-radius:2px;
+background:linear-gradient(90deg,var(--indigo),var(--cyan));
+}
+.progress{height:2px;background:transparent}
+.progress span{display:block;height:100%;transform-origin:0 50%;transform:scaleX(0);
+background:linear-gradient(90deg,var(--indigo),var(--purple),var(--cyan));
+}
+.menu-btn{
+display:none;margin-left:auto;width:42px;height:42px;border-radius:11px;cursor:pointer;
+background:rgba(139,149,255,.08);border:1px solid var(--line);color:var(--text);
+align-items:center;justify-content:center;transition:background .2s ease,border-color .2s ease;
+}
+.menu-btn:hover{background:rgba(139,149,255,.16);border-color:rgba(139,149,255,.4)}
+.menu-btn svg{width:20px;height:20px}
+.menu-btn .icon-close{display:none}
+.menu-btn[aria-expanded="true"] .icon-open{display:none}
+.menu-btn[aria-expanded="true"] .icon-close{display:block}
+.mobile-nav{
+position:fixed;top:var(--head-h);left:0;right:0;z-index:55;
+background:rgba(8,11,22,.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+border-bottom:1px solid var(--line);
+opacity:0;transform:translateY(-10px);pointer-events:none;
+transition:opacity .25s ease,transform .25s ease;
+}
+body.menu-open .mobile-nav{opacity:1;transform:none;pointer-events:auto}
+.mobile-nav nav{padding:1rem 1.25rem 1.5rem;display:grid;gap:.25rem}
+.mobile-nav a.m-link{
+display:flex;align-items:center;justify-content:space-between;
+padding:.85rem .9rem;border-radius:12px;font-weight:500;color:var(--text-2);
+border:1px solid transparent;transition:all .2s ease;
+}
+.mobile-nav a.m-link:hover,.mobile-nav a.m-link[aria-current="page"]{
+background:rgba(124,92,255,.12);border-color:var(--line);color:#fff;
+}
+.mobile-nav a.m-link::after{content:"→";color:var(--text-3)}
+.mobile-nav .mn-note{margin-top:.75rem;padding:.75rem .9rem;font-family:var(--font-mono);font-size:.72rem;color:var(--text-3);border:1px dashed var(--line);border-radius:12px}
+/* ============ MASTHEAD ============ */
+.masthead{position:relative;overflow:hidden;padding:4.6rem 0 3.4rem;border-bottom:1px solid var(--line-soft)}
+.masthead::before{content:"";position:absolute;inset:0;pointer-events:none;
+background:
+radial-gradient(620px 320px at 18% 0%, rgba(124,92,255,.22), transparent 62%),
+radial-gradient(520px 300px at 82% 20%, rgba(34,211,238,.12), transparent 62%);
+}
+.orb{position:absolute;border-radius:50%;filter:blur(70px);pointer-events:none;opacity:.55}
+.orb-1{width:340px;height:340px;left:-90px;top:-110px;background:radial-gradient(circle,rgba(124,92,255,.5),transparent 65%);animation:drift 16s ease-in-out infinite alternate}
+.orb-2{width:260px;height:260px;right:-60px;top:20%;background:radial-gradient(circle,rgba(34,211,238,.34),transparent 65%);animation:drift 20s ease-in-out infinite alternate-reverse}
+@keyframes drift{from{transform:translate(0,0)}to{transform:translate(46px,30px)}}
+.masthead-inner{position:relative}
+.eyebrow{
+display:inline-flex;align-items:center;gap:.6rem;
+font-family:var(--font-mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;
+color:var(--cyan);margin-bottom:1.15rem;
+}
+.eyebrow::before{content:"";width:26px;height:1px;background:linear-gradient(90deg,var(--cyan),transparent)}
+.masthead h1{
+font-family:var(--font-display);font-weight:700;letter-spacing:-.025em;line-height:1.04;
+font-size:clamp(2.5rem,6.4vw,4.4rem);max-width:16ch;
+}
+.masthead h1 .grad{background:linear-gradient(92deg,#8ea2ff,#b48cff 45%,#5ee7df);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{margin-top:1.1rem;font-size:clamp(1.02rem,1.6vw,1.22rem);color:var(--text-2);max-width:52ch}
+.meta{list-style:none;display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.9rem}
+.chip{
+display:inline-flex;align-items:center;gap:.55rem;
+padding:.48rem .85rem;border-radius:999px;
+background:rgba(13,17,34,.6);border:1px solid var(--line);
+backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+font-size:.8rem;transition:border-color .25s ease,transform .25s ease;
+}
+.chip:hover{border-color:rgba(139,149,255,.45);transform:translateY(-1px)}
+.chip b{font-family:var(--font-mono);font-weight:500;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+.chip span{color:var(--text)}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+/* ============ MOBILE TOC CHIPS ============ */
+.toc-chips{
+position:sticky;top:var(--head-h);z-index:40;display:none;
+gap:.5rem;overflow-x:auto;padding:.65rem 16px;
+background:rgba(6,8,15,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+border-bottom:1px solid var(--line-soft);scrollbar-width:none;
+}
+.toc-chips::-webkit-scrollbar{display:none}
+.toc-chips a{
+flex-shrink:0;font-family:var(--font-mono);font-size:.72rem;color:var(--text-2);
+padding:.42rem .8rem;border-radius:999px;border:1px solid var(--line);
+white-space:nowrap;transition:all .2s ease;
+}
+.toc-chips a:hover{color:#fff;border-color:rgba(139,149,255,.45)}
+.toc-chips a.active{color:#0a0d1a;background:linear-gradient(92deg,#8ea2ff,#5ee7df);border-color:transparent;font-weight:600}
+@media (max-width:1023px){.toc-chips{display:flex}}
+/* ============ LAYOUT ============ */
+.layout{display:grid;grid-template-columns:264px minmax(0,1fr);gap:3.2rem;padding:3.4rem 0 5rem;align-items:start}
+@media (max-width:1023px){.layout{grid-template-columns:1fr;gap:0;padding-top:2.4rem}}
+/* TOC aside */
+.toc-panel{position:sticky;top:calc(var(--head-h) + 26px);display:grid;gap:1.2rem}
+@media (max-width:1023px){.toc-panel{display:none}}
+.toc{
+position:relative;padding:1.2rem 1.1rem 1.3rem 1.35rem;border-radius:var(--radius);
+background:linear-gradient(165deg,rgba(124,92,255,.07),rgba(10,13,26,.5));
+border:1px solid var(--line);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+.toc-title{
+font-family:var(--font-mono);font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;
+color:var(--text-3);margin-bottom:.85rem;
+}
+.toc ol{list-style:none;position:relative}
+.toc ol::before{content:"";position:absolute;left:-.65rem;top:4px;bottom:4px;width:2px;border-radius:2px;background:rgba(139,149,255,.14)}
+#tocMark{
+position:absolute;left:-.65rem;top:0;width:2px;height:24px;border-radius:2px;
+background:linear-gradient(180deg,var(--indigo),var(--cyan));
+box-shadow:0 0 10px rgba(94,231,223,.7);
+transition:transform .28s cubic-bezier(.4,0,.2,1);
+}
+.toc a{
+display:flex;gap:.6rem;align-items:baseline;padding:.34rem .35rem;border-radius:8px;
+font-size:.85rem;color:var(--text-3);transition:color .2s ease,transform .2s ease,background .2s ease;
+}
+.toc a .n{font-family:var(--font-mono);font-size:.66rem;color:rgba(139,149,255,.55);transition:color .2s ease}
+.toc a:hover{color:var(--text);background:rgba(139,149,255,.06);transform:translateX(3px)}
+.toc a.active{color:#fff;transform:translateX(3px)}
+.toc a.active .n{color:var(--cyan)}
+.toc-card{
+padding:1.1rem 1.15rem;border-radius:var(--radius);
+background:rgba(13,17,34,.55);border:1px solid var(--line);
+}
+.toc-card p{font-size:.84rem;color:var(--text-2)}
+.toc-card a{display:inline-flex;align-items:center;gap:.4rem;margin-top:.6rem;font-size:.84rem;font-weight:600;color:var(--cyan)}
+.toc-card a:hover{color:#a5f3ec}
+/* ============ DOCUMENT ============ */
+.doc{position:relative;min-width:0}
+.doc::before{content:"";position:absolute;left:25px;top:30px;bottom:30px;width:1px;
+background:linear-gradient(180deg,transparent,rgba(139,149,255,.22) 8%,rgba(139,149,255,.22) 92%,transparent);
+}
+.clause{position:relative;padding:2.1rem 0 2.3rem 78px;border-top:1px solid var(--line-soft)}
+.clause:first-of-type{border-top:0;padding-top:.4rem}
+.clause-num{
+position:absolute;left:0;top:2.28rem;width:52px;height:30px;display:grid;place-items:center;
+font-family:var(--font-mono);font-size:.76rem;color:#a9b6ff;letter-spacing:.06em;
+border:1px solid rgba(139,149,255,.3);border-radius:9px;
+background:rgba(13,17,34,.92);box-shadow:0 0 0 4px var(--bg);
+transition:border-color .3s ease,color .3s ease,box-shadow .3s ease;
+}
+.clause:first-of-type .clause-num{top:.5rem}
+.clause:target .clause-num,.clause.in:hover .clause-num{border-color:var(--cyan);color:var(--cyan)}
+.clause:target{animation:flash 1.6s ease}
+@keyframes flash{0%{background:rgba(124,92,255,.10)}100%{background:transparent}}
+.clause-head{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+.clause h2{
+font-family:var(--font-display);font-weight:700;letter-spacing:-.01em;
+font-size:clamp(1.3rem,2.3vw,1.62rem);color:#fff;
+}
+.anchor-copy{
+width:32px;height:32px;display:grid;place-items:center;border-radius:9px;cursor:pointer;
+background:transparent;border:1px solid transparent;color:var(--text-3);
+transition:all .2s ease;position:relative;
+}
+.anchor-copy svg{width:15px;height:15px}
+.anchor-copy:hover{color:var(--cyan);border-color:var(--line);background:rgba(94,231,223,.06)}
+.anchor-copy .ic-check{display:none;color:var(--cyan)}
+.anchor-copy.copied .ic-link{display:none}
+.anchor-copy.copied .ic-check{display:block}
+.anchor-copy.copied::after{
+content:"Copied";position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+font-family:var(--font-mono);font-size:.62rem;letter-spacing:.08em;color:#0a0d1a;
+background:var(--cyan);padding:.2rem .5rem;border-radius:6px;white-space:nowrap;
+}
+.clause-body{margin-top:.9rem;color:var(--text-2);font-size:.98rem;max-width:74ch}
+.clause-body p+p{margin-top:.85rem}
+.clause-body strong{color:var(--text);font-weight:600}
+.clause-body ul{list-style:none;margin:.9rem 0 0;display:grid;gap:.5rem}
+.clause-body ul li{position:relative;padding-left:1.35rem}
+.clause-body ul li::before{content:"▹";position:absolute;left:.15rem;color:var(--cyan);font-size:.85rem}
+.clause-body ul.two-col{display:grid;grid-template-columns:1fr 1fr;gap:.55rem 1.4rem}
+@media (max-width:720px){.clause-body ul.two-col{grid-template-columns:1fr}}
+.clause-body .inline-link{font-weight:500}
+.note{
+margin:1.15rem 0 0;padding:.95rem 1.1rem;border-radius:14px;font-size:.9rem;color:#c9d3ee;
+background:linear-gradient(160deg,rgba(34,211,238,.08),rgba(10,13,26,.42));
+border:1px solid rgba(94,231,223,.28);display:flex;gap:.7rem;align-items:flex-start;
+}
+.note svg{flex-shrink:0;width:17px;height:17px;margin-top:2px;color:var(--cyan)}
+.note strong{color:#8df0e6}
+.warn{
+margin:1.15rem 0 0;padding:.95rem 1.1rem;border-radius:14px;font-size:.9rem;color:#f2ddb5;
+background:linear-gradient(160deg,rgba(255,196,110,.07),rgba(10,13,26,.42));
+border:1px solid rgba(255,196,110,.26);display:flex;gap:.7rem;align-items:flex-start;
+}
+.warn svg{flex-shrink:0;width:17px;height:17px;margin-top:2px;color:var(--amber)}
+/* scroll reveal */
+.js .clause{opacity:0;transform:translateY(16px);transition:opacity .55s ease,transform .55s ease}
+.js .clause.in{opacity:1;transform:none}
+/* summary terminal */
+.summary{
+margin-top:3.2rem;border-radius:var(--radius);overflow:hidden;
+border:1px solid var(--line);box-shadow:var(--shadow);
+background:linear-gradient(165deg,rgba(124,92,255,.10),rgba(9,12,24,.9));
+}
+.term-bar{display:flex;align-items:center;gap:.45rem;padding:.7rem 1rem;border-bottom:1px solid var(--line-soft);background:rgba(6,8,15,.55)}
+.term-bar .dot{width:10px;height:10px;border-radius:50%}
+.dot.r{background:#ff6b7f}.dot.y{background:#ffcf7d}.dot.g{background:#5ee7df}
+.term-title{margin-left:.6rem;font-family:var(--font-mono);font-size:.68rem;letter-spacing:.12em;color:var(--text-3)}
+.term-body{padding:1.3rem 1.4rem 1.5rem;font-family:var(--font-mono);font-size:.86rem;line-height:2;color:var(--text-2)}
+.term-body .prompt{color:var(--cyan);margin-right:.4rem}
+.term-body .out{padding-left:1.3rem}
+.term-body .out .b{color:var(--purple);margin-right:.5rem}
+.cursor{display:inline-block;width:8px;height:1.05em;background:var(--cyan);vertical-align:-2px;animation:blink 1.1s steps(2,start) infinite}
+@keyframes blink{50%{opacity:0}}
+/* pager */
+.doc-pager{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:2.4rem}
+@media (max-width:640px){.doc-pager{grid-template-columns:1fr}}
+.pager-link{
+display:grid;gap:.2rem;padding:1rem 1.2rem;border-radius:14px;
+background:var(--panel);border:1px solid var(--line);
+transition:transform .25s ease,border-color .25s ease,background .25s ease;
+}
+.pager-link span{font-family:var(--font-mono);font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;color:var(--text-3)}
+.pager-link strong{font-family:var(--font-display);font-size:1.02rem;color:var(--text)}
+.pager-link.right{text-align:right}
+.pager-link:hover{transform:translateY(-3px);border-color:rgba(139,149,255,.45);background:rgba(124,92,255,.08)}
+.pager-link:hover strong{color:#fff}
+/* ============ FOOTER ============ */
+.site-foot{border-top:1px solid var(--line-soft);background:rgba(8,11,20,.6);margin-top:1rem}
+.foot-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1.25fr;gap:2.5rem;padding:3.4rem 0 2.6rem}
+@media (max-width:900px){.foot-grid{grid-template-columns:1fr 1fr}}
+@media (max-width:540px){.foot-grid{grid-template-columns:1fr}}
+.foot-brand p{margin-top:.9rem;font-size:.86rem;color:var(--text-3);max-width:34ch}
+.status-pill{
+display:inline-flex;align-items:center;gap:.5rem;margin-top:1.1rem;
+padding:.4rem .8rem;border-radius:999px;font-family:var(--font-mono);font-size:.68rem;letter-spacing:.1em;
+color:#8df0e6;border:1px solid rgba(94,231,223,.3);background:rgba(34,211,238,.06);
+}
+.status-pill i{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 9px var(--cyan);animation:pulse 2.4s ease-in-out infinite}
+.foot-col h3{font-family:var(--font-mono);font-size:.66rem;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--text-3);margin-bottom:.9rem}
+.foot-col ul{list-style:none;display:grid;gap:.5rem}
+.foot-col a{font-size:.88rem;color:var(--text-2)}
+.foot-col a:hover{color:#fff}
+.foot-col a[aria-current="page"]{color:var(--cyan)}
+.foot-contact li{font-size:.86rem;color:var(--text-2);display:grid;gap:.35rem}
+.foot-bottom{
+display:flex;flex-wrap:wrap;gap:.8rem;justify-content:space-between;align-items:center;
+padding:1.3rem 0 1.6rem;border-top:1px solid var(--line-soft);
+font-size:.78rem;color:var(--text-3);
+}
+.foot-bottom .mono{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.08em}
+/* ============ BACK TO TOP ============ */
+.to-top{
+position:fixed;right:22px;bottom:22px;z-index:70;width:48px;height:48px;border-radius:50%;
+display:grid;place-items:center;cursor:pointer;color:#cfd6ff;
+background:rgba(13,17,34,.88);border:1px solid rgba(139,149,255,.35);
+backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+opacity:0;transform:translateY(16px) scale(.9);pointer-events:none;
+transition:opacity .3s ease,transform .3s ease,border-color .25s ease,box-shadow .25s ease;
+}
+.to-top.show{opacity:1;transform:none;pointer-events:auto}
+.to-top:hover{border-color:#8ea2ff;box-shadow:0 0 26px rgba(124,92,255,.45);color:#fff}
+.to-top svg{grid-area:1/1}
+.to-top .ring-svg{width:48px;height:48px;transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:rgba(139,149,255,.16);stroke-width:2}
+#ring{fill:none;stroke:url(#ringGrad);stroke-width:2;stroke-linecap:round;stroke-dasharray:119.4;stroke-dashoffset:119.4}
+.to-top .arrow{width:16px;height:16px;place-self:center}
+/* ============ RESPONSIVE ============ */
+@media (max-width:900px){
+.main-nav{display:none}
+.menu-btn{display:inline-flex}
+.brand-sub{display:none}
+html{scroll-padding-top:calc(var(--head-h) + 64px)}
+}
+@media (max-width:640px){
+.clause{padding-left:58px}
+.clause-num{width:44px}
+.doc::before{left:21px}
+.masthead{padding-top:3.4rem}
+.term-body{font-size:.78rem;padding:1rem 1.05rem 1.2rem}
+}
+/* ============ REDUCED MOTION ============ /
+@media (prefers-reduced-motion:reduce){
+html{scroll-behavior:auto}
+,::before,::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+.js .clause{opacity:1;transform:none}
+}
+</style>
 </head>
 <body>
-<div class="shell">
-    <header class="topbar">
-        <a href="index.html" class="brand">
-            <img src="C:\Users\Renewfy\Links\CHATIFY\STATIC\IMAGES AND VIDEOS\IMAGE.png" alt="Chaitify AI" class="logo-img">
-            <span>Chatify</span>
-        </a>
-        <div class="topbar-actions">
-            <div class="theme-switch" role="group" aria-label="Theme">
-                <button type="button" data-theme="light" aria-pressed="false">☀</button>
-                <button type="button" data-theme="dark" aria-pressed="false">☾</button>
-                <button type="button" data-theme="system" aria-pressed="true">◐</button>
-            </div>
-        </div>
-    </header>
+<a class="skip-link" href="#content">Skip to content</a>
+<div class="bg-glow" aria-hidden="true"></div>
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-noise" aria-hidden="true"></div>
 
-    <main class="main">
-        <h1>Terms of Service</h1>
-        <div class="meta">Last updated: July 21, 2026</div>
+<!-- ================= HEADER ================= -->
+<header class="site-head" id="siteHead">
+<div class="head-inner">
+<a href="index.html" class="brand" aria-label="Chatify AI — home">
+<svg class="brand-mark" viewBox="0 0 36 36" aria-hidden="true">
+<defs>
+<linearGradient id="lgBrand" x1="0" y1="0" x2="36" y2="36">
+<stop offset="0" stop-color="#6a7bff"/><stop offset=".55" stop-color="#9a5cff"/><stop offset="1" stop-color="#22d3ee"/>
+</linearGradient>
+</defs>
+<rect x="1" y="1" width="34" height="34" rx="10" fill="url(#lgBrand)"/>
+<path d="M11 14c0-2.2 1.8-4 4-4h6c2.2 0 4 1.8 4 4v5c0 2.2-1.8 4-4 4h-5.2L11 28z" fill="#06080f"/>
+<circle cx="23.4" cy="13.2" r="2.1" fill="#5ee7df"/>
+</svg>
+<span class="brand-name">Chatify <em>AI</em></span>
+<span class="brand-sub">by Legend Inc.</span>
+</a>
+<nav class="main-nav" aria-label="Primary">
+<ul class="nav-list">
+<li><a href="index.html">Home</a></li>
+<li><a href="chat.html">Chat</a></li>
+<li><a href="research.html">Research</a></li>
+<li><a href="coding.html">Coding</a></li>
+<li><a href="writing.html">Writing</a></li>
+<li><a href="models.html">Models</a></li>
+<li><a href="settings.html" aria-current="page">Settings</a></li>
+</ul>
+</nav>
+<button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mobileNav" aria-label="Open menu">
+<svg class="icon-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+<svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+</button>
+</div>
+<div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+</header>
 
-        <h2>1. Acceptance of Terms</h2>
-        <p>By accessing and using Chatify AI, you agree to be bound by these Terms of Service. If you do not agree to abide by the above, please do not use this service.</p>
-
-        <h2>2. Use License</h2>
-        <p>Permission is granted to temporarily download one copy of the materials (information or software) on Chatify AI for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:</p>
-        <ul style="margin-left: var(--sp-4); margin-bottom: var(--sp-3);">
-            <li style="margin-bottom: var(--sp-1);">Modifying or copying the materials</li>
-            <li style="margin-bottom: var(--sp-1);">Using the materials for any commercial purpose or for any public display</li>
-            <li style="margin-bottom: var(--sp-1);">Attempting to decompile or reverse engineer the software</li>
-            <li style="margin-bottom: var(--sp-1);">Removing any copyright or other proprietary notations from the materials</li>
-            <li style="margin-bottom: var(--sp-1);">Transferring the materials to another person or "mirroring" the materials on any other server</li>
-        </ul>
-
-        <h2>3. Disclaimer</h2>
-        <p>The materials on Chatify AI are provided on an 'as is' basis. Legend Inc. makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including, without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.</p>
-
-        <h2>4. Limitations</h2>
-        <p>In no event shall Legend Inc. or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on Chatify AI.</p>
-
-        <h2>5. Accuracy of Materials</h2>
-        <p>The materials appearing on Chatify AI could include technical, typographical, or photographic errors. Legend Inc. does not warrant that any of the materials on Chatify AI are accurate, complete, or current. Legend Inc. may make changes to the materials contained on Chatify AI at any time without notice.</p>
-
-        <h2>6. Links</h2>
-        <p>Legend Inc. has not reviewed all of the sites linked to its Internet web site and is not responsible for the contents of any such linked site. The inclusion of any link does not imply endorsement by Legend Inc. of the site. Use of any such linked website is at the user's own risk.</p>
-
-        <h2>7. Modifications</h2>
-        <p>Legend Inc. may revise these terms of service for Chatify AI at any time without notice. By using this web site, you are agreeing to be bound by the then current version of these terms of service.</p>
-
-        <h2>8. Governing Law</h2>
-        <p>These terms and conditions are governed by and construed in accordance with the laws of the jurisdiction in which Legend Inc. is registered, and you irrevocably submit to the exclusive jurisdiction of the courts in that location.</p>
-
-        <h2>Contact Us</h2>
-        <p>If you have questions about these Terms, please contact us at legal@chatify.ai</p>
-    </main>
+<!-- mobile menu -->
+<div class="mobile-nav" id="mobileNav" hidden>
+<nav aria-label="Mobile">
+<a class="m-link" href="index.html">Home</a>
+<a class="m-link" href="chat.html">Chat</a>
+<a class="m-link" href="research.html">Research</a>
+<a class="m-link" href="coding.html">Coding</a>
+<a class="m-link" href="writing.html">Writing</a>
+<a class="m-link" href="models.html">Models</a>
+<a class="m-link" href="settings.html" aria-current="page">Settings</a>
+<p class="mn-note">LEGAL · TERMS OF SERVICE</p>
+</nav>
 </div>
 
-<script>
-const themeButtons = document.querySelectorAll('[data-theme]');
-function applyTheme(mode) {
-    const resolved = mode === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : mode;
-    document.documentElement.classList.toggle('dark', resolved === 'dark');
-    themeButtons.forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.theme === mode);
-        btn.setAttribute('aria-pressed', btn.dataset.theme === mode ? 'true' : 'false');
-    });
-    localStorage.setItem('chatify_theme', mode);
-}
-themeButtons.forEach(btn => btn.addEventListener('click', () => applyTheme(btn.dataset.theme)));
-applyTheme(localStorage.getItem('chatify_theme') || 'system');
-</script>
+<main id="content">
 
+<!-- ================= MASTHEAD ================= -->
+<section class="masthead" aria-labelledby="page-title">
+<span class="orb orb-1" aria-hidden="true"></span>
+<span class="orb orb-2" aria-hidden="true"></span>
+<div class="wrap masthead-inner">
+<p class="eyebrow">Legend Inc. · Legal Document</p>
+<h1 id="page-title">Terms of <span class="grad">Service</span></h1>
+<p class="lede">Terms governing your use of Chatify AI.</p>
+<ul class="meta">
+<li class="chip"><span class="dot" aria-hidden="true"></span><b>Status</b><span>Current</span></li>
+<li class="chip"><b>Effective</b><span id="effDate">—</span></li>
+<li class="chip"><b>Version</b><span>v1.0</span></li>
+<li class="chip"><b>Read time</b><span id="readTime">…</span></li>
+</ul>
+</div>
+</section>
+
+<!-- mobile section chips -->
+<nav class="toc-chips" id="tocChips" aria-label="Sections on this page"></nav>
+
+<div class="wrap layout">
+<!-- ================= TOC ASIDE ================= -->
+<aside class="toc-panel">
+  <nav class="toc" aria-label="Table of contents">
+    <p class="toc-title">On this page</p>
+    <ol id="tocList">
+      <span id="tocMark" aria-hidden="true"></span>
+      <li><a href="#acceptance" class="js-toclink"><span class="n">01</span>Acceptance of Terms</a></li>
+      <li><a href="#about" class="js-toclink"><span class="n">02</span>About Chatify AI</a></li>
+      <li><a href="#account" class="js-toclink"><span class="n">03</span>Account and Access</a></li>
+      <li><a href="#acceptable-use" class="js-toclink"><span class="n">04</span>Acceptable Use</a></li>
+      <li><a href="#ai-content" class="js-toclink"><span class="n">05</span>AI-Generated Content</a></li>
+      <li><a href="#accuracy" class="js-toclink"><span class="n">06</span>Accuracy and Limitations</a></li>
+      <li><a href="#user-content" class="js-toclink"><span class="n">07</span>User Content</a></li>
+      <li><a href="#files" class="js-toclink"><span class="n">08</span>Files and Inputs</a></li>
+      <li><a href="#third-party" class="js-toclink"><span class="n">09</span>Third-Party Services</a></li>
+      <li><a href="#ip" class="js-toclink"><span class="n">10</span>Intellectual Property</a></li>
+      <li><a href="#privacy" class="js-toclink"><span class="n">11</span>Privacy</a></li>
+      <li><a href="#availability" class="js-toclink"><span class="n">12</span>Service Availability</a></li>
+      <li><a href="#security" class="js-toclink"><span class="n">13</span>Security</a></li>
+      <li><a href="#prohibited" class="js-toclink"><span class="n">14</span>Prohibited Activities</a></li>
+      <li><a href="#suspension" class="js-toclink"><span class="n">15</span>Suspension &amp; Termination</a></li>
+      <li><a href="#disclaimers" class="js-toclink"><span class="n">16</span>Disclaimers</a></li>
+      <li><a href="#liability" class="js-toclink"><span class="n">17</span>Limitation of Liability</a></li>
+      <li><a href="#changes" class="js-toclink"><span class="n">18</span>Changes to Terms</a></li>
+      <li><a href="#contact" class="js-toclink"><span class="n">19</span>Contact</a></li>
+      <li><a href="#effective-date" class="js-toclink"><span class="n">20</span>Effective Date</a></li>
+    </ol>
+  </nav>
+  <div class="toc-card">
+    <p>Unclear about a clause? Ask us before it becomes a problem.</p>
+    <a href="#contact">Contact us <span aria-hidden="true">→</span></a>
+  </div>
+</aside>
+
+<!-- ================= DOCUMENT ================= -->
+<article class="doc" id="doc" aria-label="Terms of Service document">
+
+  <section class="clause" id="acceptance" aria-labelledby="h-acceptance">
+    <span class="clause-num" aria-hidden="true">01</span>
+    <div class="clause-head">
+      <h2 id="h-acceptance" tabindex="-1">Acceptance of Terms</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 1, Acceptance of Terms">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>These Terms of Service (the <strong>“Terms”</strong>) are an agreement between you and <strong>Legend Inc.</strong> (“Legend”, “we”, “us”) governing your access to and use of the Chatify AI websites, applications, chat, research, coding and writing features, and related services (together, the <strong>“Service”</strong>).</p>
+      <p>By creating an account, clicking a button that says something like “I agree”, or simply accessing or using the Service, you confirm that you have read these Terms and you agree to be bound by them. If you do not agree, please do not use the Service.</p>
+      <p>If we introduce paid plans, enterprise plans or additional products, separate or supplemental terms may apply and will be presented to you at that time.</p>
+    </div>
+  </section>
+
+  <section class="clause" id="about" aria-labelledby="h-about">
+    <span class="clause-num" aria-hidden="true">02</span>
+    <div class="clause-head">
+      <h2 id="h-about" tabindex="-1">About Chatify AI</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 2, About Chatify AI">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>Chatify AI is an AI-powered assistant designed to help you converse, research, write and work with code. Responses are generated by machine-learning models, which means output is produced statistically and may change as we ship new models and features.</p>
+      <p>The Service is provided for general productivity, informational and creative assistance. It is not intended to be, and should not be treated as, the sole basis for decisions that could have a legal, medical, financial, safety or other significant impact on you or others.</p>
+    </div>
+  </section>
+
+  <section class="clause" id="account" aria-labelledby="h-account">
+    <span class="clause-num" aria-hidden="true">03</span>
+    <div class="clause-head">
+      <h2 id="h-account" tabindex="-1">Account and Access</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 3, Account and Access">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>Some features of the Service may require you to create an account. When you do, you agree to provide accurate information and keep it up to date. You are responsible for all activity that occurs under your account.</p>
+      <ul>
+        <li>Keep your credentials confidential and do not share them with anyone.</li>
+        <li>Use a strong, unique password and enable any security features we make available.</li>
+        <li>If you suspect unauthorized access, notify us immediately through the contact channels in Section 19.</li>
+      </ul>
+      <p>You must meet the minimum age requirement stated when you sign up. We may ask you to verify your identity or eligibility, and we may decline to provide access where required.</p>
+    </div>
+  </section>
+
+  <section class="clause" id="acceptable-use" aria-labelledby="h-acceptable-use">
+    <span class="clause-num" aria-hidden="true">04</span>
+    <div class="clause-head">
+      <h2 id="h-acceptable-use" tabindex="-1">Acceptable Use</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 4, Acceptable Use">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>Use the Service lawfully, respectfully and for its intended purposes. Do not misuse, disrupt, or attempt to circumvent the limits and safeguards of the Service, and do not use it in ways that could harm other users or third parties.</p>
+      <p>Because AI output can be wrong (see Sections 05 and 06), do not rely on the Service as your only source of information in situations where an error could cause serious harm — including safety-critical, medical, legal or financial decisions. Use independent judgement and qualified professionals where it matters.</p>
+    </div>
+  </section>
+
+  <section class="clause" id="ai-content" aria-labelledby="h-ai-content">
+    <span class="clause-num" aria-hidden="true">05</span>
+    <div class="clause-head">
+      <h2 id="h-ai-content" tabindex="-1">AI-Generated Content</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 5, AI-Generated Content">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>Chatify AI generates content using machine-learning models. That content may be inaccurate, incomplete, outdated or superficially convincing while being wrong. AI-generated output is not a substitute for advice from qualified professionals — legal, medical, financial or otherwise.</p>
+      <div class="note" role="note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v4m0 4h.01"/></svg>
+        <p><strong>Verify before you rely on it.</strong> You should independently verify any AI-generated information that is important to you — especially anything involving health, money, law, safety or citations — against primary sources before acting on it.</p>
+      </div>
+      <p>Where applicable law, platform rules or professional standards require disclosure that content was produced with AI assistance, you are responsible for making that disclosure. Do not present AI output as human-authored in contexts where that would be misleading.</p>
+    </div>
+  </section>
+
+  <section class="clause" id="accuracy" aria-labelledby="h-accuracy">
+    <span class="clause-num" aria-hidden="true">06</span>
+    <div class="clause-head">
+      <h2 id="h-accuracy" tabindex="-1">Accuracy and Limitations</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 6, Accuracy and Limitations">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>We continuously work to improve the quality of the Service, but we <strong>do not claim that AI responses are always accurate</strong>. Models can “hallucinate” — producing statements, references or code that look plausible but are incorrect or fabricated.</p>
+      <p>Cross-check important details against trusted primary sources, review generated code before running it, and treat the Service as a helpful assistant rather than an authoritative reference.</p>
+    </div>
+  </section>
+
+  <section class="clause" id="user-content" aria-labelledby="h-user-content">
+    <span class="clause-num" aria-hidden="true">07</span>
+    <div class="clause-head">
+      <h2 id="h-user-content" tabindex="-1">User Content</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 7, User Content">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>You retain whatever rights you already have in the prompts, text, files and other material you submit to the Service (<strong>“User Content”</strong>). To operate the Service, you grant us a limited license to process, store and use your User Content solely to the extent necessary to provide the Service to you — for example, to generate responses.</p>
+      <p>You are responsible for your User Content and for making sure you have the rights needed to submit it. Retention and deletion practices for User Content are described in our <a href="privacy.html" class="inline-link">Privacy Policy</a>.</p>
+    </div>
+  </section>
+
+  <section class="clause" id="files" aria-labelledby="h-files">
+    <span class="clause-num" aria-hidden="true">08</span>
+    <div class="clause-head">
+      <h2 id="h-files" tabindex="-1">Files and Inputs</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 8, Files and Inputs">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>Where file upload or other input features are available, only submit content you have the rights to use, and avoid uploading sensitive personal data unless the feature is explicitly designed for it. Supported formats and size limits may apply and can change over time.</p>
+      <p>We may run automated checks such as malware scanning, but automated checks cannot catch everything — do not treat them as a guarantee that any file is safe. You remain responsible for how you use files and outputs you obtain through the Service.</p>
+    </div>
+  </section>
+
+  <section class="clause" id="third-party" aria-labelledby="h-third-party">
+    <span class="clause-num" aria-hidden="true">09</span>
+    <div class="clause-head">
+      <h2 id="h-third-party" tabindex="-1">Third-Party Services</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 9, Third-Party Services">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>The Service may include links to, or integrations with, third-party websites, tools, models or services (including any plug-ins or model providers we enable). Those third-party services are governed by their own terms and privacy policies, not by these Terms.</p>
+      <p>We do not control third-party content and are not responsible for it. Your use of any third-party service is at your own risk, and we encourage you to review that service’s terms before using it.</p>
+    </div>
+  </section>
+
+  <section class="clause" id="ip" aria-labelledby="h-ip">
+    <span class="clause-num" aria-hidden="true">10</span>
+    <div class="clause-head">
+      <h2 id="h-ip" tabindex="-1">Intellectual Property</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 10, Intellectual Property">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>The Chatify AI name, logo, interface, software and other materials provided by Legend Inc. are owned by Legend Inc. and are protected by applicable intellectual property rights. No rights are granted to you except as expressly stated in these Terms.</p>
+      <p>As between you and us — and subject to these Terms — you may use the output the Service generates for you. Because AI models may produce similar responses for different users, output may not be unique, and identical or similar content may be available to others.</p>
+      <ul>
+        <li>Do not scrape, bulk-extract or systematically copy the Service or its content.</li>
+        <li>Do not use the Service or its output to build competing products or to train competing AI models, unless we give written permission.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="clause" id="privacy" aria-labelledby="h-privacy">
+    <span class="clause-num" aria-hidden="true">11</span>
+    <div class="clause-head">
+      <h2 id="h-privacy" tabindex="-1">Privacy</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 11, Privacy">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>Your use of the Service is also governed by our <a href="privacy.html" class="inline-link">Privacy Policy</a>, which explains what information we handle, why we handle it, and the choices available to you.</p>
+      <p>As a practical guideline: avoid submitting sensitive personal information — about yourself or anyone else — unless the feature is explicitly designed for it. Details on data retention and how content is used are set out in the Privacy Policy.</p>
+    </div>
+  </section>
+
+  <section class="clause" id="availability" aria-labelledby="h-availability">
+    <span class="clause-num" aria-hidden="true">12</span>
+    <div class="clause-head">
+      <h2 id="h-availability" tabindex="-1">Service Availability</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 12, Service Availability">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>We work to keep the Service reliable, but we cannot guarantee it will always be available, fast or uninterrupted. Access may be temporarily suspended for maintenance, upgrades, capacity limits or events outside our control, and we may apply usage or rate limits to protect the Service for everyone.</p>
+      <p>No service-level commitment applies unless we separately agree one with you in writing.</p>
+    </div>
+  </section>
+
+  <section class="clause" id="security" aria-labelledby="h-security">
+    <span class="clause-num" aria-hidden="true">13</span>
+    <div class="clause-head">
+      <h2 id="h-security" tabindex="-1">Security</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 13, Security">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>We apply reasonable technical and organizational measures to help protect the Service and the information handled through it. However, no method of transmission or storage is completely secure, and we cannot guarantee absolute security.</p>
+      <p>Security is shared work: protect your credentials, keep your devices updated, and use the security features we provide. If you believe you have found a vulnerability, please report it responsibly through the contact channels in Section 19. Do not perform security testing without our prior written consent.</p>
+    </div>
+  </section>
+
+  <section class="clause" id="prohibited" aria-labelledby="h-prohibited">
+    <span class="clause-num" aria-hidden="true">14</span>
+    <div class="clause-head">
+      <h2 id="h-prohibited" tabindex="-1">Prohibited Activities</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 14, Prohibited Activities">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>When using the Service, you agree that you will not, and will not help others to:</p>
+      <ul class="two-col">
+        <li>Violate applicable law or infringe anyone’s rights.</li>
+        <li>Generate or promote content intended to harm, harass, defraud or exploit others.</li>
+        <li>Introduce malware or attempt unauthorized access to the Service or its infrastructure.</li>
+        <li>Send spam, or abuse the Service through automated bulk requests.</li>
+        <li>Create or spread deliberately deceptive content such as impersonation or disinformation.</li>
+        <li>Reverse engineer, decompile or attempt to extract model weights, training data or system prompts.</li>
+        <li>Circumvent usage limits, safety measures or access restrictions.</li>
+        <li>Scrape or collect data from the Service without permission.</li>
+      </ul>
+      <div class="warn" role="note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+        <p>If we become aware of prohibited activity, we may take action — including removing content, restricting features, or suspending or terminating access as described in Section 15.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="clause" id="suspension" aria-labelledby="h-suspension">
+    <span class="clause-num" aria-hidden="true">15</span>
+    <div class="clause-head">
+      <h2 id="h-suspension" tabindex="-1">Suspension and Termination</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 15, Suspension and Termination">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>We may suspend or terminate your access to the Service if you breach these Terms, if we are required to by law, or if we reasonably believe continued access could cause harm. Where practicable, we will give you notice and an opportunity to address the issue.</p>
+      <p>You may stop using the Service at any time. You can close your account and request deletion of your data from your account settings, or by contacting us as described in Section 19. Sections that by their nature should survive (for example: intellectual property, disclaimers and liability) will survive termination.</p>
+    </div>
+  </section>
+
+  <section class="clause" id="disclaimers" aria-labelledby="h-disclaimers">
+    <span class="clause-num" aria-hidden="true">16</span>
+    <div class="clause-head">
+      <h2 id="h-disclaimers" tabindex="-1">Disclaimers</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 16, Disclaimers">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE SERVICE IS PROVIDED <strong>“AS IS”</strong> AND <strong>“AS AVAILABLE”</strong>. WE DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED — INCLUDING IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT AND ACCURACY — AND WE DO NOT WARRANT THAT THE SERVICE OR ITS OUTPUT WILL BE ERROR-FREE, UNINTERRUPTED OR SECURE.</p>
+      <p>Some jurisdictions do not allow certain disclaimers, so parts of this section may not apply to you. Nothing in these Terms limits any rights you hold under applicable law that cannot be waived.</p>
+    </div>
+  </section>
+
+  <section class="clause" id="liability" aria-labelledby="h-liability">
+    <span class="clause-num" aria-hidden="true">17</span>
+    <div class="clause-head">
+      <h2 id="h-liability" tabindex="-1">Limitation of Liability</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 17, Limitation of Liability">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>TO THE EXTENT PERMITTED BY APPLICABLE LAW, LEGEND INC. WILL NOT BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL OR PUNITIVE DAMAGES, OR FOR LOSS OF PROFITS, DATA, GOODWILL OR OTHER INTANGIBLE LOSSES, ARISING OUT OF OR RELATING TO YOUR USE OF (OR INABILITY TO USE) THE SERVICE.</p>
+      <p>Our aggregate liability arising out of or relating to these Terms or the Service will not exceed the amount you paid us for the Service in the twelve (12) months before the event giving rise to the claim.</p>
+      <p>Nothing in these Terms excludes or limits liability that cannot be excluded or limited under applicable law, such as liability for fraud or intentional misconduct.</p>
+    </div>
+  </section>
+
+  <section class="clause" id="changes" aria-labelledby="h-changes">
+    <span class="clause-num" aria-hidden="true">18</span>
+    <div class="clause-head">
+      <h2 id="h-changes" tabindex="-1">Changes to Terms</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 18, Changes to Terms">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>We may update these Terms from time to time, for example to reflect changes in the Service or in applicable requirements. When we make material changes, we will provide reasonable advance notice by prominent posting in the Service, by email, or through other reasonable means, and we will update the effective date at the bottom of this page.</p>
+      <p>Your continued use of the Service after the updated Terms take effect constitutes acceptance of the revised Terms. If you do not agree with the changes, please stop using the Service.</p>
+    </div>
+  </section>
+
+  <section class="clause" id="contact" aria-labelledby="h-contact">
+    <span class="clause-num" aria-hidden="true">19</span>
+    <div class="clause-head">
+      <h2 id="h-contact" tabindex="-1">Contact</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 19, Contact">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>Questions, notices or feedback about these Terms are welcome. Please reach us through:</p>
+      <ul>
+        <li>Product support: the help and feedback options inside Chatify AI.</li>
+        <li>Legal and terms questions: the contact options in <a href="settings.html" class="inline-link">Settings</a>.</li>
+        <li>Security reports: the contact options in <a href="settings.html" class="inline-link">Settings</a>.</li>
+      </ul>
+      <p>We aim to respond to all enquiries within a reasonable time.</p>
+    </div>
+  </section>
+
+  <section class="clause" id="effective-date" aria-labelledby="h-effective-date">
+    <span class="clause-num" aria-hidden="true">20</span>
+    <div class="clause-head">
+      <h2 id="h-effective-date" tabindex="-1">Effective Date</h2>
+      <button class="anchor-copy" type="button" aria-label="Copy link to section 20, Effective Date">
+        <svg class="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </button>
+    </div>
+    <div class="clause-body">
+      <p>These Terms take effect on <strong id="effDateBody">—</strong> (version v1.0) and supersede any earlier versions published for this Service.</p>
+      <p>By continuing to use Chatify AI on or after that date, you agree to be bound by the then-current Terms.</p>
+    </div>
+  </section>
+
+  <!-- summary terminal -->
+  <div class="summary" role="note" aria-label="Agreement summary">
+    <div class="term-bar" aria-hidden="true">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="term-title">chatify — terms-summary</span>
+    </div>
+    <div class="term-body">
+      <p><span class="prompt">$</span>chatify --terms --summary</p>
+      <p class="out"><span class="b">▸</span>By using Chatify AI, you agree to these terms.</p>
+      <p class="out"><span class="b">▸</span>AI output can be wrong — verify anything that matters.</p>
+      <p class="out"><span class="b">▸</span>Questions? Contact us before it becomes a problem.</p>
+      <p><span class="prompt">$</span><span class="cursor" aria-hidden="true"></span></p>
+    </div>
+  </div>
+
+  <!-- pager -->
+  <nav class="doc-pager" aria-label="Related documents">
+    <a class="pager-link" href="privacy.html"><span>← Previous</span><strong>Privacy Policy</strong></a>
+    <a class="pager-link right" href="status.html"><span>Next →</span><strong>System Status</strong></a>
+  </nav>
+
+</article>
+</div>
+</main>
+
+<!-- ================= FOOTER ================= -->
+<footer class="site-foot">
+<div class="wrap foot-grid">
+<div class="foot-brand">
+<a href="index.html" class="brand" aria-label="Chatify AI — home">
+<svg class="brand-mark" viewBox="0 0 36 36" aria-hidden="true">
+<rect x="1" y="1" width="34" height="34" rx="10" fill="url(#lgBrand)"/>
+<path d="M11 14c0-2.2 1.8-4 4-4h6c2.2 0 4 1.8 4 4v5c0 2.2-1.8 4-4 4h-5.2L11 28z" fill="#06080f"/>
+<circle cx="23.4" cy="13.2" r="2.1" fill="#5ee7df"/>
+</svg>
+<span class="brand-name">Chatify <em>AI</em></span>
+</a>
+<p>An AI assistant for conversation, research, coding and writing — built by Legend Inc.</p>
+<span class="status-pill"><i aria-hidden="true"></i>ALL SYSTEMS NOMINAL</span>
+</div>
+<nav class="foot-col" aria-label="Product">
+<h3>Product</h3>
+<ul>
+<li><a href="chat.html">Chat</a></li>
+<li><a href="research.html">Research</a></li>
+<li><a href="coding.html">Coding</a></li>
+<li><a href="writing.html">Writing</a></li>
+<li><a href="models.html">Models</a></li>
+</ul>
+</nav>
+<nav class="foot-col" aria-label="Legal">
+<h3>Legal</h3>
+<ul>
+<li><a href="term.html" aria-current="page">Terms of Service</a></li>
+<li><a href="privacy.html">Privacy Policy</a></li>
+<li><a href="settings.html">Settings</a></li>
+</ul>
+</nav>
+<div class="foot-col foot-contact">
+<h3>Contact</h3>
+<ul>
+<li>Support: <a href="settings.html">in-app help &amp; feedback</a></li>
+<li>Legal: <a href="#contact">contact options</a></li>
+<li>Security: <a href="settings.html">responsible disclosure</a></li>
+</ul>
+</div>
+</div>
+<div class="wrap foot-bottom">
+<span>© <span id="year">2025</span> Legend Inc. All rights reserved.</span>
+<span class="mono">TERMS OF SERVICE · V1.0</span>
+</div>
+</footer>
+
+<!-- ================= BACK TO TOP ================= -->
+<button class="to-top" id="toTop" type="button" aria-label="Back to top">
+<svg class="ring-svg" viewBox="0 0 44 44" aria-hidden="true">
+<defs>
+<linearGradient id="ringGrad" x1="0" y1="0" x2="44" y2="44">
+<stop offset="0" stop-color="#7c8cff"/><stop offset="1" stop-color="#5ee7df"/>
+</linearGradient>
+</defs>
+<circle class="ring-bg" cx="22" cy="22" r="19"/>
+<circle id="ring" cx="22" cy="22" r="19"/>
+</svg>
+<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5m0 0-6 6m6-6 6 6"/></svg>
+</button>
+
+<script>
+(function(){
+"use strict";
+document.documentElement.classList.add("js");
+
+var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+/* ---------- refs ---------- */
+var siteHead = document.getElementById("siteHead");
+var progressEl = document.getElementById("progressBar");
+var menuBtn = document.getElementById("menuBtn");
+var mobileNav = document.getElementById("mobileNav");
+var tocChips = document.getElementById("tocChips");
+var tocMark = document.getElementById("tocMark");
+var toTop = document.getElementById("toTop");
+var ringEl = document.getElementById("ring");
+var RING_C = 119.4;
+
+var sections = Array.prototype.slice.call(document.querySelectorAll(".clause"));
+var tocLinks = Array.prototype.slice.call(document.querySelectorAll(".js-toclink"));
+
+/* ---------- year ---------- */
+var yearEl = document.getElementById("year");
+if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+
+/* ---------- effective date ---------- */
+var effStr = new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+var effChip = document.getElementById("effDate");
+var effBody = document.getElementById("effDateBody");
+if (effChip) effChip.textContent = effStr;
+if (effBody) effBody.textContent = effStr;
+
+/* ---------- reading time ---------- */
+var docEl = document.getElementById("doc");
+var readEl = document.getElementById("readTime");
+if (docEl && readEl) {
+var words = (docEl.textContent || "").trim().split(/\s+/).length;
+readEl.textContent = "\u2248 " + Math.max(1, Math.round(words / 220)) + " min";
+}
+
+/* ---------- mobile TOC chips (generated) ---------- */
+if (tocChips) {
+var frag = document.createDocumentFragment();
+sections.forEach(function (sec, i) {
+var h = sec.querySelector("h2");
+var a = document.createElement("a");
+a.href = "#" + sec.id;
+a.className = "js-chiplink";
+a.textContent = (i < 9 ? "0" : "") + (i + 1) + " · " + (h ? h.textContent : sec.id);
+frag.appendChild(a);
+});
+tocChips.appendChild(frag);
+}
+var chipLinks = Array.prototype.slice.call(document.querySelectorAll(".js-chiplink"));
+
+/* ---------- active section ---------- */
+var currentId = sections.length ? sections[0].id : null;
+
+function setActive(id) {
+if (id === currentId && document.querySelector('.js-toclink[href="#' + id + '"].active')) return;
+currentId = id;
+
+tocLinks.forEach(function (a) {
+var on = a.getAttribute("href") === "#" + id;
+a.classList.toggle("active", on);
+if (on) {
+a.setAttribute("aria-current", "true");
+if (tocMark) {
+try {
+var li = a.parentElement;
+var ol = li ? li.parentElement : null;
+if (ol) {
+tocMark.style.transform = "translateY(" + (li.offsetTop - ol.offsetTop - 4) + "px)";
+}
+} catch (e) { /* positioning is decorative */ }
+}
+} else {
+a.removeAttribute("aria-current");
+}
+});
+
+chipLinks.forEach(function (a) {
+var on = a.getAttribute("href") === "#" + id;
+a.classList.toggle("active", on);
+if (on) {
+try { a.scrollIntoView({ inline: "center", block: "nearest", behavior: reduceMotion.matches ? "auto" : "smooth" }); } catch (e) { /* older browsers */ }
+}
+});
+}
+
+/* ---------- scroll spy ---------- */
+if ("IntersectionObserver" in window) {
+var spy = new IntersectionObserver(function (entries) {
+entries.forEach(function (entry) {
+if (entry.isIntersecting) setActive(entry.target.id);
+});
+}, { rootMargin: "-38% 0px -56% 0px", threshold: 0 });
+sections.forEach(function (s) { spy.observe(s); });
+
+/* reveal-on-scroll */
+var revealer = new IntersectionObserver(function (entries) {
+entries.forEach(function (entry) {
+if (entry.isIntersecting) {
+entry.target.classList.add("in");
+revealer.unobserve(entry.target);
+}
+});
+}, { rootMargin: "0px 0px -8% 0px", threshold: 0.05 });
+sections.forEach(function (s) { revealer.observe(s); });
+} else {
+sections.forEach(function (s) { s.classList.add("in"); });
+}
+
+/* ---------- scroll: header, progress, back-to-top ---------- */
+var ticking = false;
+function onScroll() {
+if (ticking) return;
+ticking = true;
+window.requestAnimationFrame(function () {
+var y = window.scrollY || window.pageYOffset || 0;
+var max = (document.documentElement.scrollHeight - window.innerHeight) || 1;
+var p = Math.min(1, Math.max(0, y / max));
+
+if (progressEl) progressEl.style.transform = "scaleX(" + p + ")";
+if (ringEl) ringEl.style.strokeDashoffset = String(RING_C * (1 - p));
+if (siteHead) siteHead.classList.toggle("scrolled", y > 8);
+if (toTop) toTop.classList.toggle("show", y > 480);
+
+ticking = false;
+});
+}
+window.addEventListener("scroll", onScroll, { passive: true });
+window.addEventListener("resize", function () {
+onScroll();
+if (currentId) setActive(currentId); /* reposition toc marker */
+if (window.innerWidth > 900) closeMenu();
+});
+onScroll();
+
+/* ---------- back to top ---------- */
+if (toTop) {
+toTop.addEventListener("click", function () {
+window.scrollTo({ top: 0, behavior: reduceMotion.matches ? "auto" : "smooth" });
+toTop.focus({ preventScroll: true });
+});
+}
+
+/* ---------- mobile menu ---------- */
+function openMenu() {
+if (!menuBtn || !mobileNav) return;
+mobileNav.hidden = false;
+document.body.classList.add("menu-open");
+menuBtn.setAttribute("aria-expanded", "true");
+menuBtn.setAttribute("aria-label", "Close menu");
+}
+function closeMenu() {
+if (!menuBtn || !mobileNav) return;
+document.body.classList.remove("menu-open");
+menuBtn.setAttribute("aria-expanded", "false");
+menuBtn.setAttribute("aria-label", "Open menu");
+window.setTimeout(function () {
+if (!document.body.classList.contains("menu-open")) mobileNav.hidden = true;
+}, 260);
+}
+if (menuBtn && mobileNav) {
+menuBtn.addEventListener("click", function () {
+if (menuBtn.getAttribute("aria-expanded") === "true") closeMenu(); else openMenu();
+});
+mobileNav.addEventListener("click", function (e) {
+if (e.target && e.target.closest && e.target.closest("a")) closeMenu();
+});
+document.addEventListener("keydown", function (e) {
+if (e.key === "Escape" && document.body.classList.contains("menu-open")) {
+closeMenu();
+menuBtn.focus();
+}
+});
+document.addEventListener("click", function (e) {
+if (!document.body.classList.contains("menu-open")) return;
+if (e.target.closest && (e.target.closest(".mobile-nav") || e.target.closest(".site-head"))) return;
+closeMenu();
+});
+}
+
+/* ---------- copy section links ---------- */
+function feedback(btn, ok) {
+btn.classList.add("copied");
+btn.setAttribute("aria-label", ok ? "Link copied" : "Copy failed");
+window.setTimeout(function () {
+btn.classList.remove("copied");
+btn.setAttribute("aria-label", btn.getAttribute("data-original") || "Copy section link");
+}, 1600);
+}
+Array.prototype.forEach.call(document.querySelectorAll(".anchor-copy"), function (btn) {
+btn.setAttribute("data-original", btn.getAttribute("aria-label") || "Copy section link");
+btn.addEventListener("click", function () {
+var sec = btn.closest(".clause");
+if (!sec) return;
+var url = window.location.href.split("#")[0] + "#" + sec.id;
+var done = false;
+
+var fallback = function () {
+try {
+var ta = document.createElement("textarea");
+ta.value = url;
+ta.setAttribute("readonly", "");
+ta.style.position = "fixed";
+ta.style.opacity = "0";
+document.body.appendChild(ta);
+ta.select();
+done = document.execCommand("copy");
+document.body.removeChild(ta);
+} catch (err) { done = false; }
+feedback(btn, done);
+};
+
+if (navigator.clipboard && window.isSecureContext) {
+navigator.clipboard.writeText(url)
+.then(function () { feedback(btn, true); })
+.catch(fallback);
+} else {
+fallback();
+}
+});
+});
+
+/* ---------- initial active state ---------- */
+if (window.location.hash) {
+var h = window.location.hash.slice(1);
+if (document.getElementById(h)) setActive(h);
+} else if (sections.length) {
+setActive(sections[0].id);
+}
+})();
+</script>
 </body>
 </html>

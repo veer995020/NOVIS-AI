@@ -59,6 +59,88 @@
   --shadow-2: 0 18px 55px rgba(0, 0, 0, .34);
 
   --transition: 180ms cubic-bezier(.2,.8,.2,1);
+
+  /* Thinking animation */
+  --thinking-dot: 600ms ease-in-out infinite;
+}
+
+@keyframes thinking-pulse {
+  0%, 100% { opacity: .4; }
+  50% { opacity: 1; }
+}
+
+@keyframes thinking-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes thinking-wave {
+  0% { width: 4px; }
+  50% { width: 8px; }
+  100% { width: 4px; }
+}
+
+@keyframes stream-fade {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.thinking-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--glass);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-2);
+  width: fit-content;
+  animation: thinking-pulse var(--thinking-dot);
+}
+
+.thinking-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--cyan);
+  border-radius: 50%;
+  animation: thinking-bounce 1.4s ease-in-out infinite;
+}
+
+.thinking-dot:nth-child(2) {
+  animation-delay: 200ms;
+}
+
+.thinking-dot:nth-child(3) {
+  animation-delay: 400ms;
+}
+
+.stream-char {
+  animation: stream-fade 200ms ease-in;
+}
+
+.code-block-secure {
+  position: relative;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 8px 0;
+}
+
+.code-block-secure pre {
+  margin: 0;
+  padding: 12px 16px;
+  overflow-x: auto;
+  color: var(--text-0);
+}
+
+.code-block-secure code {
+  color: var(--text-0);
+  white-space: pre;
 }
 
 [data-theme="light"] {
@@ -1351,36 +1433,53 @@ body[data-sidebar="closed"] .sidebar {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
   gap: 10px;
-  padding: 0 4px 10px;
+  padding: 10px 4px 0;
+  border-top: 1px solid var(--border);
+  margin-bottom: 8px;
 }
 
 .attachment-item {
   position: relative;
   display: grid;
-  grid-template-columns: 48px minmax(0,1fr) auto;
+  grid-template-columns: 56px minmax(0,1fr) auto;
   gap: 10px;
   align-items: center;
-  padding: 10px;
-  border-radius: 18px;
+  padding: 12px;
+  border-radius: 12px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,.04);
+  background: var(--glass);
+  transition: all 140ms ease;
+}
+
+.attachment-item:hover {
+  background: var(--glass-2);
+  border-color: var(--border-2);
 }
 
 .attachment-item.status-error {
   border-color: rgba(244,63,94,.42);
-  background: rgba(244,63,94,.07);
+  background: rgba(244,63,94,.08);
+}
+
+.attachment-item.status-error:hover {
+  background: rgba(244,63,94,.12);
+}
+
+.attachment-item.status-preparing {
+  opacity: .85;
 }
 
 .attachment-thumb {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
   overflow: hidden;
   display: grid;
   place-items: center;
-  background: rgba(255,255,255,.06);
+  background: var(--glass-2);
   border: 1px solid var(--border);
   color: var(--text-2);
+  flex-shrink: 0;
 }
 
 .attachment-thumb img {
@@ -1389,39 +1488,76 @@ body[data-sidebar="closed"] .sidebar {
   object-fit: cover;
 }
 
+.attachment-thumb svg {
+  width: 28px;
+  height: 28px;
+}
+
 .attachment-info {
   min-width: 0;
   display: grid;
-  gap: 4px;
+  gap: 3px;
 }
 
 .attachment-name {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-size: 12.5px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text-0);
+  line-height: 1.3;
 }
 
 .attachment-meta {
-  color: var(--text-3);
+  display: flex;
+  gap: 8px;
   font-size: 11px;
+  color: var(--text-3);
+  align-items: center;
+}
+
+.attachment-size {
+  white-space: nowrap;
+}
+
+.attachment-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.attachment-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.attachment-status-dot.preparing {
+  background: var(--cyan);
+  animation: thinking-pulse 1s ease-in-out infinite;
+}
+
+.attachment-status-dot.error {
+  background: var(--red);
 }
 
 .attachment-progress {
-  height: 4px;
+  height: 3px;
   border-radius: 999px;
   overflow: hidden;
-  background: rgba(255,255,255,.09);
+  background: rgba(255,255,255,.07);
+  margin-top: 4px;
 }
 
 .attachment-progress span {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--brand);
-  transition: width .16s linear;
+  background: linear-gradient(90deg, var(--indigo), var(--cyan));
+  transition: width .15s linear;
 }
 
 .status-error .attachment-progress span {
@@ -1429,30 +1565,142 @@ body[data-sidebar="closed"] .sidebar {
 }
 
 .attachment-remove {
-  width: 30px;
-  height: 30px;
-  min-width: 30px;
-  min-height: 30px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--text-2);
+  transition: all 140ms ease;
+  flex-shrink: 0;
+}
+
+.attachment-remove:hover {
+  background: rgba(244,63,94,.2);
+  color: var(--red);
+}
+
+/* Upload Zone Styles */
+.upload-zone {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  padding: 20px;
+  background: rgba(7,7,13,.4);
+  backdrop-filter: blur(6px);
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+}
+
+.upload-zone.active {
+  display: flex;
+}
+
+.upload-zone-content {
+  padding: 28px;
+  border-radius: 18px;
+  border: 2px dashed rgba(99,102,241,.5);
+  background: rgba(99,102,241,.08);
+  color: var(--text-0);
+  font-weight: 600;
+  text-align: center;
+  pointer-events: none;
+  display: grid;
+  gap: 8px;
+  align-items: center;
+  justify-items: center;
+}
+
+.upload-zone-icon {
+  width: 40px;
+  height: 40px;
+  opacity: .6;
+  color: var(--cyan);
+}
+
+.upload-zone.drag-over .upload-zone-content {
+  border-color: var(--cyan);
+  background: rgba(34,211,238,.12);
+}
+
+.upload-zone.drag-over .upload-zone-icon {
+  opacity: 1;
+  animation: thinking-bounce 1.4s ease-in-out infinite;
 }
 
 .drop-overlay {
   position: absolute;
   inset: 0;
   z-index: 30;
-  display: grid;
+  display: none;
   place-items: center;
   padding: 20px;
   background: rgba(7,7,13,.6);
   backdrop-filter: blur(8px);
 }
 
+.drop-overlay.active {
+  display: grid;
+}
+
 .drop-overlay > div {
-  padding: 22px 30px;
-  border-radius: 22px;
-  border: 2px dashed rgba(99,102,241,.58);
-  background: rgba(99,102,241,.12);
-  color: var(--text-0);
+  padding: 28px 40px;
+  border-radius: 20px;
+  border: 2.5px dashed var(--cyan);
+  background: rgba(34,211,238,.1);
+  color: var(--cyan);
   font-weight: 700;
+  text-align: center;
+  pointer-events: none;
+  animation: thinking-pulse 1s ease-in-out infinite;
+}
+
+/* Upload Error Toast */
+.upload-error {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  background: rgba(244,63,94,.15);
+  border: 1px solid rgba(244,63,94,.3);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.upload-error-title {
+  font-weight: 600;
+  color: var(--red);
+  font-size: 12px;
+}
+
+.upload-error-message {
+  font-size: 11px;
+  color: var(--text-1);
+  line-height: 1.4;
+}
+
+.upload-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-3);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.upload-stat {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.upload-stat-value {
+  color: var(--text-0);
+  font-weight: 600;
 }
 
 /* ==========================================================================
@@ -2072,11 +2320,20 @@ dialog::backdrop {
       </button>
     </section>
 
-    <div class="drop-overlay" id="dropOverlay" hidden>
+    <div class="drop-overlay" id="dropOverlay" aria-hidden="true">
       <div>Drop files or images to attach them to this chat</div>
     </div>
 
     <form class="composer" id="composer" aria-label="Message composer">
+      <div class="upload-zone" id="uploadZone" aria-hidden="true">
+        <div class="upload-zone-content">
+          <svg class="upload-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+          </svg>
+          <div>Drop files or images here</div>
+        </div>
+      </div>
+
       <div class="attachment-tray" id="attachmentTray" aria-label="Attachments" hidden></div>
 
       <div class="composer-shell">
@@ -2089,10 +2346,10 @@ dialog::backdrop {
 
       <div class="composer-toolbar">
         <div class="toolbar-left" role="toolbar" aria-label="Composer tools">
-          <button type="button" class="icon-btn" data-action="attach-file" aria-label="Attach file" title="Attach file">
+          <button type="button" class="icon-btn" data-action="attach-file" aria-label="Attach file" title="Attach file (Ctrl+U)">
             <svg class="icon"><use href="#i-paperclip"></use></svg>
           </button>
-          <button type="button" class="icon-btn" data-action="attach-image" aria-label="Upload image" title="Upload image">
+          <button type="button" class="icon-btn" data-action="attach-image" aria-label="Upload image" title="Upload image (Ctrl+I)">
             <svg class="icon"><use href="#i-image"></use></svg>
           </button>
           <button type="button" class="icon-btn" id="codeModeBtn" data-action="code-mode" aria-pressed="false" aria-label="Toggle code mode" title="Code mode">
@@ -2113,7 +2370,7 @@ dialog::backdrop {
         </div>
       </div>
 
-      <input type="file" id="fileInput" multiple hidden accept=".pdf,.txt,.md,.csv,.json,.js,.ts,.py,.html,.css,image/*" />
+      <input type="file" id="fileInput" multiple hidden accept=".pdf,.txt,.md,.csv,.json,.js,.ts,.py,.html,.css" />
       <input type="file" id="imageInput" multiple hidden accept="image/*" />
     </form>
   </main>
@@ -3025,6 +3282,7 @@ dialog::backdrop {
       messageList: $("#messageList"),
       scrollBottomBtn: $("#scrollBottomBtn"),
       dropOverlay: $("#dropOverlay"),
+      uploadZone: $("#uploadZone"),
       conversationTitleBtn: $("#conversationTitleBtn"),
       headerModelName: $("#headerModelName"),
       headerModeName: $("#headerModeName"),
@@ -3057,6 +3315,53 @@ dialog::backdrop {
       deleteSaveBtn: $("#deleteSaveBtn"),
       deleteCancelBtn: $("#deleteCancelBtn")
     };
+  }
+
+  /* ========================================================================
+     CONTENT SECURITY & UTILITIES
+     ====================================================================== */
+
+  /**
+   * Simple HTML sanitizer - removes dangerous tags and attributes to prevent XSS
+   */
+  function sanitizeHTML(html) {
+    const div = document.createElement('div');
+    div.textContent = html;
+    return div.innerHTML;
+  }
+
+  /**
+   * Deep sanitizes HTML by removing script tags, event handlers, and dangerous elements
+   */
+  function sanitizeContent(html) {
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+    
+    // Remove script tags and other dangerous elements
+    const dangerous = temp.querySelectorAll('script, iframe, object, embed, form');
+    dangerous.forEach(el => el.remove());
+    
+    // Remove event handlers from all elements
+    const allElements = temp.querySelectorAll('*');
+    allElements.forEach(el => {
+      Array.from(el.attributes).forEach(attr => {
+        if (attr.name.startsWith('on')) {
+          el.removeAttribute(attr.name);
+        }
+      });
+    });
+    
+    return temp.innerHTML;
+  }
+
+  /**
+   * Creates a thinking indicator animation element
+   */
+  function createThinkingIndicator() {
+    const div = document.createElement('div');
+    div.className = 'thinking-indicator';
+    div.innerHTML = 'Thinking<span class="thinking-dot"></span><span class="thinking-dot"></span><span class="thinking-dot"></span>';
+    return div;
   }
 
   /* ========================================================================
@@ -3920,18 +4225,42 @@ dialog::backdrop {
       item.className = `attachment-item status-${attachment.status}`;
       item.dataset.attachmentId = attachment.id;
 
-      const preview = attachment.kind === "image" && attachment.imageUrl
-        ? `<img src="${attachment.imageUrl}" alt="${escapeHtml(attachment.name)} preview" />`
-        : ICONS.file;
+      // Create preview/thumbnail
+      let thumbContent = ICONS.file;
+      if (attachment.kind === "image" && attachment.imageUrl) {
+        thumbContent = `<img src="${attachment.imageUrl}" alt="${escapeHtml(attachment.name)} preview" />`;
+      }
+
+      // Create status indicator
+      let statusDot = `<span class="attachment-status-dot"></span>`;
+      if (attachment.status === "preparing") {
+        statusDot = `<span class="attachment-status-dot preparing"></span>`;
+      } else if (attachment.status === "error") {
+        statusDot = `<span class="attachment-status-dot error"></span>`;
+      }
+
+      // Create meta information
+      const sizeText = formatBytes(attachment.size);
+      const statusText = attachment.statusText || attachment.status;
+      
+      // Build progress bar HTML (only show if not complete)
+      let progressHTML = "";
+      if (attachment.status !== "ready") {
+        progressHTML = `<div class="attachment-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(attachment.progress)}" aria-label="Upload progress"><span style="width:${attachment.progress}%"></span></div>`;
+      }
 
       item.innerHTML = `
-        <div class="attachment-thumb">${preview}</div>
+        <div class="attachment-thumb">${thumbContent}</div>
         <div class="attachment-info">
           <span class="attachment-name" title="${escapeHtml(attachment.name)}">${escapeHtml(attachment.name)}</span>
-          <span class="attachment-meta">${escapeHtml(formatBytes(attachment.size))} · ${escapeHtml(attachment.statusText || attachment.status)}</span>
-          <div class="attachment-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(attachment.progress)}" aria-label="Processing progress">
-            <span style="width:${attachment.progress}%"></span>
-          </div>
+          <span class="attachment-meta">
+            <span class="attachment-size">${sizeText}</span>
+            <span class="attachment-status">
+              ${statusDot}
+              <span>${escapeHtml(statusText)}</span>
+            </span>
+          </span>
+          ${progressHTML}
         </div>
         <button type="button" class="icon-btn attachment-remove" data-attachment-remove="${attachment.id}" aria-label="Remove ${escapeHtml(attachment.name)}">
           ${ICONS.close}
@@ -3952,10 +4281,19 @@ dialog::backdrop {
     return scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 90;
   }
 
-  function scrollToBottom(force = false) {
+  function scrollToBottom(force = false, smooth = true) {
     const scroller = els.messageScroller;
     if (force || store.getSetting("autoScroll") || isNearBottom()) {
-      scroller.scrollTop = scroller.scrollHeight;
+      if (smooth && !force) {
+        requestAnimationFrame(() => {
+          scroller.scrollTo({
+            top: scroller.scrollHeight,
+            behavior: 'smooth'
+          });
+        });
+      } else {
+        scroller.scrollTop = scroller.scrollHeight;
+      }
     }
     updateScrollBottomButton();
   }
@@ -4725,45 +5063,155 @@ dialog::backdrop {
   /* ========================================================================
      UPLOADS
      ====================================================================== */
+  /* ========================================================================
+     FILE UPLOAD UTILITIES
+     ====================================================================== */
+
+  /**
+   * Validates a single file for upload
+   * Returns { valid: boolean, error?: string }
+   */
+  function validateFile(file, isImageMode = false) {
+    // Check for empty file
+    if (file.size === 0) {
+      return {
+        valid: false,
+        error: `${file.name}: File is empty`
+      };
+    }
+
+    // Check file size
+    if (file.size > MAX_FILE_SIZE) {
+      return {
+        valid: false,
+        error: `${file.name}: Exceeds 10 MB limit (${formatBytes(file.size)})`
+      };
+    }
+
+    const isImage = file.type.startsWith("image/");
+
+    // Validate image mode
+    if (isImageMode && !isImage) {
+      return {
+        valid: false,
+        error: `${file.name}: Not an image file`
+      };
+    }
+
+    // Validate file type
+    if (!isImage && !DOCUMENT_EXTENSIONS.test(file.name) && !DOCUMENT_TYPES.has(file.type)) {
+      return {
+        valid: false,
+        error: `${file.name}: Unsupported file type`
+      };
+    }
+
+    return { valid: true };
+  }
+
+  /**
+   * Formats bytes to human-readable size
+   */
+  function formatBytes(bytes) {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+  }
+
+  /**
+   * Shows upload zone when dragging over composer
+   */
+  function showUploadZone() {
+    if (els.uploadZone) {
+      els.uploadZone.classList.add("active");
+    }
+  }
+
+  /**
+   * Hides upload zone
+   */
+  function hideUploadZone() {
+    if (els.uploadZone) {
+      els.uploadZone.classList.remove("active");
+      els.uploadZone.classList.remove("drag-over");
+    }
+  }
+
+  /**
+   * Updates upload zone drag-over state
+   */
+  function setUploadZoneDragOver(isDragOver) {
+    if (els.uploadZone) {
+      if (isDragOver) {
+        els.uploadZone.classList.add("drag-over");
+      } else {
+        els.uploadZone.classList.remove("drag-over");
+      }
+    }
+  }
+
+  /**
+   * Shows drop overlay with animation
+   */
+  function showDropOverlay() {
+    if (els.dropOverlay) {
+      els.dropOverlay.classList.add("active");
+    }
+  }
+
+  /**
+   * Hides drop overlay
+   */
+  function hideDropOverlay() {
+    if (els.dropOverlay) {
+      els.dropOverlay.classList.remove("active");
+    }
+  }
+
+  /* ========================================================================
+     FILE UPLOAD HANDLER
+     ====================================================================== */
   function handleUpload(fileList, source = "file") {
+    hideUploadZone();
+    hideDropOverlay();
+
     const files = Array.from(fileList || []);
     if (!files.length) return;
 
     const tools = store.getTools();
+    const isImageMode = source === "image";
+    const errors = [];
+    let addedCount = 0;
 
     for (const file of files) {
+      // Check attachment limit
       if (store.getState().attachments.length >= MAX_ATTACHMENTS) {
-        showToast(`Attachment limit reached (${MAX_ATTACHMENTS}).`, "warning");
+        errors.push(`Attachment limit (${MAX_ATTACHMENTS}) reached. Remove attachments to add more.`);
         break;
       }
 
+      // Check tools enabled
       const isImage = file.type.startsWith("image/");
-
-      if (source === "image" && !isImage) {
-        showToast(`Unsupported image file: ${file.name}`, "error");
-        continue;
-      }
-
       if (isImage && !tools.images) {
-        showToast("Images tool is disabled.", "warning");
+        errors.push(`${file.name}: Images tool is disabled in settings`);
         continue;
       }
 
       if (!isImage && !tools.files) {
-        showToast("Files tool is disabled.", "warning");
+        errors.push(`${file.name}: Files tool is disabled in settings`);
         continue;
       }
 
-      if (file.size > MAX_FILE_SIZE) {
-        showToast(`${file.name} is larger than 10 MB.`, "error");
+      // Validate file
+      const validation = validateFile(file, isImageMode);
+      if (!validation.valid) {
+        errors.push(validation.error);
         continue;
       }
 
-      if (!isImage && !DOCUMENT_EXTENSIONS.test(file.name) && !DOCUMENT_TYPES.has(file.type)) {
-        showToast(`Unsupported file type: ${file.name}`, "error");
-        continue;
-      }
-
+      // Create attachment object
       const attachment = {
         id: randomId("att"),
         file,
@@ -4774,7 +5222,7 @@ dialog::backdrop {
         imageUrl: null,
         progress: 0,
         status: "preparing",
-        statusText: "Preparing"
+        statusText: "Preparing…"
       };
 
       store.addAttachment(attachment);
@@ -4783,6 +5231,20 @@ dialog::backdrop {
       if (attachment.kind === "image") {
         readImageAttachment(attachment, file);
       }
+
+      addedCount++;
+    }
+
+    // Show combined results
+    if (addedCount > 0) {
+      const msg = addedCount === 1 ? "1 file" : `${addedCount} files`;
+      showToast(`${msg} added to chat`, "success");
+    }
+
+    if (errors.length > 0) {
+      errors.forEach(error => {
+        showToast(error, "error");
+      });
     }
 
     renderAttachments();
@@ -5232,7 +5694,9 @@ dialog::backdrop {
       if (Array.from(event.dataTransfer?.types || []).includes("Files")) {
         event.preventDefault();
         dragDepth += 1;
-        els.dropOverlay.hidden = false;
+        showUploadZone();
+        showDropOverlay();
+        setUploadZoneDragOver(true);
       }
     });
 
@@ -5243,13 +5707,19 @@ dialog::backdrop {
     els.chatMain.addEventListener("dragleave", (event) => {
       event.preventDefault();
       dragDepth = Math.max(0, dragDepth - 1);
-      if (!dragDepth) els.dropOverlay.hidden = true;
+      if (!dragDepth) {
+        hideUploadZone();
+        hideDropOverlay();
+        setUploadZoneDragOver(false);
+      }
     });
 
     els.chatMain.addEventListener("drop", (event) => {
       event.preventDefault();
       dragDepth = 0;
-      els.dropOverlay.hidden = true;
+      hideUploadZone();
+      hideDropOverlay();
+      setUploadZoneDragOver(false);
       handleUpload(event.dataTransfer?.files || [], "drop");
     });
 
@@ -5287,6 +5757,17 @@ dialog::backdrop {
       if ((event.ctrlKey || event.metaKey) && event.key === "/") {
         event.preventDefault();
         els.composerInput.focus();
+      }
+
+      // Upload shortcuts
+      if ((event.ctrlKey || event.metaKey) && event.key === "u") {
+        event.preventDefault();
+        els.fileInput.click();
+      }
+
+      if ((event.ctrlKey || event.metaKey) && event.key === "i") {
+        event.preventDefault();
+        els.imageInput.click();
       }
     });
 
@@ -5336,6 +5817,49 @@ dialog::backdrop {
   function getMessageIdFromElement(element) {
     return element.closest("[data-message-id]")?.dataset.messageId || null;
   }
+
+  /* ========================================================================
+     CONTENT SECURITY & RENDERING
+     ====================================================================== */
+
+  /**
+   * Simple HTML sanitizer - removes dangerous tags and attributes
+   * Prevents XSS attacks while preserving safe content
+   */
+  function sanitizeHTML(html) {
+    const div = document.createElement('div');
+    div.textContent = html;
+    return div.innerHTML;
+  }
+
+  /**
+   * Sanitizes HTML by creating a temporary DOM and removing unsafe elements
+   */
+  function sanitizeContent(html) {
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+    
+    // Remove script tags and event handlers
+    const scripts = temp.querySelectorAll('script, iframe, object, embed, form');
+    scripts.forEach(el => el.remove());
+    
+    // Remove dangerous attributes
+    const allElements = temp.querySelectorAll('*');
+    allElements.forEach(el => {
+      // Remove event handlers
+      Array.from(el.attributes).forEach(attr => {
+        if (attr.name.startsWith('on')) {
+          el.removeAttribute(attr.name);
+        }
+      });
+    });
+    
+    return temp.innerHTML;
+  }
+
+
+
+
 
   /* ========================================================================
      START
