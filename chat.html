@@ -1431,7 +1431,7 @@ body[data-sidebar="closed"] .sidebar {
 
 .attachment-tray {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 10px;
   padding: 10px 4px 0;
   border-top: 1px solid var(--border);
@@ -1449,6 +1449,7 @@ body[data-sidebar="closed"] .sidebar {
   border: 1px solid var(--border);
   background: var(--glass);
   transition: all 140ms ease;
+  animation: message-in 0.22s ease both;
 }
 
 .attachment-item:hover {
@@ -1636,15 +1637,21 @@ body[data-sidebar="closed"] .sidebar {
   position: absolute;
   inset: 0;
   z-index: 30;
-  display: none;
+  display: grid;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
   place-items: center;
   padding: 20px;
   background: rgba(7,7,13,.6);
   backdrop-filter: blur(8px);
+  transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .drop-overlay.active {
-  display: grid;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .drop-overlay > div {
@@ -5098,12 +5105,17 @@ dialog::backdrop {
       };
     }
 
-    // Validate file type
-    if (!isImage && !DOCUMENT_EXTENSIONS.test(file.name) && !DOCUMENT_TYPES.has(file.type)) {
-      return {
-        valid: false,
-        error: `${file.name}: Unsupported file type`
-      };
+    // Validate file type - dual check: extension AND mime type
+    if (!isImage) {
+      const hasValidExtension = DOCUMENT_EXTENSIONS.test(file.name);
+      const hasValidMimeType = DOCUMENT_TYPES.has(file.type);
+
+      if (!hasValidExtension || !hasValidMimeType) {
+        return {
+          valid: false,
+          error: `${file.name}: Unsupported file type`
+        };
+      }
     }
 
     return { valid: true };
