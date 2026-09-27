@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="SizeAdjuster.css">
-<meta name="description" content="About Chatify AI — Made by Legend Inc. to simplify AI research for everyone">
+<meta name="description" content="About Nova AI — Made by Legend Inc. to simplify AI research for everyone">
 <meta name="theme-color" content="#0a0a16">
-<title>About — Chatify AI</title>
+<title>About — Nova AI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -94,8 +94,8 @@ p { color: var(--ink-2); line-height: 1.7; margin-bottom: var(--sp-3); }
 <div class="shell">
     <header class="topbar">
         <a href="index.html" class="brand">
-            <img src="IMAGE.png" alt="Chatify AI" class="logo-img">
-            <span>Chatify</span>
+            <img src="IMAGE.png" alt="Nova AI" class="logo-img">
+            <span>Nova</span>
         </a>
         <div class="topbar-actions">
             <div class="theme-switch" role="group" aria-label="Theme">
@@ -108,19 +108,19 @@ p { color: var(--ink-2); line-height: 1.7; margin-bottom: var(--sp-3); }
 
     <main class="main">
         <div class="hero">
-            <h1>About Chatify AI</h1>
+            <h1>About Nova AI</h1>
             <p>Built by Legend Inc. to make AI research accessible to everyone.</p>
         </div>
 
         <div class="card">
             <h2>Our mission</h2>
-            <p>We believe that access to advanced AI tools should not be a privilege. Chatify AI was created to democratize AI research, enabling students, professionals, and teams to ask better questions, find better answers, and make better decisions.</p>
+            <p>We believe that access to advanced AI tools should not be a privilege. Nova AI was created to democratize AI research, enabling students, professionals, and teams to ask better questions, find better answers, and make better decisions.</p>
         </div>
 
         <div class="card">
             <h2>Our story</h2>
-            <p>Legend Inc. was founded in 202x6 by a team of AI researchers and product builders who saw the gap between cutting-edge AI capabilities and practical accessibility. We started Chatify AI to bridge that gap—creating a platform that combines the power of multiple AI models with the simplicity of a single, intuitive interface.</p>
-            <p>Today, Chatify AI helps thousands of researchers, students, and professionals accelerate their work and unlock new insights.</p>
+            <p>Legend Inc. was founded in 202x6 by a team of AI researchers and product builders who saw the gap between cutting-edge AI capabilities and practical accessibility. We started Nova AI to bridge that gap—creating a platform that combines the power of multiple AI models with the simplicity of a single, intuitive interface.</p>
+            <p>Today, Nova AI helps thousands of researchers, students, and professionals accelerate their work and unlock new insights.</p>
         </div>
 
         <div class="card">
@@ -161,10 +161,10 @@ function applyTheme(mode) {
         btn.classList.toggle('active', btn.dataset.theme === mode);
         btn.setAttribute('aria-pressed', btn.dataset.theme === mode ? 'true' : 'false');
     });
-    localStorage.setItem('chatify_theme', mode);
+    localStorage.setItem('nova_theme', mode);
 }
 themeButtons.forEach(btn => btn.addEventListener('click', () => applyTheme(btn.dataset.theme)));
-applyTheme(localStorage.getItem('chatify_theme') || 'system');
+applyTheme(localStorage.getItem('nova_theme') || 'system');
 </script>
 
 </body>

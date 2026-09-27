@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Chatify AI by Legend Inc — account profile and settings workspace.">
+<meta name="description" content="Nova AI by Legend Inc — account profile and settings workspace.">
 <meta name="theme-color" content="#070812">
-<title>Account · Chatify AI — Legend Inc</title>
+<title>Account · Nova AI — Legend Inc</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
-   CHATIFY AI · ACCOUNT WORKSPACE
+   NOVA AI · ACCOUNT WORKSPACE
    Design tokens
 ============================================================ */
 :root{
@@ -485,16 +485,16 @@ html[data-motion="reduced"] *,html[data-motion="reduced"] *::before,html[data-mo
 <span class="orb orb-b" aria-hidden="true"></span>
 <span class="orb orb-c" aria-hidden="true"></span>
 
-<noscript><p style="padding:20px;text-align:center">Chatify AI account workspace requires JavaScript.</p></noscript>
+<noscript><p style="padding:20px;text-align:center">Nova AI account workspace requires JavaScript.</p></noscript>
 
 <!-- ======================= TOPBAR ======================= -->
 <header class="topbar">
   <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open navigation menu" aria-expanded="false" aria-controls="sidebar">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
   </button>
-  <a class="brand" href="#profile" data-section-link="profile" aria-label="Chatify AI home">
+  <a class="brand" href="#profile" data-section-link="profile" aria-label="Nova AI home">
     <span class="brand-mark"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c.8 5.5 2.5 7.2 8 8-5.5.8-7.2 2.5-8 8-.8-5.5-2.5-7.2-8-8 5.5-.8 7.2-2.5 8-8z"/></svg></span>
-    <span class="brand-name">Chatify<span class="brand-tag">AI</span></span>
+    <span class="brand-name">Nova<span class="brand-tag">AI</span></span>
   </a>
   <span class="brand-sub mono">ACCOUNT</span>
   <div class="topbar-right">
@@ -584,7 +584,7 @@ html[data-motion="reduced"] *,html[data-motion="reduced"] *::before,html[data-mo
         <div>
           <p class="eyebrow">Account · Overview</p>
           <h1 id="h-profile">Profile</h1>
-          <p class="panel-desc">Your identity across Chatify AI. All changes are stored in this browser only.</p>
+          <p class="panel-desc">Your identity across Nova AI. All changes are stored in this browser only.</p>
         </div>
         <div class="head-actions">
           <button class="btn ghost" id="logoutBtn">
@@ -650,7 +650,7 @@ html[data-motion="reduced"] *,html[data-motion="reduced"] *::before,html[data-mo
           <div class="field" id="fld-bio">
             <label for="pf-bio">Bio</label>
             <textarea id="pf-bio" data-pf="bio" rows="3" maxlength="200" disabled></textarea>
-            <div class="fmeta"><span>Shown on your public Chatify cards.</span><span id="bioCount">0 / 200</span></div>
+            <div class="fmeta"><span>Shown on your public Nova cards.</span><span id="bioCount">0 / 200</span></div>
             <p class="ferr" id="err-bio" role="alert" hidden></p>
           </div>
 
@@ -709,7 +709,7 @@ html[data-motion="reduced"] *,html[data-motion="reduced"] *::before,html[data-mo
         <div>
           <p class="eyebrow">01 · Preferences</p>
           <h1 id="h-general">General</h1>
-          <p class="panel-desc">Core workspace preferences for your Chatify AI session.</p>
+          <p class="panel-desc">Core workspace preferences for your Nova AI session.</p>
         </div>
       </header>
       <div class="card rows">
@@ -763,7 +763,7 @@ html[data-motion="reduced"] *,html[data-motion="reduced"] *::before,html[data-mo
         <div>
           <p class="eyebrow">02 · Preferences</p>
           <h1 id="h-chat">Chat</h1>
-          <p class="panel-desc">How conversations look and behave in the Chatify workspace.</p>
+          <p class="panel-desc">How conversations look and behave in the Nova workspace.</p>
         </div>
       </header>
       <div class="card rows">
@@ -860,7 +860,7 @@ html[data-motion="reduced"] *,html[data-motion="reduced"] *::before,html[data-mo
           <div class="row-ctrl"><label class="switch"><input type="checkbox" id="ai-stream" data-key="settings.ai.streaming"><span class="track" aria-hidden="true"></span></label></div>
         </div>
         <div class="row">
-          <div class="row-info"><label class="row-title" for="ai-memory">Memory &amp; context</label><p class="row-desc">How much context Chatify carries between exchanges.</p></div>
+          <div class="row-info"><label class="row-title" for="ai-memory">Memory &amp; context</label><p class="row-desc">How much context Nova carries between exchanges.</p></div>
           <div class="row-ctrl">
             <select class="select" id="ai-memory" data-key="settings.ai.memory">
               <option value="perchat">Per-chat only</option>
@@ -878,7 +878,7 @@ html[data-motion="reduced"] *,html[data-motion="reduced"] *::before,html[data-mo
         <div>
           <p class="eyebrow">04 · Intelligence</p>
           <h1 id="h-models">Models</h1>
-          <p class="panel-desc">Choose the engine Chatify reaches for first. Your pick syncs everywhere.</p>
+          <p class="panel-desc">Choose the engine Nova reaches for first. Your pick syncs everywhere.</p>
         </div>
       </header>
       <div class="card-grid" role="radiogroup" aria-label="Default model">
@@ -931,7 +931,7 @@ html[data-motion="reduced"] *,html[data-motion="reduced"] *::before,html[data-mo
         <div>
           <p class="eyebrow">05 · Intelligence</p>
           <h1 id="h-modes">Modes</h1>
-          <p class="panel-desc">Modes tune Chatify's behavior for the task at hand. Pick your default.</p>
+          <p class="panel-desc">Modes tune Nova's behavior for the task at hand. Pick your default.</p>
         </div>
       </header>
       <div class="card-grid" role="radiogroup" aria-label="Default mode">
@@ -1022,7 +1022,7 @@ html[data-motion="reduced"] *,html[data-motion="reduced"] *::before,html[data-mo
         <div>
           <p class="eyebrow">07 · Alerts</p>
           <h1 id="h-notif">Notifications</h1>
-          <p class="panel-desc">Decide when Chatify pings you — in-app, in-browser, or by email.</p>
+          <p class="panel-desc">Decide when Nova pings you — in-app, in-browser, or by email.</p>
         </div>
       </header>
       <div class="card rows">
@@ -1082,11 +1082,11 @@ html[data-motion="reduced"] *,html[data-motion="reduced"] *::before,html[data-mo
           <div class="row-ctrl"><label class="switch"><input type="checkbox" id="pv-personal" data-key="settings.privacy.personalization"><span class="track" aria-hidden="true"></span></label></div>
         </div>
         <div class="row">
-          <div class="row-info"><label class="row-title" for="pv-analytics">Usage analytics</label><p class="row-desc">Share anonymous usage statistics to improve Chatify.</p></div>
+          <div class="row-info"><label class="row-title" for="pv-analytics">Usage analytics</label><p class="row-desc">Share anonymous usage statistics to improve Nova.</p></div>
           <div class="row-ctrl"><label class="switch"><input type="checkbox" id="pv-analytics" data-key="settings.privacy.analytics"><span class="track" aria-hidden="true"></span></label></div>
         </div>
         <div class="row">
-          <div class="row-info"><span class="row-title">Clear temporary data</span><p class="row-desc">Removes cached, temporary items stored by Chatify in this browser.</p></div>
+          <div class="row-info"><span class="row-title">Clear temporary data</span><p class="row-desc">Removes cached, temporary items stored by Nova in this browser.</p></div>
           <div class="row-ctrl"><button class="btn ghost sm" id="clearTempBtn">Clear temp data</button></div>
         </div>
       </div>
@@ -1172,7 +1172,7 @@ html[data-motion="reduced"] *,html[data-motion="reduced"] *::before,html[data-mo
           <div class="row-ctrl"><label class="switch"><input type="checkbox" id="ck-prefs" data-key="settings.cookies.preferences"><span class="track" aria-hidden="true"></span></label></div>
         </div>
         <div class="row">
-          <div class="row-info"><label class="row-title" for="ck-analytics">Analytics cookies</label><p class="row-desc">Anonymous usage metrics that help improve Chatify.</p></div>
+          <div class="row-info"><label class="row-title" for="ck-analytics">Analytics cookies</label><p class="row-desc">Anonymous usage metrics that help improve Nova.</p></div>
           <div class="row-ctrl"><label class="switch"><input type="checkbox" id="ck-analytics" data-key="settings.cookies.analytics"><span class="track" aria-hidden="true"></span></label></div>
         </div>
         <div class="row">
@@ -1231,7 +1231,7 @@ html[data-motion="reduced"] *,html[data-motion="reduced"] *::before,html[data-mo
             <span class="pc">
               <span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg></span>
               <span class="pc-top"><span class="pc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/></svg></span></span>
-              <b class="pc-name">Dark</b><span class="pc-desc">Signature Chatify night mode.</span>
+              <b class="pc-name">Dark</b><span class="pc-desc">Signature Nova night mode.</span>
             </span>
           </label>
           <label class="pick-card">
@@ -1281,7 +1281,7 @@ html[data-motion="reduced"] *,html[data-motion="reduced"] *::before,html[data-mo
         <div class="row">
           <div class="row-info">
             <span class="row-title danger-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V5h6v2M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg>Clear local chat state</span>
-            <p class="row-desc">Remove all chat threads and drafts cached by Chatify in this browser.</p>
+            <p class="row-desc">Remove all chat threads and drafts cached by Nova in this browser.</p>
           </div>
           <div class="row-ctrl"><button class="btn danger sm" id="clearChatBtn">Clear chat state</button></div>
         </div>
@@ -1303,7 +1303,7 @@ html[data-motion="reduced"] *,html[data-motion="reduced"] *::before,html[data-mo
     </section>
 
     <p style="text-align:center;color:var(--faint);font-size:11.5px;font-family:var(--mono);letter-spacing:.08em;margin-top:34px">
-      CHATIFY AI · LEGEND INC · ACCOUNT DATA STORED IN THIS BROWSER ONLY
+      NOVA AI · LEGEND INC · ACCOUNT DATA STORED IN THIS BROWSER ONLY
     </p>
   </main>
 </div>
@@ -1318,7 +1318,7 @@ html[data-motion="reduced"] *,html[data-motion="reduced"] *::before,html[data-mo
 
 <div class="cookiebar" id="cookieBar" role="region" aria-label="Cookie consent" hidden>
   <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="10" r="1"/><circle cx="10" cy="15" r="1"/></svg> Cookies in this workspace</h3>
-  <p>Chatify uses essential storage to keep you signed in, plus optional preference and analytics cookies. Choose what's allowed in this browser.</p>
+  <p>Nova uses essential storage to keep you signed in, plus optional preference and analytics cookies. Choose what's allowed in this browser.</p>
   <div class="btns">
     <button class="btn primary sm" id="ckAccept">Accept all</button>
     <button class="btn ghost sm" id="ckReject">Essentials only</button>
@@ -1354,7 +1354,7 @@ html[data-motion="reduced"] *,html[data-motion="reduced"] *::before,html[data-mo
 <script>
 "use strict";
 /* ================================================================
-   CHATIFY AI · ACCOUNT — single-file frontend
+   NOVA AI · ACCOUNT — single-file frontend
    All persistence is browser-local. No server is contacted.
 ================================================================ */
 
@@ -1387,12 +1387,12 @@ const AVATARS = [
   {name:'Aurora', h1:158, h2:200}, {name:'Ember',  h1:14,  h2:42},
   {name:'Lime',   h1:92,  h2:150}, {name:'Rose',   h1:330, h2:20}
 ];
-const RESERVED_USERNAMES = ['admin','chatify','legend','support','root','moderator','system'];
+const RESERVED_USERNAMES = ['admin','nova','legend','support','root','moderator','system'];
 
 /* ---------- defaults & state ---------- */
 const DEFAULTS = {
   profile:{ displayName:'Veer', username:'veer', email:'veer@legend.inc',
-    bio:'Building with Chatify AI — shipping ideas at the speed of thought.',
+    bio:'Building with Nova AI — shipping ideas at the speed of thought.',
     avatar:{h1:248,h2:286}, status:'Active', memberSince:'Mar 2024', memberTs:new Date('2024-03-18').getTime(),
     plan:{name:'Legend Pro', renews:'Jul 12, 2026'} },
   theme:'dark', model:'rapid', mode:'general',
@@ -1411,12 +1411,12 @@ const DEFAULTS = {
   usage:{ messages:{used:1284,limit:5000}, research:{used:12,limit:50}, memory:62 },
   sessions:[
     {id:1, device:'Chrome · macOS', loc:'Mumbai, IN', ts:NOW-2*HOUR, current:true},
-    {id:2, device:'Chatify iOS · iPhone', loc:'Mumbai, IN', ts:NOW-2*DAY},
+    {id:2, device:'Nova iOS · iPhone', loc:'Mumbai, IN', ts:NOW-2*DAY},
     {id:3, device:'Edge · Windows 11', loc:'Pune, IN', ts:NOW-5*DAY}
   ],
   signins:[
     {device:'Chrome · macOS', loc:'Mumbai, IN', ts:NOW-2*HOUR, status:'now'},
-    {device:'Chatify iOS · iPhone', loc:'Mumbai, IN', ts:NOW-DAY, status:'ok'},
+    {device:'Nova iOS · iPhone', loc:'Mumbai, IN', ts:NOW-DAY, status:'ok'},
     {device:'Edge · Windows 11', loc:'Pune, IN', ts:NOW-5*DAY, status:'new'}
   ],
   activity:[
@@ -1424,7 +1424,7 @@ const DEFAULTS = {
     {icon:'zap',   text:'Default model set to Rapid', ts:NOW-DAY},
     {icon:'flask', text:'Research completed · “LLM evaluation trends”', ts:NOW-2*DAY},
     {icon:'spark', text:'Legend Pro plan renewed', ts:NOW-6*DAY},
-    {icon:'star',  text:'Joined Chatify AI', ts:new Date('2024-03-18').getTime()}
+    {icon:'star',  text:'Joined Nova AI', ts:new Date('2024-03-18').getTime()}
   ]
 };
 
@@ -1437,13 +1437,13 @@ let snapshot  = { settings:clone(DEFAULTS.settings), theme:DEFAULTS.theme, model
 
 /* ---------- local store (browser-side only, API-shaped for future swap) ---------- */
 const Store = {
-  key:'chatify.account.v1',
+  key:'nova.account.v1',
   read(){ try{ const raw=localStorage.getItem(this.key); return raw?JSON.parse(raw):null; }catch(e){ return null; } },
   save(){ return new Promise(res=>setTimeout(()=>{
     try{ localStorage.setItem(this.key, JSON.stringify({profile:state.profile, theme:state.theme, model:state.model, mode:state.mode, settings:state.settings})); res(true); }
     catch(e){ res(false); } }, 500)); },
   clearPrefixed(prefix){ let n=0; try{ Object.keys(localStorage).forEach(k=>{ if(k.startsWith(prefix)){ localStorage.removeItem(k); n++; } }); }catch(e){} return n; },
-  wipe(){ try{ Object.keys(localStorage).filter(k=>k.startsWith('chatify.')).forEach(k=>localStorage.removeItem(k)); }catch(e){} }
+  wipe(){ try{ Object.keys(localStorage).filter(k=>k.startsWith('nova.')).forEach(k=>localStorage.removeItem(k)); }catch(e){} }
 };
 
 /* ---------- icons ---------- */
@@ -2017,7 +2017,7 @@ function openTFAModal(onEnable, onCancel){
     <p class="modal-text">Protect your workspace with a one-time code from any authenticator app.</p>
     <ol class="steps">
       <li>Install an authenticator app on your phone.</li>
-      <li>Add a new account and scan the Chatify QR code (shown in the full app).</li>
+      <li>Add a new account and scan the Nova QR code (shown in the full app).</li>
       <li>Enter the 6-digit code below to finish setup.</li>
     </ol>
     <div class="field" style="margin-top:0"><label for="tfaCode">Authentication code</label>
@@ -2067,11 +2067,11 @@ $('#ckChoose').addEventListener('click', ()=>{ showSection('cookies'); });
 $('#clearTempBtn').addEventListener('click', async ()=>{
   const yes = await confirmDialog({
     title:'Clear temporary data?',
-    body:'Cached and temporary items stored by Chatify in this browser will be removed. Your profile and settings stay.',
+    body:'Cached and temporary items stored by Nova in this browser will be removed. Your profile and settings stay.',
     confirmText:'Clear data', variant:'danger'
   });
   if(!yes) return;
-  const n = Store.clearPrefixed('chatify.tmp');
+  const n = Store.clearPrefixed('nova.tmp');
   toast('ok','Temporary data cleared', n ? `${n} item${n>1?'s':''} removed.` : 'No temporary items were stored.');
   logActivity('trash','Temporary data cleared');
 });
@@ -2079,11 +2079,11 @@ $('#clearTempBtn').addEventListener('click', async ()=>{
 $('#clearChatBtn').addEventListener('click', async ()=>{
   const yes = await confirmDialog({
     title:'Clear local chat state?',
-    body:'All chat threads and drafts cached by Chatify in this browser will be removed. This cannot be undone.',
+    body:'All chat threads and drafts cached by Nova in this browser will be removed. This cannot be undone.',
     confirmText:'Clear chat state', variant:'danger'
   });
   if(!yes) return;
-  const n = Store.clearPrefixed('chatify.chat') + Store.clearPrefixed('chatify.draft');
+  const n = Store.clearPrefixed('nova.chat') + Store.clearPrefixed('nova.draft');
   toast(n ? 'ok':'info', n ? 'Chat state cleared' : 'No stored chat state found',
         n ? `${n} local item${n>1?'s':''} removed.` : 'This browser has no cached chat data.');
   logActivity('trash','Local chat state cleared');
@@ -2134,7 +2134,7 @@ $('#deleteAccountBtn').addEventListener('click', ()=>{
         <div style="text-align:center;padding:14px 0">
           <span class="brand-mark" style="width:48px;height:48px;border-radius:14px;margin:0 auto 14px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--ac1),var(--ac2))">${icon('check','style="width:24px;height:24px"')}</span>
           <b style="font-family:var(--display);font-size:17px">Local account data erased</b>
-          <p class="modal-text" style="margin-top:6px">Everything Chatify stored in this browser has been removed.</p>
+          <p class="modal-text" style="margin-top:6px">Everything Nova stored in this browser has been removed.</p>
         </div>`;
       $('#modalFoot').innerHTML='';
       const done = mkBtn('Done','primary', ()=>{
@@ -2161,7 +2161,7 @@ $('#logoutBtn').addEventListener('click', async ()=>{
   const warn = (state.unsaved.profile || state.unsaved.settings)
     ? ' You have unsaved changes that will remain unsaved.' : '';
   const yes = await confirmDialog({
-    title:'Sign out of Chatify AI?',
+    title:'Sign out of Nova AI?',
     body:`You will be signed out on this device.${warn} Your local data stays in this browser.`,
     confirmText:'Sign out'
   });
@@ -2296,8 +2296,27 @@ $$('[data-section-link]').forEach(a=>a.addEventListener('click', e=>{ e.preventD
 /* ================================================================
    INIT
 ================================================================ */
-(function init(){
-  const saved = Store.read();
+const MIGRATION_MAP = {
+    'nova_theme': 'nova_theme',
+    'nova.account.v1': 'nova.account.v1',
+    'nova.chat': 'nova.chat',
+    'nova.draft': 'nova.draft',
+    'nova.tmp': 'nova.tmp'
+};
+
+function migrateNovaToNova() {
+    Object.entries(MIGRATION_MAP).forEach(([oldKey, newKey]) => {
+        const value = localStorage.getItem(oldKey);
+        if (value !== null) {
+            localStorage.setItem(newKey, value);
+            localStorage.removeItem(oldKey);
+        }
+    });
+}
+
+// Execute migration before the app reads state
+migrateNovaToNova();
+
   if(saved){
     if(saved.profile)  mergeDeep(state.profile, saved.profile);
     if(saved.settings) mergeDeep(state.settings, saved.settings);

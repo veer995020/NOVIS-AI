@@ -1,5 +1,5 @@
 /**
- * Chatify State Store — Complete & Optimized
+ * NOVA State Store — Complete & Optimized
  * Single source of truth for all application state
  * 
  * Optimizations:
