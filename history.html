@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="SizeAdjuster.css">
-<meta name="description" content="Nova AI — Your chat and research history">
+<meta name="description" content="Nyro AI — Your chat and research history">
 <meta name="theme-color" content="#0a0a16">
-<title>History — Nova AI</title>
+<title>History — Nyro AI</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +14,7 @@
 
 <style>
 /* ============================================================================
-   DESIGN TOKENS — shared with account.html for a consistent Nova AI feel
+   DESIGN TOKENS — shared with account.html for a consistent Nyro AI feel
    ============================================================================ */
 
 :root {
@@ -768,7 +768,7 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
     <header class="topbar">
         <a href="dashboard.html" class="brand">
             <span class="brand-mark" aria-hidden="true">C</span>
-            <span>Nova <span class="crumb">/ History</span></span>
+            <span>Nyro <span class="crumb">/ History</span></span>
         </a>
         <div class="topbar-actions">
             <div class="theme-switch" role="group" aria-label="Theme">
@@ -833,7 +833,7 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
         <div class="state-panel" id="emptyState">
             <div class="state-icon" aria-hidden="true">🗂️</div>
             <h3>No history yet</h3>
-            <p>Your chats and research sessions will show up here once you start using Nova.</p>
+            <p>Your chats and research sessions will show up here once you start using Nyro.</p>
             <div class="state-actions">
                 <a href="chat.html" class="btn btn-solid">Start a chat</a>
                 <a href="research.html" class="btn btn-ghost">Start research</a>
@@ -892,14 +892,14 @@ function applyTheme(mode) {
         btn.classList.toggle('active', isActive);
         btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     });
-    localStorage.setItem('nova_theme', mode);
+    localStorage.setItem('novis_theme', mode);
 }
 function initTheme() {
-    applyTheme(localStorage.getItem('nova_theme') || 'system');
+    applyTheme(localStorage.getItem('novis_theme') || 'system');
 }
 themeButtons.forEach(btn => btn.addEventListener('click', () => applyTheme(btn.dataset.theme)));
 media.addEventListener('change', () => {
-    if ((localStorage.getItem('nova_theme') || 'system') === 'system') applyTheme('system');
+    if ((localStorage.getItem('novis_theme') || 'system') === 'system') applyTheme('system');
 });
 initTheme();
 
@@ -913,17 +913,17 @@ document.getElementById('backBtn').addEventListener('click', () => history.back(
    ============================================================================ */
 
 let historyData = [
-    { id: 'h1', type: 'chat', title: 'Comparing RAG pipelines for legal docs', snippet: 'We walked through chunking strategies, embedding models, and reranking approaches for a legal document retrieval system…', model: 'Nova Pro', count: 24, updated: Date.now() - 1000 * 60 * 12, pinned: true, favorite: true },
+    { id: 'h1', type: 'chat', title: 'Comparing RAG pipelines for legal docs', snippet: 'We walked through chunking strategies, embedding models, and reranking approaches for a legal document retrieval system…', model: 'Nyro Pro', count: 24, updated: Date.now() - 1000 * 60 * 12, pinned: true, favorite: true },
     { id: 'h2', type: 'research', title: 'State of small language models, 2026', snippet: 'Deep research on distillation techniques, on-device inference benchmarks, and the competitive landscape for sub-3B models…', sources: 18, updated: Date.now() - 1000 * 60 * 55, pinned: true, favorite: false },
-    { id: 'h3', type: 'chat', title: 'Debugging a flaky WebSocket reconnect', snippet: 'Traced an exponential backoff bug where reconnect attempts stacked instead of replacing the previous timer…', model: 'Nova Fast', count: 11, updated: Date.now() - 1000 * 60 * 60 * 3, pinned: false, favorite: true },
+    { id: 'h3', type: 'chat', title: 'Debugging a flaky WebSocket reconnect', snippet: 'Traced an exponential backoff bug where reconnect attempts stacked instead of replacing the previous timer…', model: 'Nyro Fast', count: 11, updated: Date.now() - 1000 * 60 * 60 * 3, pinned: false, favorite: true },
     { id: 'h4', type: 'research', title: 'Neon vs glassmorphism design trends', snippet: 'Surveyed 40+ SaaS dashboards released in 2025–26 to map how neon accents pair with translucent surfaces…', sources: 27, updated: Date.now() - 1000 * 60 * 60 * 8, pinned: false, favorite: false },
-    { id: 'h5', type: 'chat', title: 'Drafting onboarding email sequence', snippet: 'Three-email welcome sequence for new signups, focused on activation within the first 48 hours…', model: 'Nova Pro', count: 9, updated: Date.now() - 1000 * 60 * 60 * 26, pinned: false, favorite: false },
+    { id: 'h5', type: 'chat', title: 'Drafting onboarding email sequence', snippet: 'Three-email welcome sequence for new signups, focused on activation within the first 48 hours…', model: 'Nyro Pro', count: 9, updated: Date.now() - 1000 * 60 * 60 * 26, pinned: false, favorite: false },
     { id: 'h6', type: 'research', title: 'GPU pricing across cloud providers', snippet: 'Compared on-demand and spot pricing for A100/H100 instances across AWS, GCP, Azure, and specialty providers…', sources: 14, updated: Date.now() - 1000 * 60 * 60 * 30, pinned: false, favorite: true },
-    { id: 'h7', type: 'chat', title: 'Refactor plan for the auth module', snippet: 'Outlined a migration path from session cookies to short-lived JWTs with refresh token rotation…', model: 'Nova Fast', count: 31, updated: Date.now() - 1000 * 60 * 60 * 48, pinned: false, favorite: false },
+    { id: 'h7', type: 'chat', title: 'Refactor plan for the auth module', snippet: 'Outlined a migration path from session cookies to short-lived JWTs with refresh token rotation…', model: 'Nyro Fast', count: 31, updated: Date.now() - 1000 * 60 * 60 * 48, pinned: false, favorite: false },
     { id: 'h8', type: 'research', title: 'Consumer sentiment on AI chat assistants', snippet: 'Synthesized survey data and social listening on trust, usefulness, and privacy concerns around AI chat products…', sources: 22, updated: Date.now() - 1000 * 60 * 60 * 72, pinned: false, favorite: false },
-    { id: 'h9', type: 'chat', title: 'Naming ideas for the mobile app', snippet: 'Brainstormed twenty short, memorable names that pair well with the existing Nova brand mark…', model: 'Nova Pro', count: 6, updated: Date.now() - 1000 * 60 * 60 * 96, pinned: false, favorite: false },
+    { id: 'h9', type: 'chat', title: 'Naming ideas for the mobile app', snippet: 'Brainstormed twenty short, memorable names that pair well with the existing Nyro brand mark…', model: 'Nyro Pro', count: 6, updated: Date.now() - 1000 * 60 * 60 * 96, pinned: false, favorite: false },
     { id: 'h10', type: 'research', title: 'Timezone handling edge cases', snippet: 'Catalogued DST transition bugs, historical offset changes, and testing strategies for a scheduling feature…', sources: 9, updated: Date.now() - 1000 * 60 * 60 * 120, pinned: false, favorite: false },
-    { id: 'h11', type: 'chat', title: 'Explaining vector databases to a PM', snippet: 'A plain-language walkthrough of embeddings, similarity search, and when a vector DB actually helps…', model: 'Nova Fast', count: 15, updated: Date.now() - 1000 * 60 * 60 * 150, pinned: false, favorite: false },
+    { id: 'h11', type: 'chat', title: 'Explaining vector databases to a PM', snippet: 'A plain-language walkthrough of embeddings, similarity search, and when a vector DB actually helps…', model: 'Nyro Fast', count: 15, updated: Date.now() - 1000 * 60 * 60 * 150, pinned: false, favorite: false },
     { id: 'h12', type: 'research', title: 'Competitor feature matrix — Q2', snippet: 'Feature-by-feature comparison across five competing AI research platforms, updated for the Q2 review…', sources: 31, updated: Date.now() - 1000 * 60 * 60 * 200, pinned: false, favorite: false },
 ];
 
@@ -1276,7 +1276,7 @@ document.getElementById('clearFiltersBtn').addEventListener('click', () => {
    ============================================================================ */
 
 render();
-console.log('Nova AI · history.html — ready for backend integration (replace historyData with GET /api/history)');
+console.log('Nyro AI · history.html — ready for backend integration (replace historyData with GET /api/history)');
 </script>
 
 </body>

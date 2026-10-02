@@ -4,8 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#07070d" />
-<meta name="description" content="Nova AI — premium conversational workspace by Legend Inc." />
-<title>New Chat — Nova AI</title>
+<meta name="description" content="NOVIS AI — premium conversational workspace by Legend Inc." />
+<title>New Chat — NOVIS AI</title>
 
 <style>
 /* ==========================================================================
@@ -2206,14 +2206,14 @@ dialog::backdrop {
 
 <div class="app" id="app">
   <!-- LEFT SIDEBAR -->
-  <aside class="sidebar" id="sidebar" aria-label="Nova navigation and history">
+  <aside class="sidebar" id="sidebar" aria-label="NOVIS navigation and history">
     <div class="sidebar-inner">
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">
           <svg class="icon icon-lg"><use href="#i-sparkles"></use></svg>
         </div>
         <div class="brand-copy">
-          <strong>Nova AI</strong>
+          <strong>NOVIS AI</strong>
           <span>Legend Inc.</span>
         </div>
         <button type="button" class="icon-btn" data-action="toggle-sidebar" aria-label="Collapse sidebar" title="Collapse sidebar">
@@ -2344,8 +2344,8 @@ dialog::backdrop {
       <div class="attachment-tray" id="attachmentTray" aria-label="Attachments" hidden></div>
 
       <div class="composer-shell">
-        <label class="visually-hidden" for="composerInput">Message Nova AI</label>
-        <textarea id="composerInput" rows="1" placeholder="Ask Nova anything…"></textarea>
+        <label class="visually-hidden" for="composerInput">Message NOVIS AI</label>
+        <textarea id="composerInput" rows="1" placeholder="Ask NOVIS anything…"></textarea>
         <button type="submit" class="send-btn" id="sendBtn" title="Send" aria-label="Send message">
           <svg class="icon"><use href="#i-send"></use></svg>
         </button>
@@ -2527,7 +2527,7 @@ dialog::backdrop {
       name: "General",
       icon: "💬",
       description: "Direct everyday assistance.",
-      placeholder: "Ask Nova anything…"
+      placeholder: "Ask NOVIS anything…"
     },
     {
       id: "research",
@@ -3256,8 +3256,8 @@ dialog::backdrop {
   const store = new StateStore(buildInitialState());
   const manager = new ConversationManager(store);
 
-  window.__novaStore = store;
-  window.__novaManager = manager;
+  window.__novisStore = store;
+  window.__novisManager = manager;
 
   /* ========================================================================
      DOM + APP VARIABLES
@@ -3697,7 +3697,7 @@ dialog::backdrop {
     thinking.push("- Drafting the visible response.");
 
     const answer = [];
-    answer.push("> Local frontend simulation — connect NOVA to an inference endpoint to replace this generator.");
+    answer.push("> Local frontend simulation — connect NYRO to an inference endpoint to replace this generator.");
 
     if (attachments.length) {
       answer.push(
@@ -3731,7 +3731,7 @@ dialog::backdrop {
 
       if (/python|py/i.test(promptLower)) {
         answer.push("```python");
-        answer.push("# NOVA local coding preview");
+        answer.push("# NYRO local coding preview");
         answer.push("def handle_request(payload: str) -> dict:");
         answer.push("    value = payload.strip()");
         answer.push("    if not value:");
@@ -3745,7 +3745,7 @@ dialog::backdrop {
         answer.push("```");
       } else if (/sql/i.test(promptLower)) {
         answer.push("```sql");
-        answer.push("-- NOVA local coding preview");
+        answer.push("-- NYRO local coding preview");
         answer.push("SELECT id, title, updated_at");
         answer.push("FROM conversations");
         answer.push("WHERE updated_at >= NOW() - INTERVAL '7 days'");
@@ -3754,7 +3754,7 @@ dialog::backdrop {
         answer.push("```");
       } else {
         answer.push("```js");
-        answer.push("// NOVA local coding preview");
+        answer.push("// NYRO local coding preview");
         answer.push("export async function handleRequest(input) {");
         answer.push("  const value = String(input ?? '').trim();");
         answer.push("");
@@ -3805,7 +3805,7 @@ dialog::backdrop {
     } else if (wantsWriting) {
       answer.push(`## Writing preview for: ${safeTopic}`);
       answer.push("### Clear rewrite");
-      answer.push(`> NOVA can turn “${safeTopic}” into a focused, readable draft with a clearer structure and sharper wording.`);
+      answer.push(`> NYRO can turn “${safeTopic}” into a focused, readable draft with a clearer structure and sharper wording.`);
 
       answer.push("### Tone options");
       answer.push("- **Concise:** remove filler and lead with the main point.");
@@ -4003,7 +4003,7 @@ dialog::backdrop {
     els.favoriteBtn.classList.toggle("is-active", pinned);
     els.favoriteBtn.setAttribute("aria-pressed", String(pinned));
 
-    document.title = `${title} — Nova AI`;
+    document.title = `${title} — Nyro AI`;
   }
 
   function renderConversation() {
@@ -4077,7 +4077,7 @@ dialog::backdrop {
 
     if (!message.content) {
       if (message.pending && !message.thinkingActive) {
-        return '<div class="typing" role="status" aria-label="Nova is thinking"><span></span><span></span><span></span></div>';
+        return '<div class="typing" role="status" aria-label="Nyro is thinking"><span></span><span></span><span></span></div>';
       }
       return "";
     }
@@ -4202,7 +4202,7 @@ dialog::backdrop {
       <div class="empty-orb" aria-hidden="true">${ICONS.sparkles}</div>
       <h2>Hello, VEER</h2>
       <p class="empty-sub">
-        Nova is a local, ephemeral workspace for the connected AI experience you are building.
+        Nyro is a local, ephemeral workspace for the connected AI experience you are building.
         Choose a prompt below, attach files, switch models, or start typing your own request.
       </p>
       <div class="empty-meta">
@@ -4366,7 +4366,7 @@ dialog::backdrop {
 
   function sendMessage(rawText) {
     if (store.isLoading()) {
-      showToast("Nova is already generating a response.", "warning");
+      showToast("Nyro is already generating a response.", "warning");
       return;
     }
 
@@ -4919,7 +4919,7 @@ dialog::backdrop {
     }
 
     const transcript = [
-      `Nova AI — ${conversation.title}`,
+      `Nyro AI — ${conversation.title}`,
       `Model: ${store.getModel().name} · Mode: ${store.getMode().name}`,
       "",
       ...conversation.messages.map(message => {

@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="description" content="Chatify AI Model Laboratory — explore Brainstormer, Mythical, Sonet and Rapid. Compare capabilities, modes and workloads, then launch the right model.">
+<meta name="description" content="Nyro AI Model Laboratory — explore Brainstormer, Mythical, Sonet and Rapid. Compare capabilities, modes and workloads, then launch the right model.">
 <meta name="color-scheme" content="dark">
-<title>Model Laboratory — Chatify AI</title>
+<title>Model Laboratory — Nyro AI</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,7 +15,7 @@
 
 <style>
 /* ============================================================
-   CHATIFY AI · MODEL LABORATORY — design system
+   NYRO AI · MODEL LABORATORY — design system
    Backend-ready: model data lives in one JS config object so a
    FastAPI /api/models endpoint can hydrate the same renderers.
    ============================================================ */
@@ -520,11 +520,11 @@ html.fx-off .js .reveal{opacity:1;transform:none}
 <!-- ======= navbar ======= -->
 <header class="nav" id="siteNav">
   <div class="wrap nav-in">
-    <a class="brand" href="index.html" aria-label="Chatify AI home">
+    <a class="brand" href="index.html" aria-label="Nyro AI home">
       <span class="mark" aria-hidden="true">
         <svg viewBox="0 0 32 32"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b8dff"/><stop offset="1" stop-color="#a98bff"/></linearGradient></defs><rect x="2" y="2" width="28" height="28" rx="9" fill="none" stroke="url(#lg)" stroke-width="1.6"/><path d="M9 20.5V12a2.5 2.5 0 0 1 2.5-2.5h9" fill="none" stroke="url(#lg)" stroke-width="2.2" stroke-linecap="round"/><circle cx="21.5" cy="20" r="2.4" fill="#43dcff"/></svg>
       </span>
-      Chatify&nbsp;<em>AI</em>
+      Nyro&nbsp;<em>AI</em>
     </a>
     <nav class="nav-links" id="navMenu" aria-label="Primary">
       <a href="index.html">Home</a>
@@ -538,7 +538,7 @@ html.fx-off .js .reveal{opacity:1;transform:none}
       <button class="icon-btn" id="navSearchBtn" aria-label="Search models" title="Search models">
         <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
       </button>
-      <span class="avatar" title="Signed in to Chatify AI" aria-hidden="true">LI</span>
+      <span class="avatar" title="Signed in to Nyro AI" aria-hidden="true">LI</span>
       <a class="btn btn-primary btn-sm" href="chat.html"><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg><span>Open Chat</span></a>
       <button class="icon-btn nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle navigation menu">
         <svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg>
@@ -553,9 +553,9 @@ html.fx-off .js .reveal{opacity:1;transform:none}
 <section class="hero" aria-label="Introduction">
   <div class="wrap hero-grid">
     <div>
-      <span class="hero-tag"><svg class="ic" style="width:13px;height:13px" aria-hidden="true"><use href="#i-spark"/></svg>CHATIFY AI · MODEL LABORATORY</span>
-      <h1>Meet the Intelligence Behind <span class="thin">Chatify AI</span></h1>
-      <p class="hero-sub">One conversation, four specialized minds. Chatify AI gives you distinct models — each engineered for a different kind of work, from deep investigation to instant answers. Explore them, compare them, and put the right one on the job.</p>
+      <span class="hero-tag"><svg class="ic" style="width:13px;height:13px" aria-hidden="true"><use href="#i-spark"/></svg>NYRO AI · MODEL LABORATORY</span>
+      <h1>Meet the Intelligence Behind <span class="thin">Nyro AI</span></h1>
+      <p class="hero-sub">One conversation, four specialized minds. Nyro AI gives you distinct models — each engineered for a different kind of work, from deep investigation to instant answers. Explore them, compare them, and put the right one on the job.</p>
       <div class="hero-cta">
         <a class="btn btn-primary" href="#models"><svg class="ic" aria-hidden="true"><use href="#i-layers"/></svg>Explore the models</a>
         <a class="btn btn-ghost" href="chat.html">Open Chat<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
@@ -572,7 +572,7 @@ html.fx-off .js .reveal{opacity:1;transform:none}
       <div class="ring-vis rv1" aria-hidden="true"></div>
       <div class="ring-vis rv2" aria-hidden="true"></div>
       <div class="ring-vis glow" aria-hidden="true"></div>
-      <div class="core" aria-hidden="true"><b>CHATIFY AI</b><small>4 MODELS</small></div>
+      <div class="core" aria-hidden="true"><b>NYRO AI</b><small>4 MODELS</small></div>
 
       <div class="orbit o1" aria-hidden="false">
         <div class="o-pos" style="--off:0deg"><div class="o-up">
@@ -636,7 +636,7 @@ html.fx-off .js .reveal{opacity:1;transform:none}
         <h2 class="spot-name"><span id="featName">Brainstormer</span><span class="dot ok" aria-hidden="true" title="Ready"></span></h2>
         <p class="spot-role" id="featRole">Flagship Intelligence</p>
         <div class="badge-row" id="featBadges"></div>
-        <p class="spot-desc" id="featDesc">Chatify AI's flagship model for deep research, complex reasoning, and multi-path analysis — built for the questions that deserve a broader investigation.</p>
+        <p class="spot-desc" id="featDesc">Nyro AI's flagship model for deep research, complex reasoning, and multi-path analysis — built for the questions that deserve a broader investigation.</p>
         <div class="spot-specs" id="featSpecs"></div>
         <div class="spot-actions">
           <button class="btn btn-ghost" id="featDossier"><svg class="ic" aria-hidden="true"><use href="#i-scope"/></svg>Open full dossier</button>
@@ -861,7 +861,7 @@ html.fx-off .js .reveal{opacity:1;transform:none}
 </section>
 
 <!-- ======= 09 · modes ======= -->
-<section id="modes" aria-label="Chatify AI modes">
+<section id="modes" aria-label="Nyro AI modes">
   <div class="wrap">
     <header class="sec-head reveal">
       <span class="sec-idx">06</span>
@@ -909,7 +909,7 @@ html.fx-off .js .reveal{opacity:1;transform:none}
         <div>
           <span class="cta-sel"><i aria-hidden="true"></i><span id="ctaSelLabel">CURRENTLY SELECTED · BRAINSTORMER</span></span>
           <h2>Put the right model on the job.</h2>
-          <p>Your selection follows you into the conversation. Open Chatify AI and start working with <strong id="ctaName">Brainstormer</strong> right away — or keep comparing before you commit.</p>
+          <p>Your selection follows you into the conversation. Open Nyro AI and start working with <strong id="ctaName">Brainstormer</strong> right away — or keep comparing before you commit.</p>
           <div class="btn-row">
             <a class="btn btn-primary" id="ctaUse" href="chat.html?model=brainstormer"><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg>Open chat with this model</a>
             <a class="btn btn-ghost" href="#compare">Compare models</a>
@@ -928,7 +928,7 @@ html.fx-off .js .reveal{opacity:1;transform:none}
   <div class="wrap">
     <div class="ft-grid">
       <div>
-        <a class="brand" href="index.html"><span class="mark" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" rx="9" fill="none" stroke="#7c9bff" stroke-width="1.6"/><path d="M9 20.5V12a2.5 2.5 0 0 1 2.5-2.5h9" fill="none" stroke="#7c9bff" stroke-width="2.2" stroke-linecap="round"/><circle cx="21.5" cy="20" r="2.4" fill="#43dcff"/></svg></span>Chatify&nbsp;<em>AI</em></a>
+        <a class="brand" href="index.html"><span class="mark" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" rx="9" fill="none" stroke="#7c9bff" stroke-width="1.6"/><path d="M9 20.5V12a2.5 2.5 0 0 1 2.5-2.5h9" fill="none" stroke="#7c9bff" stroke-width="2.2" stroke-linecap="round"/><circle cx="21.5" cy="20" r="2.4" fill="#43dcff"/></svg></span>Nyro&nbsp;<em>AI</em></a>
         <p>The model laboratory from Legend Inc. Four specialized intelligences, one conversation — pick the mind that fits the work.</p>
       </div>
       <nav aria-label="Product">
@@ -960,7 +960,7 @@ html.fx-off .js .reveal{opacity:1;transform:none}
       </div>
     </div>
     <div class="ft-bottom">
-      <span>© <span id="year">2025</span> Legend Inc. — Chatify AI. All rights reserved.</span>
+      <span>© <span id="year">2025</span> Legend Inc. — Nyro AI. All rights reserved.</span>
       <span class="mono">MODEL LABORATORY · INTERFACE BUILD · BACKEND-READY FOR FASTAPI</span>
     </div>
   </div>
@@ -991,7 +991,7 @@ html.fx-off .js .reveal{opacity:1;transform:none}
 
 <script>
 /* ================================================================
-   CHATIFY AI · MODEL LABORATORY — application
+   NYRO AI · MODEL LABORATORY — application
    State + single config object; UI renders from config.
    Backend-ready: replace MODELS with a fetch('/api/models') call
    (FastAPI / Pydantic v2) without touching the renderers.
@@ -1006,7 +1006,7 @@ var MODELS = {
   brainstormer:{
     id:'brainstormer', name:'Brainstormer', role:'Flagship Intelligence', category:'FLAGSHIP · DEEP RESEARCH',
     color:'var(--c-brainstormer)', hex:'#a08bff',
-    description:"Chatify AI's flagship model for deep research, complex reasoning, and multi-path analysis — built for the questions that deserve a broader investigation.",
+    description:"Nyro AI's flagship model for deep research, complex reasoning, and multi-path analysis — built for the questions that deserve a broader investigation.",
     long:"Brainstormer explores problems from multiple directions at once: comparing evidence, structuring the investigation, and synthesizing findings into a clear answer. It applies deeper processing when the task genuinely benefits from it — and stays efficient when it doesn't.",
     badges:['FLAGSHIP','DEEP RESEARCH','COMPLEX REASONING'],
     traits:['Flagship intelligence','Deep research','Multi-path analysis','Complex reasoning','Structured investigation','Broad synthesis','Detailed analysis','Deeper passes when warranted'],
