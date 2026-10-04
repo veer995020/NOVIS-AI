@@ -2,1282 +2,1997 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="SizeAdjuster.css">
-<meta name="description" content="Nyro AI — Your chat and research history">
-<meta name="theme-color" content="#0a0a16">
-<title>History — Nyro AI</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#05070d">
+<title>Conversation History — Chatify AI</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%230a0f1e' stroke='%237c8aff' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='4' fill='%2345d6ff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
-/* ============================================================================
-   DESIGN TOKENS — shared with account.html for a consistent Nyro AI feel
-   ============================================================================ */
+/* ============================================================
+   1. DESIGN TOKENS
+============================================================ */
+:root{
+  --bg0:#05070d; --bg1:#090d1a; --bg2:#0d1226;
+  --surface:rgba(15,20,40,.62);
+  --surface2:rgba(22,29,55,.55);
+  --surface3:rgba(31,40,74,.5);
+  --surface-hover:rgba(34,43,80,.62);
+  --surface-active:rgba(44,55,100,.6);
+  --border:rgba(126,148,255,.13);
+  --border2:rgba(140,160,255,.3);
+  --text1:#edf0fb; --text2:#a6b1d3; --text3:#67739b;
+  --indigo:#7c8aff; --violet:#a78bfa; --cyan:#45d6ff; --mint:#3ddc97; --gold:#ffc861; --rose:#ff6b81;
+  --accent:var(--indigo); --accent-soft:rgba(124,138,255,.13);
+  --danger:var(--rose); --success:var(--mint); --warning:var(--gold);
+  --r-s:8px; --r-m:12px; --r-l:16px;
+  --shadow1:0 8px 24px rgba(3,6,18,.45);
+  --shadow2:0 16px 44px rgba(3,6,18,.6);
+  --glow-soft:0 0 0 1px rgba(124,138,255,.22), 0 10px 30px rgba(88,101,242,.12);
+  --blur:18px;
+  --sbw:264px; --sbw-c:76px; --pvw:400px;
+  --t-fast:.16s ease; --t-med:.28s cubic-bezier(.4,0,.2,1);
+  --font-d:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;
+  --font-b:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;
+  --font-m:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+}
+@property --ang{ syntax:'<angle>'; initial-value:0deg; inherits:false; }
 
-:root {
-    --cyan: #00d9ff;
-    --purple: #b024ff;
-    --pink: #ff006e;
-    --blue: #0080ff;
-    --lime: #39ff14;
+/* ============================================================
+   2. RESET / BASE
+============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  min-height:100dvh; background:var(--bg0); color:var(--text1);
+  font-family:var(--font-b); font-size:15px; line-height:1.55;
+  overflow-x:clip; -webkit-font-smoothing:antialiased;
+}
+body.locked{overflow:hidden}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input{font:inherit;color:inherit}
+ul,ol{list-style:none}
+::selection{background:rgba(124,138,255,.35)}
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--indigo);outline-offset:2px;border-radius:6px}
+kbd{
+  font-family:var(--font-m);font-size:10.5px;color:var(--text3);
+  border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;
+  padding:1px 6px;background:rgba(255,255,255,.03);
+}
+.sr-only{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-    --success: #2fe3a3;
-    --error: #ff5470;
-    --warning: #ffb020;
+/* ============================================================
+   3. FUTURISTIC BACKGROUND
+============================================================ */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.bg-base{position:absolute;inset:0;background:
+  radial-gradient(1100px 700px at 78% -10%, rgba(88,80,232,.14), transparent 60%),
+  radial-gradient(900px 600px at -10% 100%, rgba(20,120,180,.10), transparent 60%),
+  linear-gradient(180deg,var(--bg0) 0%,var(--bg1) 100%);}
+.bg-grid{position:absolute;inset:-60px;opacity:.5;background-image:
+  linear-gradient(rgba(126,148,255,.05) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(126,148,255,.05) 1px,transparent 1px);
+  background-size:46px 46px;
+  -webkit-mask-image:radial-gradient(ellipse 90% 80% at 50% 20%,#000 30%,transparent 78%);
+          mask-image:radial-gradient(ellipse 90% 80% at 50% 20%,#000 30%,transparent 78%);
+  animation:gridDrift 90s linear infinite;}
+@keyframes gridDrift{to{transform:translate(46px,46px)}}
+.bg canvas{position:absolute;inset:0}
+.bg-scan{position:absolute;left:0;right:0;top:-15%;height:110px;opacity:.055;
+  background:linear-gradient(180deg,transparent,var(--cyan),transparent);
+  animation:scan 16s linear infinite;}
+@keyframes scan{to{transform:translateY(130vh)}}
+.flow{position:absolute;height:1px;width:150px;opacity:.14;
+  background:linear-gradient(90deg,transparent,var(--indigo),transparent);
+  animation:flowX var(--fd,26s) linear infinite;}
+.flow.f2{background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
+@keyframes flowX{from{transform:translateX(-180px)}to{transform:translateX(105vw)}}
+.bg-orbit{position:absolute;right:-140px;top:-140px;width:460px;height:460px;border-radius:50%;
+  border:1px solid rgba(126,148,255,.08);animation:spinSlow 90s linear infinite}
+.bg-orbit::after{content:"";position:absolute;inset:60px;border-radius:50%;border:1px dashed rgba(69,214,255,.07)}
+@keyframes spinSlow{to{transform:rotate(360deg)}}
 
-    --bg-0: #f6f7fb;
-    --bg-1: #ffffff;
-    --bg-2: #eef0f7;
-    --ink-0: #10101c;
-    --ink-1: #464a5e;
-    --ink-2: #6b7184;
-    --line: #dfe2ef;
-    --glass: rgba(255, 255, 255, 0.6);
-    --overlay: rgba(10, 10, 22, 0.55);
-    --ring-track: rgba(16, 16, 28, 0.08);
+/* ============================================================
+   4. ICONS / GENERIC CONTROLS
+============================================================ */
+.ic{width:18px;height:18px;flex:none;display:block}
+.ic.s{width:14px;height:14px}.ic.xs{width:12px;height:12px}.ic.l{width:22px;height:22px}
+.iconbtn{
+  width:36px;height:36px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;
+  color:var(--text2);border:1px solid transparent;position:relative;
+  transition:background var(--t-fast),color var(--t-fast),border-color var(--t-fast),transform var(--t-fast);
+}
+.iconbtn:hover{background:var(--surface3);color:var(--text1);border-color:var(--border)}
+.iconbtn:active{transform:scale(.93)}
+.iconbtn[aria-disabled="true"]{opacity:.4;cursor:not-allowed}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:10px;
+  font-weight:600;font-size:13.5px;letter-spacing:.01em;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text1);
+  transition:transform var(--t-fast),background var(--t-fast),border-color var(--t-fast),box-shadow var(--t-fast);
+}
+.btn:hover{background:var(--surface-hover);border-color:var(--border2)}
+.btn:active{transform:scale(.97)}
+.btn-primary{
+  background:linear-gradient(135deg,#6a76ff,#5a54e8);border-color:rgba(140,150,255,.45);
+  box-shadow:0 4px 18px rgba(99,102,241,.28);
+}
+.btn-primary:hover{box-shadow:0 6px 24px rgba(99,102,241,.4);background:linear-gradient(135deg,#7783ff,#635cf0)}
+.btn-danger{background:rgba(255,107,129,.12);border-color:rgba(255,107,129,.4);color:#ffb3bf}
+.btn-danger:hover{background:rgba(255,107,129,.2)}
+[data-tip]{position:relative}
+[data-tip]::after{
+  content:attr(data-tip);position:absolute;z-index:80;white-space:nowrap;
+  font-size:11.5px;font-weight:500;color:var(--text1);background:#151c36;border:1px solid var(--border2);
+  padding:4px 9px;border-radius:7px;box-shadow:var(--shadow1);
+  opacity:0;pointer-events:none;transition:opacity .15s ease .25s;
+}
+.tip-b::after{top:calc(100% + 8px);left:50%;transform:translateX(-50%)}
+.tip-r::after{left:calc(100% + 10px);top:50%;transform:translateY(-50%)}
 
-    --shadow-sm: 0 1px 2px rgba(16, 16, 28, 0.06), 0 1px 1px rgba(16, 16, 28, 0.04);
-    --shadow-md: 0 8px 24px rgba(16, 16, 28, 0.08);
-    --shadow-glow: 0 0 0 1px rgba(0, 217, 255, 0.4), 0 0 24px rgba(0, 217, 255, 0.22);
+/* ============================================================
+   5. APP SHELL / SIDEBAR
+============================================================ */
+.app{position:relative;z-index:1;display:flex;min-height:100dvh}
+.sidebar{
+  width:var(--sbw);flex:none;position:sticky;top:0;height:100dvh;z-index:41;
+  display:flex;flex-direction:column;padding:18px 14px 14px;gap:6px;
+  background:rgba(8,11,22,.82);border-right:1px solid var(--border);
+  backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
+  transition:width var(--t-med),transform var(--t-med);
+}
+.sb-head{display:flex;align-items:center;gap:10px;padding:2px 6px 16px}
+.brand{display:flex;align-items:center;gap:11px;min-width:0;flex:1}
+.brand-mark{position:relative;width:34px;height:34px;flex:none;display:grid;place-items:center;color:var(--cyan)}
+.brand-mark::before{content:"";position:absolute;inset:0;border:1.5px solid rgba(124,138,255,.5);border-radius:50%;
+  border-top-color:transparent;transform:rotate(35deg)}
+.brand-mark .ic{width:20px;height:20px}
+.brand-text{font-family:var(--font-d);font-weight:700;font-size:17px;letter-spacing:.02em;white-space:nowrap}
+.brand-text em{font-style:normal;color:var(--cyan);font-weight:600}
+.sb-collapse{color:var(--text3)}
+.sb-collapse .ic{transition:transform var(--t-med)}
+body.nav-collapsed .sb-collapse .ic{transform:rotate(180deg)}
+.newchat{
+  display:flex;align-items:center;justify-content:center;gap:9px;margin:2px 0 12px;
+  padding:11px;border-radius:11px;font-weight:600;font-size:13.5px;color:#fff;
+  background:linear-gradient(135deg,#6a76ff 0%,#5a54e8 100%);
+  border:1px solid rgba(140,150,255,.45);box-shadow:0 4px 18px rgba(99,102,241,.25);
+  transition:transform var(--t-fast),box-shadow var(--t-fast),filter var(--t-fast);
+}
+.newchat:hover{filter:brightness(1.1);box-shadow:0 6px 26px rgba(99,102,241,.4);transform:translateY(-1px)}
+.newchat:active{transform:scale(.98)}
+.sb-label{font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);
+  padding:10px 12px 6px;font-family:var(--font-m)}
+.nav-item{
+  display:flex;align-items:center;gap:12px;padding:9.5px 12px;border-radius:10px;
+  color:var(--text2);font-weight:500;font-size:13.8px;position:relative;
+  transition:background var(--t-fast),color var(--t-fast);
+}
+.nav-item .ic{width:18px;height:18px}
+.nav-item:hover{background:var(--surface2);color:var(--text1)}
+.nav-item.active{background:var(--accent-soft);color:var(--text1)}
+.nav-item.active::before{
+  content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:3px;border-radius:3px;
+  background:linear-gradient(180deg,var(--indigo),var(--cyan));box-shadow:0 0 10px rgba(124,138,255,.6);
+}
+.sb-foot{margin-top:auto;display:flex;flex-direction:column;gap:4px;padding-top:12px;border-top:1px solid var(--border)}
+.sb-divider{height:1px;background:var(--border);margin:8px 4px}
+.soon{margin-left:auto;font-family:var(--font-m);font-size:9px;letter-spacing:.1em;color:var(--text3);
+  border:1px solid var(--border);border-radius:99px;padding:1px 7px}
+.profile{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:11px;text-align:left;
+  transition:background var(--t-fast)}
+.profile:hover{background:var(--surface2)}
+.avatar{width:30px;height:30px;flex:none;border-radius:50%;display:grid;place-items:center;
+  font-family:var(--font-d);font-weight:700;font-size:13px;color:#fff;
+  background:linear-gradient(135deg,#5a63d9,#8b5cf6);box-shadow:0 0 0 2px rgba(124,138,255,.25)}
+.p-name{font-size:13px;font-weight:600;line-height:1.2}
+.p-sub{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px}
+.p-dot{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 6px var(--mint)}
+body.nav-collapsed .sidebar{width:var(--sbw-c)}
+body.nav-collapsed .brand-text,body.nav-collapsed .newchat span,body.nav-collapsed .nav-item span,
+body.nav-collapsed .sb-label,body.nav-collapsed .p-info,body.nav-collapsed .soon{display:none}
+body.nav-collapsed .newchat{padding:11px 0}
+body.nav-collapsed .nav-item,body.nav-collapsed .iconbtn.sb-item{justify-content:center;padding:10px 0}
+body.nav-collapsed .profile{justify-content:center;padding:8px 0}
+body.nav-collapsed .sidebar [data-tip]::after{opacity:1}
+body.nav-collapsed .sidebar [data-tip]:hover::after{opacity:1}
+.sidebar-backdrop{position:fixed;inset:0;background:rgba(4,6,14,.6);backdrop-filter:blur(3px);
+  z-index:40;opacity:0;pointer-events:none;transition:opacity var(--t-med)}
 
-    --sp-1: 0.4rem;
-    --sp-2: 0.8rem;
-    --sp-3: 1.2rem;
-    --sp-4: 1.6rem;
-    --sp-5: 2.4rem;
-    --sp-6: 3.2rem;
+/* ============================================================
+   6. MAIN / HEADER
+============================================================ */
+.main{flex:1;min-width:0;padding:26px 30px 140px;transition:padding-right var(--t-med)}
+.shell{max-width:1240px;margin:0 auto}
+.page-head{display:flex;align-items:flex-start;gap:16px;margin-bottom:26px}
+.menu-btn{display:none}
+.eyebrow{font-family:var(--font-m);font-size:10.5px;letter-spacing:.22em;color:var(--cyan);
+  text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.eyebrow::before{content:"";width:16px;height:1px;background:var(--cyan);opacity:.7}
+.page-head h1{font-family:var(--font-d);font-size:clamp(24px,3vw,31px);font-weight:700;letter-spacing:-.01em;line-height:1.15}
+.page-head .sub{color:var(--text2);font-size:14px;margin-top:5px}
+.ph-actions{margin-left:auto;display:flex;align-items:center;gap:9px;flex:none}
+#btnRefresh.spinning .ic{animation:spin 0.9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-    --radius-s: 0.6rem;
-    --radius-m: 1rem;
-    --radius-l: 1.4rem;
-    --radius-full: 999px;
+/* ============================================================
+   7. OVERVIEW METRICS
+============================================================ */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin-bottom:22px}
+.metric{
+  position:relative;padding:14px 15px 12px;border-radius:var(--r-m);overflow:hidden;
+  background:var(--surface);border:1px solid var(--border);
+  backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
+  transition:border-color var(--t-fast),transform var(--t-fast);
+}
+.metric::before{content:"";position:absolute;top:0;left:14px;width:34px;height:2px;border-radius:2px;
+  background:var(--mc,var(--indigo));opacity:.8;box-shadow:0 0 10px var(--mc,var(--indigo))}
+.metric:hover{border-color:var(--border2);transform:translateY(-2px)}
+.m-row{display:flex;align-items:center;justify-content:space-between}
+.m-val{font-family:var(--font-m);font-size:25px;font-weight:600;letter-spacing:-.02em}
+.m-ic{color:var(--mc,var(--indigo));opacity:.75}
+.m-lab{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-top:3px}
 
-    --font-display: "Space Grotesk", "Inter", sans-serif;
-    --font-body: "Inter", -apple-system, sans-serif;
-    --font-mono: "JetBrains Mono", "Menlo", monospace;
+/* ============================================================
+   8. TOOLBAR / SEARCH / CHIPS
+============================================================ */
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.search{
+  flex:1;min-width:230px;display:flex;align-items:center;gap:10px;height:42px;padding:0 12px;
+  background:var(--surface);border:1px solid var(--border);border-radius:11px;
+  transition:border-color var(--t-fast),box-shadow var(--t-med);
+}
+.search:focus-within{border-color:rgba(124,138,255,.55);
+  box-shadow:0 0 0 3px rgba(124,138,255,.14),0 0 22px rgba(124,138,255,.12)}
+.search .ic{color:var(--text3)}
+.search input{flex:1;min-width:0;background:none;border:0;outline:none;font-size:14px;color:var(--text1)}
+.search input::placeholder{color:var(--text3)}
+.search input::-webkit-search-cancel-button{-webkit-appearance:none}
+.tb-right{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.btn .fcount{min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:var(--indigo);
+  color:#fff;font-family:var(--font-m);font-size:10.5px;display:inline-flex;align-items:center;justify-content:center}
+.viewswitch{display:flex;gap:2px;padding:3px;background:var(--surface);border:1px solid var(--border);border-radius:11px}
+.viewswitch button{width:36px;height:34px;border-radius:8px;display:grid;place-items:center;color:var(--text3);
+  transition:background var(--t-fast),color var(--t-fast)}
+.viewswitch button:hover{color:var(--text1)}
+.viewswitch button.active{background:var(--accent-soft);color:var(--indigo);
+  box-shadow:inset 0 0 0 1px rgba(124,138,255,.35)}
+.chips{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.chip{
+  display:inline-flex;align-items:center;gap:7px;padding:5px 7px 5px 11px;border-radius:99px;
+  font-size:12px;font-weight:500;color:var(--text1);
+  background:var(--accent-soft);border:1px solid rgba(124,138,255,.35);
+  animation:chipIn .22s ease both;
+}
+@keyframes chipIn{from{opacity:0;transform:scale(.85)}}
+.chip .cx{width:17px;height:17px;border-radius:50%;display:grid;place-items:center;color:var(--text2);
+  transition:background var(--t-fast),color var(--t-fast)}
+.chip .cx:hover{background:rgba(255,255,255,.12);color:#fff}
+.chip .cx .ic{width:10px;height:10px}
+.chips-clear{font-size:12px;font-weight:600;color:var(--text3);padding:5px 8px;border-radius:8px}
+.chips-clear:hover{color:var(--danger);background:rgba(255,107,129,.08)}
 
-    --ease: cubic-bezier(0.16, 1, 0.3, 1);
-    --fast: 140ms var(--ease);
-    --base: 240ms var(--ease);
+/* ============================================================
+   9. HISTORY AREA / SECTIONS
+============================================================ */
+.h-section{margin-bottom:26px}
+.s-label{display:flex;align-items:center;gap:10px;font-family:var(--font-m);font-size:11px;font-weight:600;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--text3);margin-bottom:12px}
+.s-label .ic{width:13px;height:13px;color:var(--gold)}
+.s-label::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--border2),transparent)}
+.s-label .s-count{font-size:10px;color:var(--text3);border:1px solid var(--border);border-radius:99px;padding:1px 8px}
+.v-list{display:flex;flex-direction:column;gap:8px}
+.v-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:14px}
+
+/* ---- conversation card (shared) ---- */
+.conv{
+  position:relative;display:flex;gap:12px;align-items:flex-start;padding:14px 16px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-m);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer;
+  transition:transform var(--t-fast),border-color var(--t-fast),background var(--t-fast),box-shadow var(--t-med);
+  animation:cardIn .42s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--d,0ms);
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(9px)}}
+.conv::before{
+  content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;pointer-events:none;opacity:0;
+  background:conic-gradient(from var(--ang),transparent 0 68%,rgba(124,138,255,.85) 80%,rgba(69,214,255,.7) 86%,transparent 95%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+  transition:opacity .35s ease;
+}
+.conv:hover{transform:translateY(-2px);border-color:var(--border2);background:var(--surface-hover);box-shadow:var(--shadow1)}
+.conv:hover::before{opacity:.9;animation:edgeSweep 3.2s linear infinite}
+@keyframes edgeSweep{to{--ang:360deg}}
+.conv:focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
+.conv.selected{border-color:rgba(124,138,255,.6);background:var(--accent-soft);
+  box-shadow:0 0 0 1px rgba(124,138,255,.3),0 8px 26px rgba(99,102,241,.14)}
+.conv.current{border-color:rgba(69,214,255,.5)}
+.conv.current::after{content:"";position:absolute;left:-1px;top:14px;bottom:14px;width:3px;border-radius:3px;
+  background:linear-gradient(180deg,var(--cyan),var(--indigo));box-shadow:0 0 10px rgba(69,214,255,.55)}
+.conv.is-archived{opacity:.75}
+/* select control */
+.sel{
+  width:20px;height:20px;flex:none;margin-top:2px;border-radius:6px;position:relative;
+  border:1.5px solid var(--border2);background:transparent;display:grid;place-items:center;
+  transition:background var(--t-fast),border-color var(--t-fast),transform var(--t-fast),opacity var(--t-fast);
+  opacity:.45;
+}
+.sel .ic{width:11px;height:11px;color:#fff;opacity:0;transform:scale(.4);transition:all var(--t-fast)}
+.conv:hover .sel,.conv.selected .sel,.conv:focus-within .sel{opacity:1}
+.sel:hover{border-color:var(--indigo)}
+.conv.selected .sel{background:linear-gradient(135deg,var(--indigo),#5a54e8);border-color:transparent;
+  animation:selPop .3s cubic-bezier(.3,1.6,.5,1)}
+.conv.selected .sel .ic{opacity:1;transform:scale(1)}
+@keyframes selPop{50%{transform:scale(1.25)}}
+@media (hover:none){.sel{opacity:1}}
+/* body */
+.conv-main{flex:1;min-width:0}
+.conv-top{display:flex;align-items:center;gap:9px;min-width:0}
+.conv-title{font-family:var(--font-d);font-size:14.8px;font-weight:600;letter-spacing:.005em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pinflag{color:var(--gold);display:inline-flex;flex:none}
+.pinflag .ic{width:12px;height:12px}
+.status{display:inline-flex;align-items:center;gap:5px;flex:none;font-size:10.5px;font-weight:600;
+  letter-spacing:.05em;color:var(--text3)}
+.status i{width:6px;height:6px;border-radius:50%;background:var(--sc,var(--text3))}
+.status.pulse i{animation:pulseDot 2s ease infinite}
+@keyframes pulseDot{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--sc) 45%,transparent)}
+  55%{box-shadow:0 0 0 5px transparent}}
+.conv-preview{margin-top:4px;font-size:13px;color:var(--text2);display:-webkit-box;
+  -webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;transition:color var(--t-fast)}
+.conv:hover .conv-preview{color:#c2cbe8}
+.v-grid .conv-preview{-webkit-line-clamp:3}
+.conv-meta{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:10px}
+.mbadge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--text2);
+  padding:3px 9px;border-radius:99px;background:rgba(255,255,255,.035);border:1px solid var(--border)}
+.mbadge i{width:7px;height:7px;border-radius:50%;background:var(--mc);box-shadow:0 0 7px var(--mc)}
+.modebadge{font-family:var(--font-m);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  padding:3px 8px;border-radius:6px;border:1px solid;opacity:.95}
+.mode-General{color:#9fb0d0;border-color:rgba(159,176,208,.35)}
+.mode-Research{color:var(--cyan);border-color:rgba(69,214,255,.35)}
+.mode-Coding{color:var(--indigo);border-color:rgba(124,138,255,.4)}
+.mode-Writing{color:#f291bb;border-color:rgba(242,127,178,.35)}
+.mitem{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-m);font-size:11px;color:var(--text3)}
+.mitem .ic{width:12px;height:12px}
+.tag{font-family:var(--font-m);font-size:10.5px;color:var(--text3);
+  background:rgba(255,255,255,.04);padding:2.5px 8px;border-radius:99px;border:1px solid var(--border)}
+/* hover actions */
+.conv-actions{display:flex;gap:3px;flex:none;opacity:0;transform:translateX(5px);
+  transition:opacity var(--t-fast),transform var(--t-fast)}
+.conv:hover .conv-actions,.conv:focus-within .conv-actions{opacity:1;transform:none}
+@media (hover:none){.conv-actions{opacity:1;transform:none}}
+.conv-actions .iconbtn{width:31px;height:31px;border-radius:8px}
+.fav.on{color:var(--gold)}
+.fav.on .ic{fill:currentColor}
+.fav.pop .ic{animation:favPop .42s cubic-bezier(.3,1.8,.5,1)}
+@keyframes favPop{40%{transform:scale(1.45)}}
+.act-more-open{color:var(--cyan)}
+.pinflag.drop{animation:pinDrop .4s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pinDrop{0%{transform:translateY(-5px) rotate(-18deg);opacity:0}}
+/* grid tweaks */
+.v-grid .conv{flex-direction:column;gap:0;padding:16px}
+.v-grid .sel{position:absolute;top:13px;right:13px;margin:0;z-index:2}
+.v-grid .conv-actions{position:absolute;bottom:12px;right:12px}
+.v-grid .conv-main{width:100%}
+.v-grid .conv-meta{margin-top:12px;padding-top:11px;border-top:1px solid var(--border)}
+
+/* ============================================================
+   10. TIMELINE VIEW
+============================================================ */
+.timeline{position:relative;padding-left:30px}
+.timeline::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;border-radius:2px;
+  background:repeating-linear-gradient(180deg,rgba(124,138,255,.4) 0 9px,rgba(124,138,255,.07) 9px 18px);
+  background-size:100% 18px;animation:dataLine 3.5s linear infinite}
+@keyframes dataLine{to{background-position:0 18px}}
+.tl-day{margin-bottom:26px;animation:cardIn .5s both;animation-delay:var(--d,0ms)}
+.tl-daylabel{display:flex;align-items:center;gap:10px;margin:0 0 12px -30px;padding-left:30px;
+  font-family:var(--font-m);font-size:11px;font-weight:600;letter-spacing:.22em;color:var(--cyan)}
+.tl-daylabel::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(69,214,255,.3),transparent)}
+.tl-daylabel .s-count{color:var(--text3);border:1px solid var(--border);border-radius:99px;padding:0 8px;font-size:10px}
+.tl-items{display:flex;flex-direction:column;gap:10px}
+.tl-item{margin-left:0}
+.tl-node{position:absolute;left:-27px;top:18px;width:12px;height:12px;border-radius:50%;
+  background:var(--bg1);border:2px solid var(--mc,var(--indigo));
+  box-shadow:0 0 10px color-mix(in srgb,var(--mc,var(--indigo)) 60%,transparent);
+  transition:transform var(--t-fast)}
+.tl-item:hover .tl-node{transform:scale(1.35)}
+.tl-item.status-processing .tl-node{animation:nodePulse 1.8s ease infinite}
+@keyframes nodePulse{50%{box-shadow:0 0 0 6px rgba(255,200,97,.12),0 0 12px var(--gold)}}
+.tl-time{position:absolute;top:-9px;right:14px;font-family:var(--font-m);font-size:10.5px;color:var(--text3);
+  background:var(--bg1);border:1px solid var(--border);border-radius:99px;padding:1px 9px}
+
+/* ============================================================
+   11. EMPTY / NO-RESULTS / SKELETON
+============================================================ */
+.statebox{padding:66px 24px;text-align:center;animation:cardIn .5s both}
+.statebox h3{font-family:var(--font-d);font-size:21px;font-weight:700;margin:18px 0 6px}
+.statebox p{color:var(--text2);font-size:14px;max-width:340px;margin:0 auto}
+.statebox .btn{margin-top:20px}
+.statebox .sb-actions{display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+.orbit{position:relative;width:126px;height:126px;margin:0 auto}
+.orbit .ring{position:absolute;inset:0;border:1px solid rgba(140,160,255,.3);border-radius:50%}
+.orbit .r2{inset:17px;border-color:rgba(69,214,255,.28);border-style:dashed;animation:spinSlow 26s linear infinite reverse}
+.orbit .core{position:absolute;inset:46px;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%,#a8b4ff,#5b63e8 62%,#333b9e);
+  box-shadow:0 0 26px rgba(124,138,255,.45);animation:coreBreathe 3.4s ease infinite}
+@keyframes coreBreathe{50%{box-shadow:0 0 40px rgba(124,138,255,.7)}}
+.orbit .sat{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;
+  background:var(--cyan);box-shadow:0 0 9px var(--cyan);animation:orbitSpin 8s linear infinite}
+.orbit .sat.s2{background:var(--violet);box-shadow:0 0 9px var(--violet);animation-duration:13s;animation-direction:reverse}
+@keyframes orbitSpin{from{transform:rotate(0) translateX(60px)}to{transform:rotate(360deg) translateX(60px)}}
+.nores-ic{width:74px;height:74px;margin:0 auto;border-radius:50%;display:grid;place-items:center;
+  color:var(--text3);background:var(--surface);border:1px dashed var(--border2)}
+.nores-ic .ic{width:28px;height:28px}
+/* skeleton */
+.skel{pointer-events:none}
+.skel .sk{border-radius:6px;background:linear-gradient(100deg,rgba(255,255,255,.045) 35%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.045) 65%);
+  background-size:220% 100%;animation:shimmer 1.5s linear infinite}
+@keyframes shimmer{to{background-position:-120% 0}}
+.sk-t{height:14px;width:42%}.sk-p{height:11px;width:76%;margin-top:9px}.sk-m{height:10px;width:55%;margin-top:12px}
+
+/* ============================================================
+   12. BULK BAR
+============================================================ */
+.bulkbar{
+  position:fixed;left:50%;bottom:22px;z-index:46;transform:translate(-50%,90px);
+  display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:15px;
+  background:rgba(16,21,42,.9);border:1px solid var(--border2);box-shadow:var(--shadow2);
+  backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
+  transition:transform .32s cubic-bezier(.3,1.2,.4,1),opacity .25s;opacity:0;pointer-events:none;
+  max-width:calc(100vw - 24px);
+}
+.bulkbar.show{transform:translate(-50%,0);opacity:1;pointer-events:auto}
+.bb-count{font-family:var(--font-m);font-size:12.5px;font-weight:600;color:var(--cyan);
+  padding:0 10px;white-space:nowrap}
+.bb-sep{width:1px;height:22px;background:var(--border2)}
+.bulkbar button[data-bulk]{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border-radius:9px;
+  font-size:12.8px;font-weight:600;color:var(--text2);transition:background var(--t-fast),color var(--t-fast)}
+.bulkbar button[data-bulk]:hover{background:var(--surface3);color:var(--text1)}
+.bulkbar button[data-bulk].danger:hover{background:rgba(255,107,129,.14);color:#ffb3bf}
+.bulkbar .bb-txt{display:inline}
+
+/* ============================================================
+   13. POPOVERS / MENUS / CONTEXT
+============================================================ */
+.popover{
+  position:fixed;z-index:70;min-width:224px;padding:8px;border-radius:13px;
+  background:rgba(17,22,44,.96);border:1px solid var(--border2);box-shadow:var(--shadow2);
+  backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
+  opacity:0;transform:translateY(-6px) scale(.97);transform-origin:top left;
+  transition:opacity .18s ease,transform .18s cubic-bezier(.3,1.2,.4,1);
+}
+.popover.open{opacity:1;transform:none}
+.pop-head{display:flex;align-items:center;justify-content:space-between;padding:4px 8px 8px;
+  border-bottom:1px solid var(--border);margin-bottom:7px}
+.pop-head strong{font-family:var(--font-d);font-size:13.5px}
+.pop-head button{font-size:11.5px;font-weight:600;color:var(--text3);padding:3px 8px;border-radius:7px}
+.pop-head button:hover{color:var(--danger);background:rgba(255,107,129,.09)}
+.fgroup{padding:6px 4px}
+.fgroup + .fgroup{border-top:1px solid var(--border)}
+.fgroup-label{font-family:var(--font-m);font-size:9.5px;letter-spacing:.18em;color:var(--text3);
+  text-transform:uppercase;padding:2px 6px 7px}
+.fgroup-grid{display:flex;flex-wrap:wrap;gap:6px}
+.fopt{
+  display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:99px;
+  font-size:12.3px;font-weight:500;color:var(--text2);
+  border:1px solid var(--border);background:rgba(255,255,255,.02);
+  transition:all var(--t-fast);
+}
+.fopt i{width:7px;height:7px;border-radius:50%;background:var(--mc,var(--text3))}
+.fopt:hover{border-color:var(--border2);color:var(--text1)}
+.fopt.active{background:var(--accent-soft);border-color:rgba(124,138,255,.55);color:var(--text1)}
+.menu-item{
+  display:flex;align-items:center;gap:11px;width:100%;padding:8.5px 10px;border-radius:9px;
+  font-size:13.3px;font-weight:500;color:var(--text2);text-align:left;
+  transition:background var(--t-fast),color var(--t-fast);
+}
+.menu-item .ic{width:16px;height:16px;color:var(--text3)}
+.menu-item:hover,.menu-item:focus-visible{background:var(--surface3);color:var(--text1)}
+.menu-item:hover .ic{color:var(--indigo)}
+.menu-item.danger:hover{background:rgba(255,107,129,.1);color:#ffb3bf}
+.menu-item.danger:hover .ic{color:var(--danger)}
+.menu-item[aria-disabled="true"]{opacity:.42;cursor:not-allowed}
+.menu-item .mi-note{margin-left:auto;font-family:var(--font-m);font-size:9px;letter-spacing:.08em;color:var(--text3);
+  border:1px solid var(--border);border-radius:99px;padding:1px 7px}
+.menu-item .mi-check{margin-left:auto;color:var(--indigo);opacity:0}
+.menu-item[aria-checked="true"] .mi-check{opacity:1}
+.menu-sep{height:1px;background:var(--border);margin:6px 8px}
+#ctxMenu{min-width:200px;z-index:75}
+
+/* ============================================================
+   14. PREVIEW PANEL
+============================================================ */
+.preview{
+  position:fixed;top:0;right:0;bottom:0;width:min(var(--pvw),100vw);z-index:48;
+  display:flex;flex-direction:column;
+  background:rgba(10,14,28,.92);border-left:1px solid var(--border2);
+  backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+  transform:translateX(103%);transition:transform .34s cubic-bezier(.3,1,.3,1);
+  box-shadow:-20px 0 60px rgba(3,6,18,.5);
+}
+.preview.open{transform:none}
+.pv-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;
+  border-bottom:1px solid var(--border)}
+.pv-eyebrow{font-family:var(--font-m);font-size:10px;letter-spacing:.24em;color:var(--cyan);text-transform:uppercase;
+  display:flex;align-items:center;gap:8px}
+.pv-eyebrow::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--cyan);
+  box-shadow:0 0 8px var(--cyan);animation:pulseDot 2.4s infinite;--sc:var(--cyan)}
+.pv-body{flex:1;overflow-y:auto;padding:20px 18px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.pv-body::-webkit-scrollbar{width:8px}
+.pv-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:8px}
+#pvTitle{font-family:var(--font-d);font-size:19px;font-weight:700;line-height:1.3;margin-bottom:10px;word-break:break-word}
+.pv-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.pv-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);
+  border:1px solid var(--border);border-radius:var(--r-m);overflow:hidden;margin-bottom:18px}
+.pv-cell{background:rgba(13,18,38,.85);padding:11px 13px}
+.pv-cell dt{font-family:var(--font-m);font-size:9.5px;letter-spacing:.16em;color:var(--text3);text-transform:uppercase}
+.pv-cell dd{font-size:13px;font-weight:600;margin-top:4px;display:flex;align-items:center;gap:6px}
+.pv-sub{font-family:var(--font-m);font-size:10px;letter-spacing:.2em;color:var(--text3);
+  text-transform:uppercase;margin:18px 0 10px;display:flex;align-items:center;gap:9px}
+.pv-sub::after{content:"";flex:1;height:1px;background:var(--border)}
+.pv-tags{display:flex;gap:7px;flex-wrap:wrap}
+.pv-msgs{display:flex;flex-direction:column;gap:10px;padding-bottom:8px}
+.pv-msg{position:relative;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.025);
+  border:1px solid var(--border);font-size:12.8px;color:var(--text2);animation:cardIn .3s both;animation-delay:var(--d,0ms)}
+.pv-msg .who{display:block;font-family:var(--font-m);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+  margin-bottom:5px;color:var(--text3)}
+.pv-msg.m-u{border-left:2px solid var(--indigo)}
+.pv-msg.m-u .who{color:var(--indigo)}
+.pv-msg.m-a{border-left:2px solid var(--cyan)}
+.pv-msg.m-a .who{color:var(--cyan)}
+.pv-copy{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:6px;display:grid;place-items:center;
+  color:var(--text3);opacity:0;transition:opacity var(--t-fast),background var(--t-fast)}
+.pv-msg:hover .pv-copy,.pv-copy:focus-visible{opacity:1}
+.pv-copy:hover{background:var(--surface3);color:var(--text1)}
+.pv-copy .ic{width:12px;height:12px}
+.pv-actions{display:flex;align-items:center;gap:8px;padding:13px 18px calc(13px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--border)}
+.pv-actions .btn-primary{flex:1;justify-content:center}
+.pv-tools{display:flex;gap:3px}
+.pv-tools .iconbtn.toggled{color:var(--gold);border-color:rgba(255,200,97,.35);background:rgba(255,200,97,.08)}
+.pv-tools .iconbtn.arch-on{color:var(--text1);background:var(--surface3)}
+.pv-backdrop{position:fixed;inset:0;z-index:47;background:rgba(4,6,14,.55);backdrop-filter:blur(2px);
+  opacity:0;pointer-events:none;transition:opacity var(--t-med)}
+.pv-backdrop.show{opacity:1;pointer-events:auto}
+@media (min-width:1280px){
+  .pv-backdrop{display:none}
+  body.pv-open .main{padding-right:calc(var(--pvw) + 30px)}
+  .preview{background:rgba(10,14,28,.72)}
 }
 
-html.dark {
-    --bg-0: #0a0a16;
-    --bg-1: #12121f;
-    --bg-2: #191929;
-    --ink-0: #f5f6fb;
-    --ink-1: #c6cae0;
-    --ink-2: #8b90ab;
-    --line: #2a2b42;
-    --glass: rgba(20, 20, 36, 0.55);
-    --overlay: rgba(4, 4, 10, 0.7);
-    --ring-track: rgba(255, 255, 255, 0.08);
+/* ============================================================
+   15. DIALOGS
+============================================================ */
+.dialog{position:fixed;inset:0;z-index:85;display:grid;place-items:center;padding:20px}
+.dlg-backdrop{position:absolute;inset:0;background:rgba(3,5,12,.7);backdrop-filter:blur(5px);
+  opacity:0;transition:opacity .2s ease}
+.dlg-panel{
+  position:relative;width:min(430px,100%);padding:24px;border-radius:var(--r-l);
+  background:rgba(16,21,42,.97);border:1px solid var(--border2);box-shadow:var(--shadow2);
+  opacity:0;transform:scale(.94) translateY(10px);
+  transition:opacity .2s ease,transform .24s cubic-bezier(.3,1.3,.4,1);
+}
+.dialog.open .dlg-backdrop{opacity:1}
+.dialog.open .dlg-panel{opacity:1;transform:none}
+.dlg-panel h2{font-family:var(--font-d);font-size:18px;font-weight:700;display:flex;align-items:center;gap:10px}
+.dlg-panel h2 .ic{color:var(--indigo)}
+.dlg-sub{color:var(--text2);font-size:13.5px;margin-top:8px}
+.dlg-sub strong{color:var(--text1);font-weight:600}
+.dlg-input{width:100%;margin-top:16px;padding:11px 13px;border-radius:10px;background:rgba(255,255,255,.035);
+  border:1px solid var(--border2);color:var(--text1);font-size:14px;outline:none;
+  transition:border-color var(--t-fast),box-shadow var(--t-fast)}
+.dlg-input:focus{border-color:var(--indigo);box-shadow:0 0 0 3px rgba(124,138,255,.16)}
+.dlg-error{color:var(--danger);font-size:12.3px;margin-top:8px;display:flex;align-items:center;gap:6px}
+.dlg-hint{font-family:var(--font-m);font-size:10.5px;color:var(--text3);margin-top:8px}
+.dlg-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:20px}
+#deleteDialog .dlg-panel{border-color:rgba(255,107,129,.28)}
+#deleteDialog h2 .ic{color:var(--danger)}
 
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.45);
-    --shadow-glow: 0 0 0 1px rgba(0, 217, 255, 0.5), 0 0 28px rgba(0, 217, 255, 0.3);
+/* ============================================================
+   16. TOASTS
+============================================================ */
+.toast-region{position:fixed;top:18px;right:18px;z-index:95;display:flex;flex-direction:column;gap:9px;
+  pointer-events:none;max-width:min(360px,calc(100vw - 32px))}
+.toast{
+  pointer-events:auto;display:flex;align-items:flex-start;gap:11px;padding:12px 13px;border-radius:12px;
+  background:rgba(17,22,44,.96);border:1px solid var(--border2);box-shadow:var(--shadow2);
+  backdrop-filter:blur(var(--blur));transform:translateX(26px);opacity:0;
+  transition:transform .28s cubic-bezier(.3,1.2,.4,1),opacity .25s;
+}
+.toast.in{transform:none;opacity:1}
+.toast.out{transform:translateX(30px);opacity:0}
+.toast .t-ic{width:28px;height:28px;flex:none;border-radius:8px;display:grid;place-items:center}
+.toast .t-ic .ic{width:15px;height:15px}
+.toast .t-msg{font-size:13px;font-weight:500;line-height:1.45;padding-top:3.5px;flex:1}
+.toast .t-x{flex:none;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;color:var(--text3)}
+.toast .t-x:hover{background:var(--surface3);color:var(--text1)}
+.toast .t-x .ic{width:11px;height:11px}
+.t-success .t-ic{background:rgba(61,220,151,.13);color:var(--success)}
+.t-info .t-ic{background:rgba(69,214,255,.12);color:var(--cyan)}
+.t-warning .t-ic{background:rgba(255,200,97,.12);color:var(--warning)}
+.t-error .t-ic{background:rgba(255,107,129,.13);color:var(--danger)}
+
+/* ============================================================
+   17. RESPONSIVE
+============================================================ */
+@media (max-width:1100px){
+  .main{padding:22px 20px 150px}
+}
+@media (max-width:960px){
+  .sidebar{position:fixed;left:0;top:0;transform:translateX(-104%);width:var(--sbw)!important;
+    box-shadow:var(--shadow2)}
+  body.nav-open .sidebar{transform:none}
+  body.nav-open .sidebar-backdrop{opacity:1;pointer-events:auto}
+  .menu-btn{display:inline-flex}
+  .sb-collapse{display:none}
+  body.nav-collapsed .brand-text,body.nav-collapsed .newchat span,body.nav-collapsed .nav-item span,
+  body.nav-collapsed .sb-label,body.nav-collapsed .p-info{display:block}
+  body.nav-collapsed .newchat span{display:inline}
+  body.nav-collapsed .nav-item{justify-content:flex-start;padding:9.5px 12px}
+}
+@media (max-width:700px){
+  .page-head{flex-wrap:wrap}
+  .ph-actions{width:100%;margin-left:0}
+  .ph-actions .btn-primary{flex:1;justify-content:center}
+  .v-grid{grid-template-columns:1fr}
+  .bulkbar{bottom:14px;padding:6px 8px;gap:3px}
+  .bulkbar button[data-bulk]{padding:8px 9px}
+  .bulkbar .bb-txt{display:none}
+  .toolbar .search{min-width:100%}
+  .search kbd{display:none}
+  .tl-time{position:static;display:inline-block;margin-bottom:6px}
+  .tl-item{padding-top:12px}
+}
+@media (max-width:430px){
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  .conv{padding:12px}
 }
 
-/* ============================================================================
-   RESET & BASE
-   ============================================================================ */
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; }
-
-body {
-    font-family: var(--font-body);
-    background: var(--bg-0);
-    color: var(--ink-0);
-    line-height: 1.55;
-    -webkit-font-smoothing: antialiased;
-    transition: background-color var(--base), color var(--base);
+/* ============================================================
+   18. ENTRY REVEAL + REDUCED MOTION
+============================================================ */
+.boot [data-reveal]{animation:riseIn .55s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--d,0ms)}
+@keyframes riseIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;scroll-behavior:auto!important}
+  .bg-scan,.flow,.bg-orbit{display:none}
+  .conv::before{display:none}
 }
-
-body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background:
-        radial-gradient(60vw 40vh at 85% -5%, rgba(176, 36, 255, 0.10), transparent 60%),
-        radial-gradient(50vw 35vh at -5% 10%, rgba(0, 217, 255, 0.08), transparent 60%);
-    pointer-events: none;
-}
-
-h1, h2, h3, h4 {
-    font-family: var(--font-display);
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    line-height: 1.25;
-    color: var(--ink-0);
-}
-
-a { color: var(--cyan); text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 2px; }
-a:hover { text-decoration-thickness: 2px; }
-
-button, input, select, textarea { font-family: inherit; color: inherit; }
-
-:focus { outline: none; }
-:focus-visible {
-    outline: 2px solid var(--cyan);
-    outline-offset: 3px;
-    border-radius: var(--radius-s);
-}
-
-@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
-    }
-}
-
-::selection { background: rgba(0, 217, 255, 0.25); }
-.mono { font-family: var(--font-mono); }
-
-.sr-only {
-    position: absolute;
-    width: 1px; height: 1px;
-    padding: 0; margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-}
-
-/* Skip link */
-.skip-link {
-    position: absolute;
-    top: -44px;
-    left: var(--sp-3);
-    background: var(--cyan);
-    color: #05050a;
-    padding: 10px 16px;
-    border-radius: var(--radius-s);
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.85rem;
-    z-index: 100;
-    transition: top var(--fast);
-}
-.skip-link:focus { top: var(--sp-3); }
-
-/* ============================================================================
-   SHELL / TOPBAR
-   ============================================================================ */
-
-.shell { min-height: 100vh; display: flex; flex-direction: column; }
-
-.topbar {
-    position: sticky;
-    top: 0;
-    z-index: 40;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--sp-3);
-    padding: var(--sp-3) var(--sp-5);
-    background: var(--glass);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border-bottom: 1px solid var(--line);
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 1rem;
-    color: var(--ink-0);
-    text-decoration: none;
-}
-.brand:hover { text-decoration: none; }
-
-.brand-mark {
-    width: 30px; height: 30px;
-    border-radius: 9px;
-    display: grid;
-    place-items: center;
-    background: linear-gradient(135deg, var(--cyan), var(--purple));
-    color: #05050a;
-    font-weight: 700;
-    font-size: 0.85rem;
-    box-shadow: 0 0 0 1px rgba(0, 217, 255, 0.3);
-}
-
-.crumb { color: var(--ink-2); font-size: 0.9rem; }
-
-.topbar-actions { display: flex; align-items: center; gap: var(--sp-2); }
-
-.theme-switch {
-    display: inline-flex;
-    padding: 3px;
-    gap: 2px;
-    background: var(--bg-2);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-full);
-}
-.theme-switch button {
-    border: none;
-    background: transparent;
-    color: var(--ink-2);
-    width: 34px; height: 34px;
-    border-radius: var(--radius-full);
-    display: grid;
-    place-items: center;
-    cursor: pointer;
-    font-size: 0.95rem;
-    transition: background var(--fast), color var(--fast);
-}
-.theme-switch button.active { background: var(--bg-1); color: var(--cyan); box-shadow: var(--shadow-sm); }
-
-.btn-back {
-    min-height: 40px;
-    padding: 0 var(--sp-3);
-    border-radius: var(--radius-full);
-    border: 1px solid var(--line);
-    background: var(--bg-1);
-    color: var(--ink-1);
-    font-size: 0.85rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: border-color var(--fast), color var(--fast);
-}
-.btn-back:hover { border-color: var(--cyan); color: var(--cyan); }
-
-/* ============================================================================
-   MAIN
-   ============================================================================ */
-
-.main {
-    flex: 1;
-    width: 100%;
-    max-width: 880px;
-    margin: 0 auto;
-    padding: var(--sp-5) var(--sp-4) var(--sp-6);
-}
-
-.page-lede { margin-bottom: var(--sp-4); }
-.page-lede h1 { font-size: 1.7rem; margin-bottom: 4px; }
-.page-lede p { color: var(--ink-2); font-size: 0.95rem; }
-
-/* ---- Toolbar: search + filters ---- */
-
-.toolbar {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-3);
-    margin-bottom: var(--sp-4);
-}
-
-.search-box {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.search-box svg {
-    position: absolute;
-    left: 16px;
-    width: 18px; height: 18px;
-    color: var(--ink-2);
-    pointer-events: none;
-}
-
-.search-box input {
-    width: 100%;
-    min-height: 48px;
-    padding: 10px 44px;
-    border-radius: var(--radius-m);
-    border: 1px solid var(--line);
-    background: var(--bg-1);
-    color: var(--ink-0);
-    font-size: 0.95rem;
-    transition: border-color var(--fast), box-shadow var(--fast);
-}
-.search-box input:focus-visible {
-    border-color: var(--cyan);
-    box-shadow: 0 0 0 4px rgba(0, 217, 255, 0.14);
-}
-
-.search-clear {
-    position: absolute;
-    right: 8px;
-    width: 32px; height: 32px;
-    border: none;
-    background: transparent;
-    color: var(--ink-2);
-    border-radius: 50%;
-    cursor: pointer;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-}
-.search-clear.show { display: flex; }
-.search-clear:hover { background: var(--bg-2); color: var(--ink-0); }
-
-.filter-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--sp-3);
-    flex-wrap: wrap;
-}
-
-.filter-left {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-3);
-    flex-wrap: wrap;
-}
-
-.segmented {
-    display: inline-flex;
-    padding: 3px;
-    background: var(--bg-2);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-full);
-}
-.segmented button {
-    border: none;
-    background: transparent;
-    color: var(--ink-2);
-    padding: 7px 14px;
-    min-height: 36px;
-    border-radius: var(--radius-full);
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background var(--fast), color var(--fast);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.segmented button.active { background: var(--bg-1); color: var(--cyan); box-shadow: var(--shadow-sm); }
-.segmented button .count { font-family: var(--font-mono); font-size: 0.72rem; opacity: 0.75; }
-
-.select-sort {
-    min-height: 40px;
-    padding: 8px 34px 8px 14px;
-    border-radius: var(--radius-full);
-    border: 1px solid var(--line);
-    background-color: var(--bg-1);
-    color: var(--ink-1);
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238b90ab' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-}
-.select-sort:focus-visible { border-color: var(--cyan); }
-
-.fav-filter {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--ink-1);
-    cursor: pointer;
-    user-select: none;
-}
-
-.switch {
-    position: relative;
-    width: 40px; height: 24px; min-height: 24px;
-    border-radius: var(--radius-full);
-    background: var(--ring-track);
-    border: 1px solid var(--line);
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: background var(--fast), border-color var(--fast);
-}
-.switch::after {
-    content: '';
-    position: absolute;
-    top: 2px; left: 2px;
-    width: 18px; height: 18px;
-    border-radius: 50%;
-    background: white;
-    box-shadow: var(--shadow-sm);
-    transition: transform var(--fast);
-}
-.switch.on { background: linear-gradient(135deg, var(--cyan), var(--blue)); border-color: transparent; }
-.switch.on::after { transform: translateX(16px); }
-
-/* ---- Result count ---- */
-
-.list-meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--sp-2);
-    font-size: 0.8rem;
-    color: var(--ink-2);
-}
-.list-meta .mono { color: var(--ink-1); }
-
-.section-label {
-    font-family: var(--font-display);
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--ink-2);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: var(--sp-4) 0 var(--sp-2);
-}
-.section-label:first-child { margin-top: 0; }
-.section-label .pin-ico { color: var(--warning); }
-
-/* ============================================================================
-   HISTORY LIST / CARDS
-   ============================================================================ */
-
-.history-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-2);
-    list-style: none;
-}
-
-.history-item {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--sp-3);
-    background: var(--bg-1);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-l);
-    padding: var(--sp-3) var(--sp-3);
-    transition: border-color var(--fast), transform var(--fast), box-shadow var(--fast);
-    animation: rise 0.3s var(--ease);
-}
-.history-item:hover { border-color: rgba(0, 217, 255, 0.35); box-shadow: var(--shadow-sm); }
-.history-item.pinned { border-color: rgba(255, 176, 32, 0.35); background: linear-gradient(180deg, rgba(255, 176, 32, 0.04), transparent 60%); }
-
-@keyframes rise {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.item-icon {
-    flex-shrink: 0;
-    width: 42px; height: 42px;
-    border-radius: var(--radius-m);
-    display: grid;
-    place-items: center;
-    font-size: 1.15rem;
-}
-.item-icon.chat { background: linear-gradient(135deg, rgba(0, 217, 255, 0.16), rgba(0, 128, 255, 0.16)); color: var(--cyan); }
-.item-icon.research { background: linear-gradient(135deg, rgba(176, 36, 255, 0.16), rgba(255, 0, 110, 0.16)); color: var(--purple); }
-
-.item-body { flex: 1; min-width: 0; }
-
-.item-title-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 2px;
-}
-
-.item-title {
-    font-family: var(--font-body);
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--ink-0);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.item-title-input {
-    font-family: var(--font-body);
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--ink-0);
-    background: var(--bg-0);
-    border: 1px solid var(--cyan);
-    border-radius: 6px;
-    padding: 3px 8px;
-    width: 100%;
-    max-width: 320px;
-}
-
-.badge-pin, .badge-fav {
-    flex-shrink: 0;
-    font-size: 0.9rem;
-    line-height: 1;
-}
-.badge-pin { color: var(--warning); }
-.badge-fav { color: var(--pink); }
-
-.item-snippet {
-    font-size: 0.85rem;
-    color: var(--ink-2);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    margin-bottom: 6px;
-}
-
-.item-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    font-size: 0.75rem;
-    color: var(--ink-2);
-}
-.item-meta .dot-sep { opacity: 0.5; }
-.item-meta .mono { font-family: var(--font-mono); }
-.item-tag {
-    display: inline-flex;
-    align-items: center;
-    padding: 2px 8px;
-    border-radius: var(--radius-full);
-    background: var(--bg-2);
-    border: 1px solid var(--line);
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--ink-1);
-}
-
-.item-actions {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.icon-btn {
-    width: 38px; height: 38px;
-    border-radius: var(--radius-s);
-    border: 1px solid transparent;
-    background: transparent;
-    color: var(--ink-2);
-    display: grid;
-    place-items: center;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background var(--fast), color var(--fast), border-color var(--fast);
-}
-.icon-btn:hover { background: var(--bg-2); color: var(--ink-0); border-color: var(--line); }
-.icon-btn.active-pin { color: var(--warning); }
-.icon-btn.active-fav { color: var(--pink); }
-.icon-btn.danger:hover { background: rgba(255, 84, 112, 0.1); color: var(--error); border-color: rgba(255, 84, 112, 0.3); }
-
-@media (max-width: 640px) {
-    .history-item { flex-wrap: wrap; }
-    .item-actions { margin-left: 54px; }
-}
-
-/* ============================================================================
-   EMPTY & NO-RESULTS STATES
-   ============================================================================ */
-
-.state-panel {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: var(--sp-6) var(--sp-4);
-    border: 1px dashed var(--line);
-    border-radius: var(--radius-l);
-    background: var(--bg-1);
-}
-.state-panel.show { display: flex; }
-
-.state-icon {
-    width: 64px; height: 64px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    font-size: 1.8rem;
-    background: linear-gradient(135deg, rgba(0, 217, 255, 0.14), rgba(176, 36, 255, 0.14));
-    margin-bottom: var(--sp-3);
-}
-
-.state-panel h3 { font-size: 1.05rem; margin-bottom: 6px; }
-.state-panel p { color: var(--ink-2); font-size: 0.88rem; max-width: 360px; margin-bottom: var(--sp-3); }
-
-.state-actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; justify-content: center; }
-
-.btn {
-    min-height: 44px;
-    padding: 0 var(--sp-4);
-    border-radius: var(--radius-s);
-    font-size: 0.88rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: transform var(--fast), box-shadow var(--fast), background var(--fast), border-color var(--fast), color var(--fast);
-    border: 1px solid transparent;
-}
-.btn:active { transform: scale(0.98); }
-
-.btn-ghost { background: transparent; border-color: var(--line); color: var(--ink-1); }
-.btn-ghost:hover { border-color: var(--ink-2); color: var(--ink-0); }
-
-.btn-solid {
-    background: linear-gradient(135deg, var(--cyan), var(--blue));
-    color: #05050a;
-    box-shadow: var(--shadow-glow);
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-}
-.btn-solid:hover { filter: brightness(1.06); }
-
-/* ============================================================================
-   LOAD MORE
-   ============================================================================ */
-
-.load-more-row {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    margin-top: var(--sp-4);
-}
-
-.btn-load-more {
-    min-height: 44px;
-    padding: 0 var(--sp-5);
-    border-radius: var(--radius-full);
-    border: 1px solid var(--line);
-    background: var(--bg-1);
-    color: var(--ink-0);
-    font-weight: 600;
-    font-size: 0.88rem;
-    cursor: pointer;
-    transition: border-color var(--fast), color var(--fast);
-}
-.btn-load-more:hover { border-color: var(--cyan); color: var(--cyan); }
-.btn-load-more:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.load-more-count { font-size: 0.78rem; color: var(--ink-2); font-family: var(--font-mono); }
-
-/* ============================================================================
-   CONFIRM MODAL (accessible — replaces native confirm())
-   ============================================================================ */
-
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: var(--overlay);
-    backdrop-filter: blur(4px);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: var(--sp-3);
-    z-index: 70;
-}
-.modal-overlay.show { display: flex; }
-
-.modal {
-    width: 100%;
-    max-width: 380px;
-    background: var(--bg-1);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-l);
-    padding: var(--sp-4);
-    box-shadow: var(--shadow-md);
-}
-.modal h2 { font-size: 1.05rem; margin-bottom: 6px; }
-.modal p { color: var(--ink-2); font-size: 0.88rem; margin-bottom: var(--sp-4); }
-.modal-actions { display: flex; justify-content: flex-end; gap: var(--sp-2); }
-
-.btn-danger {
-    background: linear-gradient(135deg, var(--error), #ff5470);
-    color: white;
-    border: none;
-}
-.btn-danger:hover { filter: brightness(1.08); }
-
-/* ============================================================================
-   TOAST
-   ============================================================================ */
-
-.toast {
-    position: fixed;
-    left: 50%;
-    bottom: 32px;
-    transform: translate(-50%, 12px);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 18px;
-    border-radius: var(--radius-full);
-    background: var(--ink-0);
-    color: var(--bg-1);
-    font-size: 0.85rem;
-    font-weight: 600;
-    box-shadow: var(--shadow-md);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity var(--base), transform var(--base);
-    z-index: 80;
-}
-.toast.show { opacity: 1; transform: translate(-50%, 0); }
-.toast .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
-
-/* ============================================================================
-   RESPONSIVE
-   ============================================================================ */
-
-@media (max-width: 768px) {
-    .main { padding: var(--sp-4) var(--sp-3) var(--sp-6); }
-    .topbar { padding: var(--sp-2) var(--sp-3); }
-}
-
-@media (max-width: 480px) {
-    .search-box input, .select-sort, .icon-btn, .switch { font-size: 16px; }
-    .filter-row { flex-direction: column; align-items: stretch; }
-    .filter-left { justify-content: space-between; }
-    .segmented { flex: 1; justify-content: space-between; }
-}
-
-        .logo-img {
-            width: 32px;
-            height: 32px;
-            object-fit: contain;
-            display: block;
-        }
-        </style>
+</style>
 </head>
+
 <body>
 
-<a href="#main-content" class="skip-link">Skip to main content</a>
+<!-- ================= SVG ICON SPRITE ================= -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <defs>
+    <symbol id="i-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+      <path d="M12 3a9 9 0 1 1-8.6 11.6"/><circle cx="12" cy="12" r="3.4"/>
+      <path d="M17.8 5.2 20 3M19 7.5l2.4-.6" opacity=".8"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 11.2 12 4l9 7.2M5.5 9.5V20h13V9.5"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.6 4v-4H6.5A2.5 2.5 0 0 1 4 13.5z"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v3.5h3.5M12 8v4.5l3 1.8"/></symbol>
+    <symbol id="i-research" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9.5 3h5M10.5 3v5.2L5.4 17a2.4 2.4 0 0 0 2.1 3.6h9a2.4 2.4 0 0 0 2.1-3.6L13.5 8.2V3M7.8 14.5h8.4"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m8.5 7.5-5 4.5 5 4.5M15.5 7.5l5 4.5-5 4.5M13.2 4.5l-2.4 15"/></symbol>
+    <symbol id="i-write" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 20h16M13.9 4.6a2.1 2.1 0 0 1 3 3L8 16.5 4.5 17.5l1-3.5z"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+      <path d="M12 3l1.9 5.4L19 10l-5.1 1.6L12 17l-1.9-5.4L5 10l5.1-1.6zM18.8 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+      <circle cx="11" cy="11" r="6.2"/><path d="m19.8 19.8-3.5-3.5"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+      <circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.7M12 18.5v2.7M4.9 4.9l1.9 1.9M17.2 17.2l1.9 1.9M2.8 12h2.7M18.5 12h2.7M4.9 19.1l1.9-1.9M17.2 6.8l1.9-1.9"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+      <path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4.2h-4.2"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="12" cy="5.4" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="18.6" r="1.7"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 6h16M7.5 12h9M10.5 18h3"/></symbol>
+    <symbol id="i-sort" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M7 5v14M7 19l-3-3M7 19l3-3M17 19V5M17 5l-3 3M17 5l3 3"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+      <path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.3" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.3" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <rect x="4" y="4" width="6.6" height="6.6" rx="1.4"/><rect x="13.4" y="4" width="6.6" height="6.6" rx="1.4"/><rect x="4" y="13.4" width="6.6" height="6.6" rx="1.4"/><rect x="13.4" y="13.4" width="6.6" height="6.6" rx="1.4"/></symbol>
+    <symbol id="i-timeline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+      <path d="M6 3v18"/><circle cx="6" cy="7" r="2" fill="currentColor" stroke="none"/><circle cx="6" cy="15" r="2" fill="currentColor" stroke="none"/><path d="M11 7h9M11 15h9"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9.2 3.5h5.6l-.9 5.2 3.3 3.3H6.8l3.3-3.3zM12 12v8.5"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">
+      <path d="m12 3.6 2.5 5.1 5.6.8-4 4 .9 5.6-5-2.7-5 2.7.9-5.6-4-4 5.6-.8z"/></symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3.5" y="4" width="17" height="4.4" rx="1"/><path d="M5.5 8.4V19a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V8.4M10 12.5h4"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.5 6.5h15M9.5 6V4.5A1.5 1.5 0 0 1 11 3h2a1.5 1.5 0 0 1 1.5 1.5V6M6.5 6.5 7.3 19a2 2 0 0 0 2 1.9h5.4a2 2 0 0 0 2-1.9l.8-12.5M10 10.5v6M14 10.5v6"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14.5 5a2.1 2.1 0 0 1 3 3L8 17.5l-4 1 1-4zM12.8 6.7l3 3"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m4.5 12.5 5 5L19.5 7"/></symbol>
+    <symbol id="i-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M7 17 17 7M9.5 7H17v7.5"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+      <circle cx="12" cy="12" r="8.2"/><path d="M12 7.5V12l3 1.8"/></symbol>
+    <symbol id="i-msg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 11.5a8 8 0 0 1-8 8 8.4 8.4 0 0 1-3.7-.8L4 20l1.4-4.6A8 8 0 1 1 21 11.5z"/></symbol>
+    <symbol id="i-chev-l" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m14.5 5.5-6.5 6.5 6.5 6.5"/></symbol>
+    <symbol id="i-chev-d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m6 9.5 6 6 6-6"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+      <path d="M4 6.5h16M4 12h16M4 17.5h16"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3.5 21.5 20h-19zM12 10v4.2"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+      <circle cx="12" cy="12" r="8.4"/><path d="M12 11v5.2"/><circle cx="12" cy="7.8" r=".7" fill="currentColor"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+      <rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2"/><path d="M15.5 5.5V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h.5"/></symbol>
+  </defs>
+</svg>
 
-<div class="shell">
-
-    <header class="topbar">
-        <a href="dashboard.html" class="brand">
-            <span class="brand-mark" aria-hidden="true">C</span>
-            <span>Nyro <span class="crumb">/ History</span></span>
-        </a>
-        <div class="topbar-actions">
-            <div class="theme-switch" role="group" aria-label="Theme">
-                <button type="button" data-theme="light" title="Light" aria-label="Light theme" aria-pressed="false">☀</button>
-                <button type="button" data-theme="dark" title="Dark" aria-label="Dark theme" aria-pressed="false">☾</button>
-                <button type="button" data-theme="system" title="System" aria-label="Match system theme" aria-pressed="true">◐</button>
-            </div>
-            <button class="btn-back" id="backBtn">← Back</button>
-        </div>
-    </header>
-
-    <main class="main" id="main-content">
-
-        <div class="page-lede">
-            <h1>History</h1>
-            <p>Every chat and research session, searchable and organized in one place.</p>
-        </div>
-
-        <!-- ===== TOOLBAR ===== -->
-        <div class="toolbar">
-            <div class="search-box">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <circle cx="11" cy="11" r="7"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-                <label for="searchInput" class="sr-only">Search chats and research</label>
-                <input type="search" id="searchInput" placeholder="Search chats and research…" autocomplete="off">
-                <button class="search-clear" id="searchClear" aria-label="Clear search">✕</button>
-            </div>
-
-            <div class="filter-row">
-                <div class="filter-left">
-                    <div class="segmented" role="group" aria-label="Filter by type" id="typeFilter">
-                        <button type="button" data-type="all" class="active">All <span class="count mono" id="countAll">0</span></button>
-                        <button type="button" data-type="chat">💬 Chats <span class="count mono" id="countChat">0</span></button>
-                        <button type="button" data-type="research">🔎 Research <span class="count mono" id="countResearch">0</span></button>
-                    </div>
-
-                    <label class="fav-filter">
-                        <div class="switch" id="favSwitch" role="switch" aria-checked="false" tabindex="0" aria-label="Show favorites only"></div>
-                        Favorites only
-                    </label>
-                </div>
-
-                <select class="select-sort" id="sortSelect" aria-label="Sort order">
-                    <option value="newest">Newest first</option>
-                    <option value="oldest">Oldest first</option>
-                    <option value="az">Title A–Z</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- ===== RESULT COUNT ===== -->
-        <div class="list-meta" id="listMeta" role="status" aria-live="polite">
-            <span>Showing <span class="mono" id="showingCount">0</span> of <span class="mono" id="totalCount">0</span></span>
-        </div>
-
-        <!-- ===== HISTORY LIST ===== -->
-        <ul class="history-list" id="historyList" aria-label="History items"></ul>
-
-        <!-- ===== EMPTY STATE (no history at all) ===== -->
-        <div class="state-panel" id="emptyState">
-            <div class="state-icon" aria-hidden="true">🗂️</div>
-            <h3>No history yet</h3>
-            <p>Your chats and research sessions will show up here once you start using Nyro.</p>
-            <div class="state-actions">
-                <a href="chat.html" class="btn btn-solid">Start a chat</a>
-                <a href="research.html" class="btn btn-ghost">Start research</a>
-            </div>
-        </div>
-
-        <!-- ===== NO RESULTS STATE (filters/search yield nothing) ===== -->
-        <div class="state-panel" id="noResultsState">
-            <div class="state-icon" aria-hidden="true">🔍</div>
-            <h3>No matches found</h3>
-            <p>Try a different search term, or clear your filters to see everything.</p>
-            <div class="state-actions">
-                <button class="btn btn-ghost" id="clearFiltersBtn">Clear filters</button>
-            </div>
-        </div>
-
-        <!-- ===== LOAD MORE ===== -->
-        <div class="load-more-row" id="loadMoreRow">
-            <button class="btn-load-more" id="loadMoreBtn">Load more</button>
-            <span class="load-more-count mono" id="loadMoreCount"></span>
-        </div>
-
-    </main>
-
-    <!-- ===== CONFIRM DELETE MODAL ===== -->
-    <div class="modal-overlay" id="confirmModal" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
-        <div class="modal">
-            <h2 id="confirmTitle">Delete this item?</h2>
-            <p id="confirmMessage">This can't be undone.</p>
-            <div class="modal-actions">
-                <button class="btn btn-ghost" id="confirmCancel">Cancel</button>
-                <button class="btn btn-danger" id="confirmDelete">Delete</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true">
-        <span class="dot" aria-hidden="true"></span> <span id="toastText">Saved</span>
-    </div>
-
+<!-- ================= BACKGROUND ================= -->
+<div class="bg" aria-hidden="true">
+  <div class="bg-base"></div>
+  <div class="bg-grid"></div>
+  <canvas id="bgCanvas"></canvas>
+  <div class="flow" style="top:22%;--fd:29s"></div>
+  <div class="flow f2" style="top:64%;--fd:38s;animation-delay:-14s"></div>
+  <div class="bg-orbit"></div>
+  <div class="bg-scan"></div>
 </div>
 
+<div class="app">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar" id="sidebar" aria-label="Primary navigation" data-reveal style="--d:0ms">
+    <div class="sb-head">
+      <a class="brand" href="index.html" aria-label="Chatify AI home">
+        <span class="brand-mark"><svg class="ic" aria-hidden="true"><use href="#i-logo"/></svg></span>
+        <span class="brand-text">Chatify <em>AI</em></span>
+      </a>
+      <button class="iconbtn sb-collapse" id="btnCollapse" data-tip="Collapse sidebar" aria-label="Collapse sidebar">
+        <svg class="ic" aria-hidden="true"><use href="#i-chev-l"/></svg>
+      </button>
+    </div>
+
+    <button class="newchat" id="btnNewChatSide">
+      <svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><span>New Chat</span>
+    </button>
+
+    <p class="sb-label">Navigate</p>
+    <nav aria-label="Main">
+      <a class="nav-item" href="index.html" data-tip="Home">
+        <svg class="ic" aria-hidden="true"><use href="#i-home"/></svg><span>Home</span></a>
+      <a class="nav-item" href="chat.html" data-tip="Chat">
+        <svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg><span>Chat</span></a>
+      <a class="nav-item active" href="history.html" aria-current="page" data-tip="History">
+        <svg class="ic" aria-hidden="true"><use href="#i-history"/></svg><span>History</span></a>
+      <a class="nav-item" href="research.html" data-tip="Research">
+        <svg class="ic" aria-hidden="true"><use href="#i-research"/></svg><span>Research</span></a>
+      <a class="nav-item" href="coding.html" data-tip="Coding">
+        <svg class="ic" aria-hidden="true"><use href="#i-code"/></svg><span>Coding</span></a>
+      <a class="nav-item" href="writing.html" data-tip="Writing">
+        <svg class="ic" aria-hidden="true"><use href="#i-write"/></svg><span>Writing</span></a>
+      <a class="nav-item" href="brainstormer.html" data-tip="Brainstormer">
+        <svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg><span>Brainstormer</span></a>
+    </nav>
+
+    <div class="sb-foot">
+      <button class="nav-item iconbtn sb-item" id="btnSbSearch" data-tip="Search" aria-label="Search conversations" style="width:100%">
+        <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><span>Search</span></button>
+      <button class="nav-item iconbtn sb-item" id="btnSettings" data-tip="Settings" aria-label="Settings" style="width:100%">
+        <svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg><span>Settings</span><span class="soon">SOON</span></button>
+      <div class="sb-divider"></div>
+      <button class="profile" id="btnProfile" aria-label="Profile — Legend Guest session">
+        <span class="avatar">L</span>
+        <span class="p-info">
+          <span class="p-name">Legend Guest</span>
+          <span class="p-sub"><span class="p-dot"></span>Guest session</span>
+        </span>
+      </button>
+    </div>
+  </aside>
+  <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+
+  <!-- ================= MAIN ================= -->
+  <main class="main" id="main">
+    <div class="shell">
+
+      <header class="page-head" data-reveal style="--d:70ms">
+        <button class="iconbtn menu-btn" id="btnMenu" aria-label="Open navigation menu" aria-expanded="false">
+          <svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg>
+        </button>
+        <div>
+          <p class="eyebrow">Legend Inc · Chatify AI · Memory Center</p>
+          <h1>Conversation History</h1>
+          <p class="sub">Explore, organize, and revisit your conversations.</p>
+        </div>
+        <div class="ph-actions">
+          <button class="btn btn-primary" id="btnNewChat">
+            <svg class="ic s" aria-hidden="true"><use href="#i-spark"/></svg>New Chat</button>
+          <button class="iconbtn tip-b" id="btnRefresh" data-tip="Refresh" aria-label="Refresh history">
+            <svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+          <button class="iconbtn tip-b" id="btnPageMore" data-tip="More options" aria-label="More options" aria-haspopup="menu" aria-expanded="false">
+            <svg class="ic" aria-hidden="true"><use href="#i-more"/></svg></button>
+        </div>
+      </header>
+
+      <!-- Overview metrics -->
+      <section class="metrics" aria-label="History overview">
+        <div class="metric" data-reveal style="--d:130ms;--mc:var(--indigo)">
+          <div class="m-row"><span class="m-val" id="mTotal">0</span>
+            <svg class="ic m-ic" aria-hidden="true"><use href="#i-chat"/></svg></div>
+          <p class="m-lab">Conversations</p></div>
+        <div class="metric" data-reveal style="--d:175ms;--mc:var(--gold)">
+          <div class="m-row"><span class="m-val" id="mPinned">0</span>
+            <svg class="ic m-ic" aria-hidden="true"><use href="#i-pin"/></svg></div>
+          <p class="m-lab">Pinned</p></div>
+        <div class="metric" data-reveal style="--d:220ms;--mc:var(--violet)">
+          <div class="m-row"><span class="m-val" id="mFavs">0</span>
+            <svg class="ic m-ic" aria-hidden="true"><use href="#i-star"/></svg></div>
+          <p class="m-lab">Favorites</p></div>
+        <div class="metric" data-reveal style="--d:265ms;--mc:var(--cyan)">
+          <div class="m-row"><span class="m-val" id="mWeek">0</span>
+            <svg class="ic m-ic" aria-hidden="true"><use href="#i-clock"/></svg></div>
+          <p class="m-lab">This Week</p></div>
+        <div class="metric" data-reveal style="--d:310ms;--mc:var(--mint)">
+          <div class="m-row"><span class="m-val" id="mResearch">0</span>
+            <svg class="ic m-ic" aria-hidden="true"><use href="#i-research"/></svg></div>
+          <p class="m-lab">Research Sessions</p></div>
+      </section>
+
+      <!-- Toolbar -->
+      <section class="toolbar" data-reveal style="--d:350ms" aria-label="Search, filter and view controls">
+        <div class="search" id="searchWrap">
+          <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
+          <input type="search" id="searchInput" placeholder="Search conversations…" autocomplete="off"
+                 aria-label="Search conversations" aria-keyshortcuts="/">
+          <kbd aria-hidden="true">/</kbd>
+          <button class="iconbtn" id="btnSearchClear" aria-label="Clear search" hidden style="width:28px;height:28px">
+            <svg class="ic s" aria-hidden="true"><use href="#i-x"/></svg></button>
+        </div>
+        <div class="tb-right">
+          <button class="btn" id="btnFilters" aria-haspopup="dialog" aria-expanded="false">
+            <svg class="ic s" aria-hidden="true"><use href="#i-filter"/></svg>Filters
+            <span class="fcount" id="filterCount" hidden>0</span></button>
+          <button class="btn" id="btnSort" aria-haspopup="menu" aria-expanded="false">
+            <svg class="ic s" aria-hidden="true"><use href="#i-sort"/></svg>
+            <span id="sortLabel">Recently Updated</span>
+            <svg class="ic xs" aria-hidden="true"><use href="#i-chev-d"/></svg></button>
+          <div class="viewswitch" role="group" aria-label="View mode">
+            <button id="btnViewList" class="active tip-b" data-tip="List view" aria-label="List view" aria-pressed="true">
+              <svg class="ic" aria-hidden="true"><use href="#i-list"/></svg></button>
+            <button id="btnViewGrid" class="tip-b" data-tip="Grid view" aria-label="Grid view" aria-pressed="false">
+              <svg class="ic" aria-hidden="true"><use href="#i-grid"/></svg></button>
+            <button id="btnViewTimeline" class="tip-b" data-tip="Timeline view" aria-label="Timeline view" aria-pressed="false">
+              <svg class="ic" aria-hidden="true"><use href="#i-timeline"/></svg></button>
+          </div>
+        </div>
+      </section>
+
+      <div class="chips" id="chipsRow" hidden aria-label="Active filters"></div>
+
+      <!-- History content -->
+      <section id="historyArea" aria-label="Conversation history" aria-busy="false"></section>
+
+    </div>
+  </main>
+
+  <!-- ================= PREVIEW PANEL ================= -->
+  <aside class="preview" id="previewPanel" aria-label="Conversation preview" aria-hidden="true">
+    <header class="pv-head">
+      <span class="pv-eyebrow">Conversation Inspector</span>
+      <button class="iconbtn" id="previewClose" aria-label="Close preview">
+        <svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
+    </header>
+    <div class="pv-body">
+      <h2 id="pvTitle"></h2>
+      <div class="pv-badges" id="pvBadges"></div>
+      <dl class="pv-grid" id="pvMeta"></dl>
+      <h3 class="pv-sub">Tags</h3>
+      <div class="pv-tags" id="pvTags"></div>
+      <h3 class="pv-sub">Recent Messages</h3>
+      <ol class="pv-msgs" id="pvMessages"></ol>
+    </div>
+    <footer class="pv-actions">
+      <button class="btn btn-primary" id="pvOpen">
+        <svg class="ic s" aria-hidden="true"><use href="#i-open"/></svg>Open Chat</button>
+      <div class="pv-tools">
+        <button class="iconbtn tip-b" id="pvRename" data-tip="Rename" aria-label="Rename conversation">
+          <svg class="ic" aria-hidden="true"><use href="#i-edit"/></svg></button>
+        <button class="iconbtn tip-b" id="pvPin" data-tip="Pin" aria-label="Pin conversation" aria-pressed="false">
+          <svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg></button>
+        <button class="iconbtn tip-b" id="pvFav" data-tip="Favorite" aria-label="Favorite conversation" aria-pressed="false">
+          <svg class="ic" aria-hidden="true"><use href="#i-star"/></svg></button>
+        <button class="iconbtn tip-b" id="pvArchive" data-tip="Archive" aria-label="Archive conversation" aria-pressed="false">
+          <svg class="ic" aria-hidden="true"><use href="#i-archive"/></svg></button>
+        <button class="iconbtn tip-b" id="pvDelete" data-tip="Delete" aria-label="Delete conversation">
+          <svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg></button>
+      </div>
+    </footer>
+  </aside>
+  <div class="pv-backdrop" id="previewBackdrop" aria-hidden="true"></div>
+</div>
+
+<!-- ================= BULK BAR ================= -->
+<div class="bulkbar" id="bulkBar" role="toolbar" aria-label="Bulk actions">
+  <span class="bb-count" id="bulkCount" aria-live="polite">0 selected</span>
+  <span class="bb-sep" aria-hidden="true"></span>
+  <button data-bulk="all"><svg class="ic s" aria-hidden="true"><use href="#i-check"/></svg><span class="bb-txt">Select all</span></button>
+  <button data-bulk="pin"><svg class="ic s" aria-hidden="true"><use href="#i-pin"/></svg><span class="bb-txt">Pin</span></button>
+  <button data-bulk="favorite"><svg class="ic s" aria-hidden="true"><use href="#i-star"/></svg><span class="bb-txt">Favorite</span></button>
+  <button data-bulk="archive"><svg class="ic s" aria-hidden="true"><use href="#i-archive"/></svg><span class="bb-txt">Archive</span></button>
+  <button data-bulk="delete" class="danger"><svg class="ic s" aria-hidden="true"><use href="#i-trash"/></svg><span class="bb-txt">Delete</span></button>
+  <span class="bb-sep" aria-hidden="true"></span>
+  <button class="iconbtn" id="bulkClear" aria-label="Clear selection" style="width:32px;height:32px">
+    <svg class="ic s" aria-hidden="true"><use href="#i-x"/></svg></button>
+</div>
+
+<!-- ================= POPOVERS ================= -->
+<div class="popover" id="filterPanel" role="dialog" aria-label="Filters" hidden>
+  <div class="pop-head"><strong>Filters</strong><button id="btnFilterClear">Clear all</button></div>
+  <div class="fgroup"><p class="fgroup-label">Status</p>
+    <div class="fgroup-grid">
+      <button class="fopt" data-f="status" data-v="all">All</button>
+      <button class="fopt" data-f="status" data-v="pinned"><i style="--mc:var(--gold)"></i>Pinned</button>
+      <button class="fopt" data-f="status" data-v="favorites"><i style="--mc:var(--violet)"></i>Favorites</button>
+      <button class="fopt" data-f="status" data-v="archived"><i style="--mc:var(--text3)"></i>Archived</button>
+    </div></div>
+  <div class="fgroup"><p class="fgroup-label">Mode</p>
+    <div class="fgroup-grid">
+      <button class="fopt" data-f="mode" data-v="General">General</button>
+      <button class="fopt" data-f="mode" data-v="Research">Research</button>
+      <button class="fopt" data-f="mode" data-v="Coding">Coding</button>
+      <button class="fopt" data-f="mode" data-v="Writing">Writing</button>
+    </div></div>
+  <div class="fgroup"><p class="fgroup-label">Model</p>
+    <div class="fgroup-grid">
+      <button class="fopt" data-f="model" data-v="Brainstormer"><i style="--mc:var(--violet)"></i>Brainstormer</button>
+      <button class="fopt" data-f="model" data-v="Mythical"><i style="--mc:var(--cyan)"></i>Mythical</button>
+      <button class="fopt" data-f="model" data-v="Sonet"><i style="--mc:var(--gold)"></i>Sonet</button>
+      <button class="fopt" data-f="model" data-v="Rapid"><i style="--mc:var(--mint)"></i>Rapid</button>
+    </div></div>
+  <div class="fgroup"><p class="fgroup-label">Date</p>
+    <div class="fgroup-grid">
+      <button class="fopt" data-f="date" data-v="today">Today</button>
+      <button class="fopt" data-f="date" data-v="yesterday">Yesterday</button>
+      <button class="fopt" data-f="date" data-v="week">This Week</button>
+      <button class="fopt" data-f="date" data-v="month">This Month</button>
+      <button class="fopt" data-f="date" data-v="older">Older</button>
+    </div></div>
+</div>
+
+<div class="popover" id="sortMenu" role="menu" aria-label="Sort conversations" hidden></div>
+
+<div class="popover" id="pageMenu" role="menu" aria-label="More options" hidden>
+  <button class="menu-item" data-p="select-all"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Select all visible</button>
+  <button class="menu-item" data-p="clear-sel"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg>Clear selection</button>
+  <div class="menu-sep"></div>
+  <button class="menu-item" data-p="refresh"><svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg>Refresh</button>
+  <div class="menu-sep"></div>
+  <button class="menu-item" data-p="export" aria-disabled="true" title="Available once the FastAPI backend is connected">
+    <svg class="ic" aria-hidden="true"><use href="#i-open"/></svg>Export JSON<span class="mi-note">API SOON</span></button>
+</div>
+
+<div class="popover" id="ctxMenu" role="menu" aria-label="Conversation actions" hidden></div>
+
+<!-- ================= DIALOGS ================= -->
+<div class="dialog" id="renameDialog" hidden>
+  <div class="dlg-backdrop" data-close></div>
+  <div class="dlg-panel" role="dialog" aria-modal="true" aria-labelledby="renameTitle">
+    <h2 id="renameTitle"><svg class="ic" aria-hidden="true"><use href="#i-edit"/></svg>Rename conversation</h2>
+    <p class="dlg-sub">Currently: <strong id="renameCurrent"></strong></p>
+    <input class="dlg-input" id="renameInput" type="text" maxlength="80" autocomplete="off"
+           aria-label="New conversation title" aria-describedby="renameError">
+    <p class="dlg-error" id="renameError" role="alert" hidden></p>
+    <p class="dlg-hint">Enter to save · Esc to cancel · max 80 characters</p>
+    <div class="dlg-actions">
+      <button class="btn" id="renameCancel">Cancel</button>
+      <button class="btn btn-primary" id="renameSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="dialog" id="deleteDialog" hidden>
+  <div class="dlg-backdrop" data-close></div>
+  <div class="dlg-panel" role="alertdialog" aria-modal="true" aria-labelledby="deleteTitle" aria-describedby="deleteText">
+    <h2 id="deleteTitle"><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>Delete conversation?</h2>
+    <p class="dlg-sub" id="deleteText"></p>
+    <p class="dlg-hint">This removes it from temporary history. This action cannot be undone.</p>
+    <div class="dlg-actions">
+      <button class="btn" id="deleteCancel">Cancel</button>
+      <button class="btn btn-danger" id="deleteConfirm"><svg class="ic s" aria-hidden="true"><use href="#i-trash"/></svg>Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-region" id="toasts" aria-live="polite" aria-label="Notifications"></div>
+
+<noscript><p style="padding:40px;text-align:center">Chatify AI History requires JavaScript to run.</p></noscript>
+
 <script>
-/* ============================================================================
-   THEME — tri-state, persisted (matches account.html)
-   ============================================================================ */
+'use strict';
+/* ============================================================
+   Chatify AI — History Command Center
+   In-memory frontend state only. No persistence. API layer is
+   structured for a future FastAPI backend (see `api` object).
+============================================================ */
 
-const themeButtons = document.querySelectorAll('[data-theme]');
-const media = window.matchMedia('(prefers-color-scheme: dark)');
-
-function applyTheme(mode) {
-    const resolved = mode === 'system' ? (media.matches ? 'dark' : 'light') : mode;
-    document.documentElement.classList.toggle('dark', resolved === 'dark');
-    themeButtons.forEach(btn => {
-        const isActive = btn.dataset.theme === mode;
-        btn.classList.toggle('active', isActive);
-        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-    });
-    localStorage.setItem('novis_theme', mode);
-}
-function initTheme() {
-    applyTheme(localStorage.getItem('novis_theme') || 'system');
-}
-themeButtons.forEach(btn => btn.addEventListener('click', () => applyTheme(btn.dataset.theme)));
-media.addEventListener('change', () => {
-    if ((localStorage.getItem('novis_theme') || 'system') === 'system') applyTheme('system');
-});
-initTheme();
-
-document.getElementById('backBtn').addEventListener('click', () => history.back());
-
-/* ============================================================================
-   SEED DATA
-   Ready for future database integration — this array is the only place
-   that needs to be swapped for a fetch('/api/history') call. Every item
-   already carries the shape a backend record would have.
-   ============================================================================ */
-
-let historyData = [
-    { id: 'h1', type: 'chat', title: 'Comparing RAG pipelines for legal docs', snippet: 'We walked through chunking strategies, embedding models, and reranking approaches for a legal document retrieval system…', model: 'Nyro Pro', count: 24, updated: Date.now() - 1000 * 60 * 12, pinned: true, favorite: true },
-    { id: 'h2', type: 'research', title: 'State of small language models, 2026', snippet: 'Deep research on distillation techniques, on-device inference benchmarks, and the competitive landscape for sub-3B models…', sources: 18, updated: Date.now() - 1000 * 60 * 55, pinned: true, favorite: false },
-    { id: 'h3', type: 'chat', title: 'Debugging a flaky WebSocket reconnect', snippet: 'Traced an exponential backoff bug where reconnect attempts stacked instead of replacing the previous timer…', model: 'Nyro Fast', count: 11, updated: Date.now() - 1000 * 60 * 60 * 3, pinned: false, favorite: true },
-    { id: 'h4', type: 'research', title: 'Neon vs glassmorphism design trends', snippet: 'Surveyed 40+ SaaS dashboards released in 2025–26 to map how neon accents pair with translucent surfaces…', sources: 27, updated: Date.now() - 1000 * 60 * 60 * 8, pinned: false, favorite: false },
-    { id: 'h5', type: 'chat', title: 'Drafting onboarding email sequence', snippet: 'Three-email welcome sequence for new signups, focused on activation within the first 48 hours…', model: 'Nyro Pro', count: 9, updated: Date.now() - 1000 * 60 * 60 * 26, pinned: false, favorite: false },
-    { id: 'h6', type: 'research', title: 'GPU pricing across cloud providers', snippet: 'Compared on-demand and spot pricing for A100/H100 instances across AWS, GCP, Azure, and specialty providers…', sources: 14, updated: Date.now() - 1000 * 60 * 60 * 30, pinned: false, favorite: true },
-    { id: 'h7', type: 'chat', title: 'Refactor plan for the auth module', snippet: 'Outlined a migration path from session cookies to short-lived JWTs with refresh token rotation…', model: 'Nyro Fast', count: 31, updated: Date.now() - 1000 * 60 * 60 * 48, pinned: false, favorite: false },
-    { id: 'h8', type: 'research', title: 'Consumer sentiment on AI chat assistants', snippet: 'Synthesized survey data and social listening on trust, usefulness, and privacy concerns around AI chat products…', sources: 22, updated: Date.now() - 1000 * 60 * 60 * 72, pinned: false, favorite: false },
-    { id: 'h9', type: 'chat', title: 'Naming ideas for the mobile app', snippet: 'Brainstormed twenty short, memorable names that pair well with the existing Nyro brand mark…', model: 'Nyro Pro', count: 6, updated: Date.now() - 1000 * 60 * 60 * 96, pinned: false, favorite: false },
-    { id: 'h10', type: 'research', title: 'Timezone handling edge cases', snippet: 'Catalogued DST transition bugs, historical offset changes, and testing strategies for a scheduling feature…', sources: 9, updated: Date.now() - 1000 * 60 * 60 * 120, pinned: false, favorite: false },
-    { id: 'h11', type: 'chat', title: 'Explaining vector databases to a PM', snippet: 'A plain-language walkthrough of embeddings, similarity search, and when a vector DB actually helps…', model: 'Nyro Fast', count: 15, updated: Date.now() - 1000 * 60 * 60 * 150, pinned: false, favorite: false },
-    { id: 'h12', type: 'research', title: 'Competitor feature matrix — Q2', snippet: 'Feature-by-feature comparison across five competing AI research platforms, updated for the Q2 review…', sources: 31, updated: Date.now() - 1000 * 60 * 60 * 200, pinned: false, favorite: false },
-];
-
-/* ============================================================================
-   STATE
-   ============================================================================ */
-
-let state = {
-    search: '',
-    type: 'all',
-    favoritesOnly: false,
-    sort: 'newest',
-    visibleCount: 6,
+/* ---------- 1. Registries ---------- */
+const MODELS = {
+  Brainstormer:{ color:'#a78bfa', desc:'Flagship model for deep research, multi-path analysis and complex long-running tasks.' },
+  Mythical:{ color:'#45d6ff', desc:'Premium advanced reasoning, coding and engineering.' },
+  Sonet:{ color:'#ffc861', desc:'Balanced productivity and learning.' },
+  Rapid:{ color:'#3ddc97', desc:'Fast everyday default assistance.' }
 };
-const PAGE_SIZE = 6;
+const MODES = { General:'#8fa3c8', Research:'#45d6ff', Coding:'#7c8aff', Writing:'#f27fb2' };
+const STATUS = {
+  active:{ label:'Active', color:'#45d6ff', pulse:true },
+  completed:{ label:'Completed', color:'#3ddc97' },
+  archived:{ label:'Archived', color:'#67739b' },
+  processing:{ label:'Processing', color:'#ffc861', pulse:true },
+  error:{ label:'Error', color:'#ff6b81' }
+};
+const SORTS = {
+  updated:{ label:'Recently Updated', fn:(a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt) },
+  created:{ label:'Recently Created', fn:(a,b)=>new Date(b.createdAt)-new Date(a.createdAt) },
+  oldest:{ label:'Oldest', fn:(a,b)=>new Date(a.updatedAt)-new Date(b.updatedAt) },
+  az:{ label:'A – Z', fn:(a,b)=>a.title.localeCompare(b.title) },
+  za:{ label:'Z – A', fn:(a,b)=>b.title.localeCompare(a.title) },
+  messages:{ label:'Most Messages', fn:(a,b)=>b.messageCount-a.messageCount }
+};
 
-/* ============================================================================
-   TOAST
-   ============================================================================ */
-
-const toast = document.getElementById('toast');
-const toastText = document.getElementById('toastText');
-function showToast(msg) {
-    toastText.textContent = msg;
-    toast.classList.add('show');
-    clearTimeout(showToast._t);
-    showToast._t = setTimeout(() => toast.classList.remove('show'), 2200);
+/* ---------- 2. Utilities ---------- */
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const prm = ()=>reducedMotion.matches;
+function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
+function el(tag,cls,text){ const n=document.createElement(tag); if(cls)n.className=cls; if(text!=null)n.textContent=text; return n; }
+function icon(name,cls){ return '<svg class="ic '+(cls||'')+'" aria-hidden="true"><use href="#i-'+name+'"/></svg>'; }
+function uid(){ return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3); }
+function fmtTime(d){ return d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}); }
+function sameDay(a,b){ return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function fmtRelative(iso){
+  const d=new Date(iso), now=new Date();
+  if(sameDay(d,now)) return 'Today, '+fmtTime(d);
+  if(sameDay(d,addDays(now,-1))) return 'Yesterday, '+fmtTime(d);
+  if((now-d)/864e5 < 7) return d.toLocaleDateString([],{weekday:'short'})+', '+fmtTime(d);
+  if(d.getFullYear()===now.getFullYear()) return d.toLocaleDateString([],{month:'short',day:'numeric'});
+  return d.toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'});
+}
+function fmtFull(iso){ return new Date(iso).toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'})+', '+fmtTime(new Date(iso)); }
+function dayKey(iso){
+  const d=new Date(iso), now=new Date();
+  if(sameDay(d,now)) return 'today';
+  if(sameDay(d,addDays(now,-1))) return 'yesterday';
+  return d.toDateString();
+}
+function dayLabel(key){
+  if(key==='today') return 'Today';
+  if(key==='yesterday') return 'Yesterday';
+  const d=new Date(key), now=new Date();
+  const opts={weekday:'short',month:'short',day:'numeric'};
+  if(d.getFullYear()!==now.getFullYear()) opts.year='numeric';
+  return d.toLocaleDateString([],opts).toUpperCase();
+}
+function inDateRange(iso,key){
+  const d=new Date(iso), now=new Date();
+  const sod=x=>new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime();
+  const diffDays=(sod(now)-sod(d))/864e5;
+  const age=(Date.now()-d.getTime())/864e5;
+  if(key==='today') return diffDays===0;
+  if(key==='yesterday') return diffDays===1;
+  if(key==='week') return age<=7;
+  if(key==='month') return age<=30;
+  if(key==='older') return age>30;
+  return true;
 }
 
-/* ============================================================================
-   FORMAT HELPERS
-   ============================================================================ */
-
-function timeAgo(ts) {
-    const diff = Date.now() - ts;
-    const min = Math.floor(diff / 60000);
-    if (min < 1) return 'just now';
-    if (min < 60) return `${min}m ago`;
-    const hr = Math.floor(min / 60);
-    if (hr < 24) return `${hr}h ago`;
-    const day = Math.floor(hr / 24);
-    return `${day}d ago`;
+/* ---------- 3. Temporary in-memory sample data ---------- */
+const NOW=Date.now(), H=36e5, D=864e5;
+const ago=(ms)=>new Date(NOW-ms).toISOString();
+function mk(o){
+  const c=Object.assign({ tags:[], pinned:false, favorite:false, archived:false, status:'completed' },o);
+  c.preview=c.messages[1].t;
+  return c;
 }
+function seedData(){ return [
+  mk({id:'c01',title:'Build a FastAPI authentication service',model:'Mythical',mode:'Coding',pinned:true,favorite:true,messageCount:32,updatedAt:ago(2*H),createdAt:ago(26*H),tags:['fastapi','auth','backend'],messages:[
+    {r:'u',t:'Design the auth layer for my FastAPI app — JWT or session cookies?'},
+    {r:'a',t:"Let's structure the authentication layer around short-lived JWT access tokens with rotating refresh tokens stored in HttpOnly cookies."},
+    {r:'u',t:'Great — show me the token refresh endpoint next.'}]}),
+  mk({id:'c02',title:'Research modern AI agent architectures',model:'Brainstormer',mode:'Research',pinned:true,messageCount:21,updatedAt:ago(5*H),createdAt:ago(30*H),tags:['agents','llm'],messages:[
+    {r:'u',t:'Compare the main architectural patterns for autonomous AI agents in 2025.'},
+    {r:'a',t:'Three dominant patterns have emerged: ReAct-style loops, planner–executor hierarchies, and multi-agent graph topologies.'},
+    {r:'u',t:'Which pattern suits a research assistant best?'}]}),
+  mk({id:'c03',title:'Explain quantum computing simply',model:'Sonet',mode:'General',messageCount:9,updatedAt:ago(7*H),createdAt:ago(8*H),tags:['physics'],messages:[
+    {r:'u',t:'Explain quantum computing to me like I am a smart 12-year-old.'},
+    {r:'a',t:'Imagine a coin spinning in the air — it is not heads or tails until it lands. A qubit works a bit like that spinning coin.'},
+    {r:'u',t:'So superposition is just "spinning"?'}]}),
+  mk({id:'c04',title:'Improve my scholarship essay',model:'Sonet',mode:'Writing',favorite:true,messageCount:14,updatedAt:ago(9*H),createdAt:ago(12*H),tags:['essay'],messages:[
+    {r:'u',t:'Here is my scholarship essay draft — can you tighten the opening paragraph?'},
+    {r:'a',t:'Your hook buries the strongest image. Open with the robotics lab moment and let the theme emerge from it.'},
+    {r:'u',t:'Rewrite it with that approach.'}]}),
+  mk({id:'c05',title:'Debug WebSocket connection errors',model:'Mythical',mode:'Coding',status:'active',messageCount:27,updatedAt:ago(40*6e4),createdAt:ago(3*H),tags:['websocket','js'],messages:[
+    {r:'u',t:'My WebSocket keeps closing with code 1006 after ~60 seconds.'},
+    {r:'a',t:'Code 1006 usually means the connection dropped without a close frame — check proxies for idle timeouts and add a heartbeat ping every 30s.'},
+    {r:'u',t:'Added the ping — now it drops at exactly 120s.'}]}),
+  mk({id:'c06',title:'Compare vector database approaches',model:'Brainstormer',mode:'Research',favorite:true,messageCount:18,updatedAt:ago(D+2*H),createdAt:ago(D+4*H),tags:['vectors','rag'],messages:[
+    {r:'u',t:'pgvector vs a dedicated vector DB for our RAG stack — trade-offs?'},
+    {r:'a',t:'pgvector wins on operational simplicity; dedicated stores like Qdrant win on recall at 10M+ vectors and filtered search performance.'},
+    {r:'u',t:'What about hybrid keyword + vector search?'}]}),
+  mk({id:'c07',title:'Design a responsive analytics dashboard',model:'Mythical',mode:'Coding',messageCount:23,updatedAt:ago(D+5*H),createdAt:ago(D+9*H),tags:['ui','css'],messages:[
+    {r:'u',t:'Sketch a responsive layout for an analytics dashboard with 6 KPI cards and two charts.'},
+    {r:'a',t:'Use a 12-column grid: KPIs as a 6-up strip collapsing to 2-up on mobile, charts stacked full-width below the lg breakpoint.'},
+    {r:'u',t:'Show the CSS grid template for that.'}]}),
+  mk({id:'c08',title:'Plan my Python learning roadmap',model:'Sonet',mode:'General',pinned:true,messageCount:11,updatedAt:ago(D+8*H),createdAt:ago(D+10*H),tags:['learning'],messages:[
+    {r:'u',t:'I know basic Python. Build me a 12-week roadmap toward backend engineering.'},
+    {r:'a',t:'Weeks 1–3: data structures and the standard library. Weeks 4–6: async and testing. Weeks 7–12: FastAPI, SQL, and one capstone.'},
+    {r:'u',t:'Suggest a capstone project.'}]}),
+  mk({id:'c09',title:'Draft product launch announcement',model:'Sonet',mode:'Writing',messageCount:7,updatedAt:ago(D+11*H),createdAt:ago(D+12*H),tags:['marketing'],messages:[
+    {r:'u',t:'Write a launch announcement for our new analytics feature — confident, not salesy.'},
+    {r:'a',t:'"Today, decisions get faster. Analytics is now built into every workspace — no setup, no exports, just answers."'},
+    {r:'u',t:'Can you make a shorter version for X?'}]}),
+  mk({id:'c10',title:'Optimize PostgreSQL slow queries',model:'Mythical',mode:'Coding',messageCount:29,updatedAt:ago(3*D),createdAt:ago(3*D+5*H),tags:['sql','performance'],messages:[
+    {r:'u',t:'This join query takes 4.2s on 8M rows. EXPLAIN output attached.'},
+    {r:'a',t:'The planner is doing a sequential scan on orders because the composite index column order does not match your WHERE clause.'},
+    {r:'u',t:'New index brought it to 180ms. Thank you!'}]}),
+  mk({id:'c11',title:'Synthesize attention mechanism papers',model:'Brainstormer',mode:'Research',favorite:true,messageCount:42,updatedAt:ago(4*D),createdAt:ago(4*D+6*H),tags:['papers','transformers'],messages:[
+    {r:'u',t:'Summarize how attention mechanisms evolved from 2017 to now.'},
+    {r:'a',t:'The arc runs from full quadratic self-attention to sparse, linear and sliding-window variants, then to MLA-style latent compression in frontier models.'},
+    {r:'u',t:'Which variant dominates long-context today?'}]}),
+  mk({id:'c12',title:'Rewrite onboarding emails for clarity',model:'Sonet',mode:'Writing',messageCount:10,updatedAt:ago(5*D),createdAt:ago(5*D+3*H),tags:['email'],messages:[
+    {r:'u',t:'Our 3-part onboarding sequence has a 12% open rate. Rewrite email one.'},
+    {r:'a',t:'Lead with the single outcome: "Set up your first workflow in 4 minutes." Everything else moves below the fold.'},
+    {r:'u',t:'Now compress it under 90 words.'}]}),
+  mk({id:'c13',title:'Build a CLI todo app in Python',model:'Rapid',mode:'Coding',messageCount:16,updatedAt:ago(6*D),createdAt:ago(6*D+2*H),tags:['cli','python'],messages:[
+    {r:'u',t:'Give me a clean structure for a Python CLI todo app with argparse.'},
+    {r:'a',t:'Split it into three modules: storage (JSON file), commands, and the argparse entry point. Start with storage.'},
+    {r:'u',t:'Add colored priority flags.'}]}),
+  mk({id:'c14',title:'Brainstorm names for a space game',model:'Brainstormer',mode:'General',status:'active',messageCount:12,updatedAt:ago(2*D),createdAt:ago(2*D+4*H),tags:['naming'],messages:[
+    {r:'u',t:'Brainstorm names for a cozy space-exploration game. Evocative, not edgy.'},
+    {r:'a',t:'Driftward, Lantern Orbit, The Quiet Parsec, Ember Reach — names that feel warm against the void.'},
+    {r:'u',t:'More in the style of Lantern Orbit.'}]}),
+  mk({id:'c15',title:'Compare GPU options for local LLMs',model:'Brainstormer',mode:'Research',status:'error',messageCount:8,updatedAt:ago(4*D+3*H),createdAt:ago(4*D+7*H),tags:['hardware','llm'],messages:[
+    {r:'u',t:'Best GPU under $900 for running 13B models locally?'},
+    {r:'a',t:'VRAM is the constraint: a used 3090 (24GB) fits 13B at Q5 easily; a 4070 Super (16GB) works with Q4 quantization.'},
+    {r:'u',t:'Compare power draw and noise for a desk setup.'}]}),
+  mk({id:'c16',title:'Refactor React state management',model:'Mythical',mode:'Coding',status:'processing',messageCount:19,updatedAt:ago(20*H),createdAt:ago(22*H),tags:['react','state'],messages:[
+    {r:'u',t:'Our app has prop drilling six levels deep. Suggest a refactor path.'},
+    {r:'a',t:'Group state by domain, lift only shared slices, and replace cross-tree drilling with a lightweight store — context stays for DI only.'},
+    {r:'u',t:'Start with the auth slice.'}]}),
+  mk({id:'c17',title:'Summarize “Thinking, Fast and Slow”',model:'Sonet',mode:'General',messageCount:6,updatedAt:ago(12*D),createdAt:ago(12*D+2*H),tags:['books'],messages:[
+    {r:'u',t:'Give me the five most actionable ideas from Thinking, Fast and Slow.'},
+    {r:'a',t:'Anchoring, loss aversion, the planning fallacy, substitution, and the outside view — each with a daily countermeasure.'},
+    {r:'u',t:'Expand the planning fallacy one.'}]}),
+  mk({id:'c18',title:'Write unit tests for payment module',model:'Mythical',mode:'Coding',messageCount:24,updatedAt:ago(15*D),createdAt:ago(15*D+4*H),tags:['testing','payments'],messages:[
+    {r:'u',t:'Write pytest cases for our charge() function, including failure paths.'},
+    {r:'a',t:'Cover: successful charge, card declined, gateway timeout with retry, idempotency key reuse, and rounding on minor units.'},
+    {r:'u',t:'Add property-based tests for rounding.'}]}),
+  mk({id:'c19',title:'Itinerary for a week in Kyoto',model:'Rapid',mode:'General',favorite:true,messageCount:13,updatedAt:ago(18*D),createdAt:ago(18*D+3*H),tags:['travel'],messages:[
+    {r:'u',t:'Plan a 7-day Kyoto itinerary — temples, food, and one day trip.'},
+    {r:'a',t:'Day 1: Higashiyama walk at dawn before crowds. Day 4: Nara day trip. Evenings reserved for Pontocho alley food.'},
+    {r:'u',t:'Add rainy-day backups.'}]}),
+  mk({id:'c20',title:'Translate research abstract to plain English',model:'Sonet',mode:'Writing',messageCount:5,updatedAt:ago(21*D),createdAt:ago(21*D+1*H),tags:['science'],messages:[
+    {r:'u',t:'Rewrite this materials-science abstract for a general audience.'},
+    {r:'a',t:'"Researchers found a way to make batteries charge faster by rearranging how ions travel inside them — like widening highway exits."'},
+    {r:'u',t:'Perfect. One sentence shorter.'}]}),
+  mk({id:'c21',title:'History of the Apollo program',model:'Sonet',mode:'Research',messageCount:17,updatedAt:ago(24*D),createdAt:ago(24*D+5*H),tags:['space','history'],messages:[
+    {r:'u',t:'Walk me through the key milestones of Apollo, 1961 to 1972.'},
+    {r:'a',t:'From the 1961 commitment through the Apollo 1 fire, the Apollo 8 orbit, and the July 1969 landing — then six more missions of science.'},
+    {r:'u',t:'Which mission was the riskiest?'}]}),
+  mk({id:'c22',title:'Fix CORS errors in fetch calls',model:'Rapid',mode:'Coding',archived:true,status:'archived',messageCount:9,updatedAt:ago(40*D),createdAt:ago(40*D+2*H),tags:['cors','web'],messages:[
+    {r:'u',t:'Getting CORS errors calling my API from localhost.'},
+    {r:'a',t:'Add CORSMiddleware to FastAPI with allow_origins for your dev origin — and make sure the browser request is not being cached.'},
+    {r:'u',t:'That fixed it.'}]}),
+  mk({id:'c23',title:'Old marketing copy experiments',model:'Sonet',mode:'Writing',archived:true,status:'archived',messageCount:15,updatedAt:ago(55*D),createdAt:ago(55*D+6*H),tags:['copy'],messages:[
+    {r:'u',t:'Generate 10 headline variants for our beta waitlist page.'},
+    {r:'a',t:'Variants ranged from curiosity-led ("See what your data has been hiding") to direct ("Join the beta — 200 seats").'},
+    {r:'u',t:'Shortlist the three most distinct.'}]}),
+  mk({id:'c24',title:'Prototype chatbot prompt library',model:'Brainstormer',mode:'General',archived:true,status:'archived',messageCount:31,updatedAt:ago(70*D),createdAt:ago(70*D+8*H),tags:['prompts'],messages:[
+    {r:'u',t:'Help me structure a reusable prompt library for support bots.'},
+    {r:'a',t:'Organize by intent, each entry holding a system frame, few-shot examples, and guardrail notes. Version them like code.'},
+    {r:'u',t:'Draft the refund-intent entry.'}]})
+];}
 
-function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+/* In-memory "server" store. Never claimed as persistence. */
+let DB = seedData();
+
+/* ---------- 4. API layer (future FastAPI-ready) ---------- */
+class ApiError extends Error{ constructor(status,msg){ super(msg); this.status=status; } }
+const api=(()=>{
+  const delay=ms=>new Promise(r=>setTimeout(r,ms));
+  const latency=()=>delay(110+Math.random()*140);
+  const clone=o=>JSON.parse(JSON.stringify(o));
+  const find=id=>{ const c=DB.find(x=>x.id===id); if(!c) throw new ApiError(404,'Conversation not found'); return c; };
+  return {
+    /* future: GET /history */
+    async getHistory(){ await latency(); return DB.map(clone); },
+    /* future: GET /history/{conversation_id} */
+    async getConversation(id){ await latency(); return clone(find(id)); },
+    /* future: PATCH /history/{conversation_id} */
+    async updateConversation(id,patch){ await latency(); const c=find(id); Object.assign(c,patch); return clone(c); },
+    /* future: DELETE /history/{conversation_id} */
+    async deleteConversation(id){ await latency(); const i=DB.findIndex(x=>x.id===id); if(i<0) throw new ApiError(404,'Conversation not found'); DB.splice(i,1); return {ok:true}; },
+    /* future: POST /history/bulk */
+    async bulkAction(ids,action,value){ await latency();
+      ids.forEach(id=>{ const c=DB.find(x=>x.id===id); if(!c) return;
+        if(action==='delete'){ DB=DB.filter(x=>x.id!==id); }
+        else if(action==='patch'){ Object.assign(c,value); } });
+      return {updated:ids.length}; },
+    /* future: GET /models */
+    async getModels(){ await delay(60); return Object.keys(MODELS); },
+    /* future: GET /health */
+    async refresh(){ await latency(); return {ok:true, count:DB.length}; }
+  };
+})();
+
+/* ---------- 5. Centralized state (single source of truth) ---------- */
+const state={
+  conversations:[],
+  selectedConversationId:null,
+  selectedConversationIds:[],
+  searchQuery:'',
+  filters:{ statuses:[], modes:[], models:[], date:null },
+  sort:'updated',
+  viewMode:'list',
+  sidebarCollapsed:false,
+  previewOpen:false,
+  loading:false,
+  refreshing:false,
+  theme:'dark'
+};
+let pendingDeleteIds=[];
+
+/* ---------- 6. Pipeline: search → filters → sort (never mutates source) ---------- */
+function pipeline(){
+  let list=state.conversations.slice();
+  const q=state.searchQuery.trim().toLowerCase();
+  if(q) list=list.filter(c=>(c.title+' '+c.preview+' '+c.model+' '+c.mode+' '+(c.tags||[]).join(' ')).toLowerCase().includes(q));
+  const f=state.filters;
+  list = f.statuses.includes('archived') ? list.filter(c=>c.archived) : list.filter(c=>!c.archived);
+  if(f.statuses.includes('pinned')) list=list.filter(c=>c.pinned);
+  if(f.statuses.includes('favorites')) list=list.filter(c=>c.favorite);
+  if(f.modes.length) list=list.filter(c=>f.modes.includes(c.mode));
+  if(f.models.length) list=list.filter(c=>f.models.includes(c.model));
+  if(f.date) list=list.filter(c=>inDateRange(c.updatedAt,f.date));
+  list.sort(SORTS[state.sort].fn);
+  return list;
 }
+function activeFilterCount(){ const f=state.filters; return f.statuses.length+f.modes.length+f.models.length+(f.date?1:0); }
+function getConv(id){ return state.conversations.find(c=>c.id===id)||null; }
 
-/* ============================================================================
-   FILTER / SORT PIPELINE
-   ============================================================================ */
+/* ---------- 7. Rendering ---------- */
+const hist=()=>$('#historyArea');
 
-function getFiltered() {
-    let items = historyData.filter(item => {
-        if (state.type !== 'all' && item.type !== state.type) return false;
-        if (state.favoritesOnly && !item.favorite) return false;
-        if (state.search) {
-            const q = state.search.toLowerCase();
-            if (!item.title.toLowerCase().includes(q) && !item.snippet.toLowerCase().includes(q)) return false;
-        }
-        return true;
+function modelBadge(name){
+  const b=el('span','mbadge'); b.style.setProperty('--mc',MODELS[name].color);
+  const dot=el('i'); const t=el('span',null,name); b.append(dot,t);
+  b.title=MODELS[name].desc; return b;
+}
+function modeBadge(name){ const b=el('span','modebadge mode-'+name,name); b.title='Mode: '+name; return b; }
+function statusEl(c){
+  const s=STATUS[c.status]||STATUS.completed;
+  const w=el('span','status'+(s.pulse?' pulse':'')); w.style.setProperty('--sc',s.color);
+  w.append(el('i'),el('em',null,s.label)); w.title='Status: '+s.label; return w;
+}
+function iconBtn(action,label,icName,extraClass){
+  const b=el('button','iconbtn '+(extraClass||'')); b.type='button'; b.dataset.action=action;
+  b.setAttribute('aria-label',label); b.dataset.tip=label; b.classList.add('tip-b');
+  b.innerHTML=icon(icName); return b;
+}
+function populateConv(art,c,view,i){
+  art.dataset.id=c.id; art.tabIndex=0;
+  art.style.setProperty('--d',Math.min(i*30,360)+'ms');
+  art.setAttribute('aria-label',c.title);
+  const isSel=state.selectedConversationIds.includes(c.id);
+  const sel=el('button','sel'); sel.type='button'; sel.dataset.action='select';
+  sel.setAttribute('aria-pressed',String(isSel)); sel.setAttribute('aria-label','Select "'+c.title+'"');
+  sel.innerHTML=icon('check');
+  const main=el('div','conv-main');
+  const top=el('div','conv-top');
+  top.append(el('h3','conv-title',c.title));
+  if(c.pinned){ const pf=el('span','pinflag'); pf.innerHTML=icon('pin'); pf.title='Pinned'; top.append(pf); }
+  top.append(statusEl(c));
+  const pv=el('p','conv-preview',c.preview);
+  const meta=el('div','conv-meta');
+  meta.append(modelBadge(c.model),modeBadge(c.mode));
+  const mi=el('span','mitem'); mi.innerHTML=icon('msg'); mi.append(el('span',null,c.messageCount+' msgs'));
+  const ti=el('span','mitem'); ti.innerHTML=icon('clock'); ti.append(el('span',null,fmtRelative(c.updatedAt)));
+  meta.append(mi,ti);
+  (c.tags||[]).slice(0,2).forEach(t=>meta.append(el('span','tag','#'+t)));
+  main.append(top,pv,meta);
+  const act=el('div','conv-actions');
+  const fav=iconBtn('favorite',c.favorite?'Remove from favorites':'Add to favorites','star','fav'+(c.favorite?' on':''));
+  fav.setAttribute('aria-pressed',String(c.favorite));
+  const open=iconBtn('open','Open in chat','open','act-more-open');
+  const more=iconBtn('more','More actions','more'); more.setAttribute('aria-haspopup','menu');
+  act.append(fav,open,more);
+  art.append(sel,main,act);
+  art.classList.toggle('selected',isSel);
+  art.classList.toggle('current',state.previewOpen&&state.selectedConversationId===c.id);
+  if(c.pinned)art.classList.add('is-pinned');
+  if(c.archived)art.classList.add('is-archived');
+  return art;
+}
+function buildConv(c,view,i){ return populateConv(el('article','conv v-'+view),c,view,i); }
+
+function buildSection(label,items,view,pinIcon){
+  const sec=el('section','h-section');
+  const h=el('h2','s-label');
+  if(pinIcon)h.innerHTML=icon('pin');
+  h.append(el('span',null,label));
+  const cnt=el('span','s-count',String(items.length)); h.append(cnt);
+  const wrap=el('div',view==='grid'?'v-grid':'v-list');
+  items.forEach((c,i)=>wrap.append(buildConv(c,view==='grid'?'grid':'list',i)));
+  sec.append(h,wrap); return sec;
+}
+function buildTimeline(list){
+  const wrap=el('div','timeline');
+  const groups=new Map();
+  list.forEach(c=>{ const k=dayKey(c.updatedAt); if(!groups.has(k))groups.set(k,[]); groups.get(k).push(c); });
+  let gi=0;
+  groups.forEach((items,k)=>{
+    const sec=el('section','tl-day'); sec.style.setProperty('--d',Math.min(gi++*70,350)+'ms');
+    const hd=el('header','tl-daylabel'); hd.append(el('span',null,dayLabel(k)),el('span','s-count',String(items.length)));
+    const iw=el('div','tl-items');
+    items.forEach((c,i)=>{
+      const art=populateConv(el('article','conv tl-item'),c,'timeline',i);
+      art.style.setProperty('--mc',MODELS[c.model].color);
+      art.classList.add('status-'+c.status);
+      const node=el('span','tl-node'); node.style.setProperty('--mc',MODELS[c.model].color);
+      const time=el('span','tl-time',fmtTime(new Date(c.updatedAt)));
+      art.prepend(node);
+      art.querySelector('.conv-main').prepend(time);
+      iw.append(art);
     });
-
-    items.sort((a, b) => {
-        if (state.sort === 'newest') return b.updated - a.updated;
-        if (state.sort === 'oldest') return a.updated - b.updated;
-        if (state.sort === 'az') return a.title.localeCompare(b.title);
-        return 0;
-    });
-
-    // Pinned items always float to top, preserving the chosen sort within each group
-    const pinned = items.filter(i => i.pinned);
-    const rest = items.filter(i => !i.pinned);
-    return { pinned, rest, all: [...pinned, ...rest] };
+    sec.append(hd,iw); wrap.append(sec);
+  });
+  return wrap;
+}
+function buildEmpty(){
+  const box=el('div','statebox');
+  const orb=el('div','orbit'); orb.innerHTML='<span class="ring"></span><span class="ring r2"></span><span class="core"></span><span class="sat"></span><span class="sat s2"></span>';
+  box.append(orb,el('h3',null,'No conversations yet'),el('p',null,'Your AI journey starts here. Begin a chat and it will appear in your memory center.'));
+  const b=el('button','btn btn-primary'); b.innerHTML=icon('spark','s'); b.append(el('span',null,'Start New Chat'));
+  b.addEventListener('click',newChat); box.append(b); return box;
+}
+function buildNoResults(){
+  const box=el('div','statebox');
+  const ic=el('div','nores-ic'); ic.innerHTML=icon('search');
+  box.append(ic,el('h3',null,'No conversations found'),el('p',null,'Try changing your search or filters.'));
+  const row=el('div','sb-actions');
+  const b1=el('button','btn','Clear Search'); const b2=el('button','btn','Clear Filters');
+  b1.addEventListener('click',()=>{ ui.searchInput.value=''; state.searchQuery=''; syncSearchClear(); renderAll(); });
+  b2.addEventListener('click',()=>{ resetFilters(); });
+  row.append(b1,b2); box.append(row); return box;
+}
+function buildSkeleton(){
+  const wrap=el('div','v-list');
+  for(let i=0;i<6;i++){
+    const c=el('article','conv skel'); c.setAttribute('aria-hidden','true'); c.style.setProperty('--d',(i*60)+'ms');
+    const m=el('div','conv-main');
+    m.append(el('div','sk sk-t'),el('div','sk sk-p'),el('div','sk sk-m'));
+    c.append(m); wrap.append(c);
+  }
+  return wrap;
 }
 
-/* ============================================================================
-   RENDER
-   ============================================================================ */
+function renderSkeleton(){ hist().setAttribute('aria-busy','true'); hist().replaceChildren(buildSkeleton()); }
 
-const listEl = document.getElementById('historyList');
-const emptyState = document.getElementById('emptyState');
-const noResultsState = document.getElementById('noResultsState');
-const loadMoreRow = document.getElementById('loadMoreRow');
-const loadMoreBtn = document.getElementById('loadMoreBtn');
-const loadMoreCount = document.getElementById('loadMoreCount');
-const listMeta = document.getElementById('listMeta');
-const showingCountEl = document.getElementById('showingCount');
-const totalCountEl = document.getElementById('totalCount');
-
-function itemHtml(item) {
-    const icon = item.type === 'chat' ? '💬' : '🔎';
-    const metaRight = item.type === 'chat'
-        ? `<span class="mono">${item.model}</span><span class="dot-sep">·</span><span>${item.count} messages</span>`
-        : `<span class="item-tag">Research</span><span class="dot-sep">·</span><span>${item.sources} sources</span>`;
-
-    return `
-    <li class="history-item ${item.pinned ? 'pinned' : ''}" data-id="${item.id}">
-        <div class="item-icon ${item.type}" aria-hidden="true">${icon}</div>
-        <div class="item-body">
-            <div class="item-title-row">
-                <span class="item-title" id="title-${item.id}">${escapeHtml(item.title)}</span>
-                ${item.pinned ? '<span class="badge-pin" title="Pinned" aria-label="Pinned">📌</span>' : ''}
-                ${item.favorite ? '<span class="badge-fav" title="Favorite" aria-label="Favorite">♥</span>' : ''}
-            </div>
-            <p class="item-snippet">${escapeHtml(item.snippet)}</p>
-            <div class="item-meta">
-                <span>${timeAgo(item.updated)}</span>
-                <span class="dot-sep">·</span>
-                ${metaRight}
-            </div>
-        </div>
-        <div class="item-actions">
-            <button class="icon-btn ${item.pinned ? 'active-pin' : ''}" data-action="pin" aria-label="${item.pinned ? 'Unpin' : 'Pin'} this item" title="${item.pinned ? 'Unpin' : 'Pin'}">📌</button>
-            <button class="icon-btn ${item.favorite ? 'active-fav' : ''}" data-action="favorite" aria-label="${item.favorite ? 'Remove from favorites' : 'Add to favorites'}" title="${item.favorite ? 'Unfavorite' : 'Favorite'}">${item.favorite ? '♥' : '♡'}</button>
-            <button class="icon-btn" data-action="rename" aria-label="Rename this item" title="Rename">✎</button>
-            <button class="icon-btn danger" data-action="delete" aria-label="Delete this item" title="Delete">🗑</button>
-        </div>
-    </li>`;
+function renderHistory(){
+  const area=hist();
+  const visible=pipeline();
+  area.replaceChildren();
+  area.setAttribute('aria-busy','false');
+  if(!state.loading && state.conversations.length===0){ area.append(buildEmpty()); updateBulkBar(); return; }
+  if(visible.length===0){ area.append(buildNoResults()); updateBulkBar(); return; }
+  if(state.viewMode==='timeline'){ area.append(buildTimeline(visible)); }
+  else{
+    const pinned=visible.filter(c=>c.pinned), rest=visible.filter(c=>!c.pinned);
+    if(pinned.length) area.append(buildSection('Pinned',pinned,state.viewMode,true));
+    if(rest.length) area.append(buildSection(pinned.length?'Recent history':'Conversations',rest,state.viewMode,false));
+  }
+  updateBulkBar();
+}
+function countUp(node,to){
+  if(prm()){ node.textContent=to; node.dataset.v=to; return; }
+  const from=+node.dataset.v||0; node.dataset.v=to;
+  if(from===to){ node.textContent=to; return; }
+  const t0=performance.now(),dur=560;
+  (function step(t){ const k=Math.min(1,(t-t0)/dur);
+    node.textContent=Math.round(from+(to-from)*(1-Math.pow(1-k,3)));
+    if(k<1)requestAnimationFrame(step); })(t0);
+}
+function renderMetrics(){
+  const all=state.conversations, live=all.filter(c=>!c.archived);
+  countUp($('#mTotal'),all.length);
+  countUp($('#mPinned'),live.filter(c=>c.pinned).length);
+  countUp($('#mFavs'),live.filter(c=>c.favorite).length);
+  countUp($('#mWeek'),live.filter(c=>inDateRange(c.updatedAt,'week')).length);
+  countUp($('#mResearch'),live.filter(c=>c.mode==='Research').length);
+}
+function renderChips(){
+  const row=$('#chipsRow'); row.replaceChildren();
+  const f=state.filters; const entries=[];
+  f.statuses.forEach(s=>entries.push({kind:'status',val:s,label:s[0].toUpperCase()+s.slice(1)}));
+  f.modes.forEach(m=>entries.push({kind:'mode',val:m,label:m}));
+  f.models.forEach(m=>entries.push({kind:'model',val:m,label:m}));
+  if(f.date){ const L={today:'Today',yesterday:'Yesterday',week:'This Week',month:'This Month',older:'Older'};
+    entries.push({kind:'date',val:f.date,label:L[f.date]}); }
+  row.hidden=entries.length===0;
+  entries.forEach(e=>{
+    const chip=el('span','chip');
+    chip.append(el('span',null,e.label));
+    const x=el('button','cx'); x.innerHTML=icon('x'); x.setAttribute('aria-label','Remove filter '+e.label);
+    x.addEventListener('click',()=>toggleFilter(e.kind,e.val));
+    chip.append(x); row.append(chip);
+  });
+  if(entries.length){
+    const clr=el('button','chips-clear','Clear all');
+    clr.addEventListener('click',resetFilters); row.append(clr);
+  }
+  const n=entries.length, fc=$('#filterCount');
+  fc.hidden=n===0; fc.textContent=n;
+}
+function syncFilterPanel(){
+  const f=state.filters;
+  $$('#filterPanel .fopt').forEach(b=>{
+    const k=b.dataset.f,v=b.dataset.v; let on=false;
+    if(k==='status')on=v==='all'?f.statuses.length===0:f.statuses.includes(v);
+    else if(k==='mode')on=f.modes.includes(v);
+    else if(k==='model')on=f.models.includes(v);
+    else on=f.date===v;
+    b.classList.toggle('active',on);
+    b.setAttribute('aria-pressed',String(on));
+  });
+}
+function renderSortMenu(){
+  const m=$('#sortMenu'); m.replaceChildren();
+  Object.entries(SORTS).forEach(([key,cfg])=>{
+    const b=el('button','menu-item'); b.setAttribute('role','menuitemradio');
+    b.setAttribute('aria-checked',String(state.sort===key)); b.dataset.s=key;
+    b.append(el('span',null,cfg.label));
+    const ck=el('span','mi-check'); ck.innerHTML=icon('check','s'); b.append(ck);
+    b.addEventListener('click',()=>{ state.sort=key; $('#sortLabel').textContent=cfg.label; hidePopovers(); renderHistory(); });
+    m.append(b);
+  });
+}
+function syncViewSwitch(){
+  const map={list:'#btnViewList',grid:'#btnViewGrid',timeline:'#btnViewTimeline'};
+  Object.entries(map).forEach(([v,sel])=>{
+    const b=$(sel), on=state.viewMode===v;
+    b.classList.toggle('active',on); b.setAttribute('aria-pressed',String(on));
+  });
+}
+function syncSearchClear(){ $('#btnSearchClear').hidden=!ui.searchInput.value; }
+function updateBulkBar(){
+  const n=state.selectedConversationIds.length;
+  $('#bulkBar').classList.toggle('show',n>0);
+  $('#bulkCount').textContent=n+' selected';
+}
+function renderAll(){
+  renderMetrics(); renderChips(); syncFilterPanel(); syncViewSwitch();
+  $('#sortLabel').textContent=SORTS[state.sort].label;
+  renderHistory(); syncPreviewButtons();
 }
 
-function render() {
-    // Update type counts
-    document.getElementById('countAll').textContent = historyData.length;
-    document.getElementById('countChat').textContent = historyData.filter(i => i.type === 'chat').length;
-    document.getElementById('countResearch').textContent = historyData.filter(i => i.type === 'research').length;
-
-    if (historyData.length === 0) {
-        listEl.innerHTML = '';
-        emptyState.classList.add('show');
-        noResultsState.classList.remove('show');
-        loadMoreRow.style.display = 'none';
-        listMeta.style.display = 'none';
-        return;
+/* ---------- 8. Preview panel ---------- */
+function openPreview(id){
+  const c=getConv(id); if(!c) return;
+  state.selectedConversationId=id; state.previewOpen=true;
+  $$('.conv.current').forEach(n=>n.classList.remove('current'));
+  const node=hist().querySelector('[data-id="'+CSS.escape(id)+'"]');
+  if(node)node.classList.add('current');
+  renderPreview(c);
+  $('#previewPanel').classList.add('open'); $('#previewPanel').setAttribute('aria-hidden','false');
+  $('#previewBackdrop').classList.toggle('show',innerWidth<1280);
+  document.body.classList.add('pv-open');
+}
+function closePreview(){
+  state.previewOpen=false; state.selectedConversationId=null;
+  $('#previewPanel').classList.remove('open'); $('#previewPanel').setAttribute('aria-hidden','true');
+  $('#previewBackdrop').classList.remove('show');
+  document.body.classList.remove('pv-open');
+  $$('.conv.current').forEach(n=>n.classList.remove('current'));
+}
+function renderPreview(c){
+  $('#pvTitle').textContent=c.title;
+  const bg=$('#pvBadges'); bg.replaceChildren();
+  bg.append(modelBadge(c.model),modeBadge(c.mode),statusEl(c));
+  const meta=$('#pvMeta'); meta.replaceChildren();
+  [['Model',c.model],['Mode',c.mode],['Messages',c.messageCount],
+   ['Status',(STATUS[c.status]||STATUS.completed).label],
+   ['Created',fmtFull(c.createdAt)],['Updated',fmtRelative(c.updatedAt)]]
+  .forEach(([t,v])=>{ const cell=el('div','pv-cell'); cell.append(el('dt',null,t),el('dd',null,String(v))); meta.append(cell); });
+  const tags=$('#pvTags'); tags.replaceChildren();
+  if(c.tags&&c.tags.length)c.tags.forEach(t=>tags.append(el('span','tag','#'+t)));
+  else tags.append(el('span','tag','No tags'));
+  const msgs=$('#pvMessages'); msgs.replaceChildren();
+  c.messages.forEach((m,i)=>{
+    const li=el('li','pv-msg '+(m.r==='u'?'m-u':'m-a')); li.style.setProperty('--d',(i*70)+'ms');
+    li.append(el('span','who',m.r==='u'?'You':c.model));
+    li.append(el('span',null,m.t));
+    if(m.r==='a'){
+      const cp=el('button','pv-copy'); cp.innerHTML=icon('copy'); cp.setAttribute('aria-label','Copy reply');
+      cp.addEventListener('click',e=>{ e.stopPropagation(); copyText(m.t); });
+      li.append(cp);
     }
-    listMeta.style.display = 'flex';
+    msgs.append(li);
+  });
+  syncPreviewButtons();
+}
+function syncPreviewButtons(){
+  const c=getConv(state.selectedConversationId);
+  if(!c||!state.previewOpen)return;
+  $('#pvPin').setAttribute('aria-pressed',String(c.pinned));
+  $('#pvPin').classList.toggle('toggled',c.pinned);
+  $('#pvPin').dataset.tip=c.pinned?'Unpin':'Pin';
+  $('#pvFav').setAttribute('aria-pressed',String(c.favorite));
+  $('#pvFav').classList.toggle('toggled',c.favorite);
+  $('#pvFav').dataset.tip=c.favorite?'Unfavorite':'Favorite';
+  $('#pvArchive').setAttribute('aria-pressed',String(c.archived));
+  $('#pvArchive').classList.toggle('arch-on',c.archived);
+  $('#pvArchive').dataset.tip=c.archived?'Unarchive':'Archive';
+}
+async function copyText(t){
+  try{ await navigator.clipboard.writeText(t); toast('info','Copied to clipboard'); }
+  catch(e){ toast('warning','Copy not available in this browser'); }
+}
 
-    const { all } = getFiltered();
+/* ---------- 9. Popover system ---------- */
+let openPop=null, ctxState=null;
+function showPopover(trigger,panel,align){
+  if(openPop&&openPop.panel===panel){ hidePopovers(); return; }
+  hidePopovers();
+  panel.hidden=false;
+  const r=trigger.getBoundingClientRect(), pw=panel.offsetWidth, ph=panel.offsetHeight;
+  let left=align==='end'?r.right-pw:r.left;
+  left=Math.max(10,Math.min(left,innerWidth-pw-10));
+  let top=r.bottom+9;
+  if(top+ph>innerHeight-10)top=Math.max(10,r.top-ph-9);
+  panel.style.left=left+'px'; panel.style.top=top+'px';
+  requestAnimationFrame(()=>panel.classList.add('open'));
+  trigger.setAttribute('aria-expanded','true');
+  openPop={panel,trigger};
+}
+function hidePopovers(){
+  if(openPop){ openPop.panel.classList.remove('open'); openPop.panel.hidden=true;
+    openPop.trigger.setAttribute('aria-expanded','false'); openPop=null; }
+  hideCtx();
+}
+/* context menu */
+function openCtx(anchor,id){
+  const c=getConv(id); if(!c)return;
+  hidePopovers();
+  const menu=$('#ctxMenu'); menu.replaceChildren();
+  const item=(label,ic,act,danger)=>{
+    const b=el('button','menu-item'+(danger?' danger':'')); b.setAttribute('role','menuitem'); b.dataset.c=act;
+    b.innerHTML=icon(ic); b.append(el('span',null,label)); return b;
+  };
+  menu.append(item('Open in chat','open','open'),item('Preview','history','preview'),el('div','menu-sep'),
+    item('Rename','edit','rename'),item(c.pinned?'Unpin':'Pin','pin','pin'),
+    item(c.favorite?'Unfavorite':'Favorite','star','favorite'),
+    item(c.archived?'Unarchive':'Archive','archive','archive'),
+    el('div','menu-sep'),item('Delete','trash','delete',true));
+  menu.hidden=false;
+  const r=anchor.getBoundingClientRect(), mw=menu.offsetWidth, mh=menu.offsetHeight;
+  let left=Math.max(10,Math.min(r.right-mw,innerWidth-mw-10));
+  let top=r.bottom+7; if(top+mh>innerHeight-10)top=Math.max(10,r.top-mh-7);
+  menu.style.left=left+'px'; menu.style.top=top+'px';
+  requestAnimationFrame(()=>menu.classList.add('open'));
+  ctxState={id,anchor};
+  const first=menu.querySelector('.menu-item'); if(first)first.focus();
+}
+function hideCtx(){ const m=$('#ctxMenu'); if(ctxState){ m.classList.remove('open'); m.hidden=true; ctxState=null; } }
+menuAction($('#ctxMenu'),b=>{
+  const s=ctxState; if(!s)return;
+  const id=s.id; hideCtx();
+  const map={open:()=>openChat(id),preview:()=>openPreview(id),rename:()=>openRename(id),
+    pin:()=>togglePin(id),favorite:()=>toggleFavorite(id),archive:()=>toggleArchive(id),
+    delete:()=>openDelete([id])};
+  if(map[b.dataset.c])map[b.dataset.c]();
+});
+function menuAction(menu,fn){
+  menu.addEventListener('click',e=>{ const b=e.target.closest('.menu-item'); if(!b)return;
+    if(b.getAttribute('aria-disabled')==='true'){ toast('info','This feature arrives with the backend integration.'); return; } fn(b); });
+  menu.addEventListener('keydown',e=>{
+    if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;
+    e.preventDefault();
+    const items=$$('.menu-item',menu); if(!items.length)return;
+    let i=items.indexOf(document.activeElement);
+    i=e.key==='ArrowDown'?(i+1)%items.length:(i-1+items.length)%items.length;
+    items[i].focus();
+  });
+}
 
-    if (all.length === 0) {
-        listEl.innerHTML = '';
-        emptyState.classList.remove('show');
-        noResultsState.classList.add('show');
-        loadMoreRow.style.display = 'none';
-        showingCountEl.textContent = '0';
-        totalCountEl.textContent = historyData.length;
-        return;
+/* ---------- 10. Dialog system ---------- */
+const modal={
+  current:null,lastFocus:null,
+  open(root){ this.lastFocus=document.activeElement; root.hidden=false;
+    requestAnimationFrame(()=>root.classList.add('open'));
+    this.current=root; document.body.classList.add('locked');
+    setTimeout(()=>{ const f=root.querySelector('[autofocus],input,button'); if(f)f.focus(); },40); },
+  close(){ const r=this.current; if(!r)return; r.classList.remove('open'); this.current=null;
+    document.body.classList.remove('locked');
+    setTimeout(()=>{ r.hidden=true; },190);
+    if(this.lastFocus&&this.lastFocus.focus)this.lastFocus.focus(); }
+};
+$$('.dialog').forEach(d=>{
+  d.addEventListener('pointerdown',e=>{ if(e.target.dataset.close!==undefined&&e.target===e.currentTarget.querySelector('.dlg-backdrop'))modal.close(); });
+});
+
+/* rename */
+let renameTargetId=null;
+function openRename(id){
+  const c=getConv(id); if(!c)return;
+  renameTargetId=id;
+  $('#renameCurrent').textContent=c.title;
+  const inp=$('#renameInput'); inp.value=c.title;
+  $('#renameError').hidden=true;
+  modal.open($('#renameDialog')); inp.select();
+}
+function renameError(msg){ const e=$('#renameError'); e.textContent=msg; e.hidden=false; $('#renameInput').focus(); }
+async function saveRename(){
+  const inp=$('#renameInput'); const v=inp.value.trim();
+  if(!v){ renameError('Title cannot be empty or whitespace only.'); return; }
+  if(v.length>80){ renameError('Title is too long (max 80 characters).'); return; }
+  const id=renameTargetId; modal.close();
+  try{
+    await api.updateConversation(id,{title:v});
+    const c=getConv(id); if(c)c.title=v; else throw new ApiError(404,'Missing conversation');
+    renderAll(); if(state.previewOpen&&state.selectedConversationId===id)renderPreview(getConv(id));
+    toast('success','Conversation renamed');
+  }catch(err){ toast('error',err.message||'Rename failed'); }
+}
+$('#renameSave').addEventListener('click',saveRename);
+$('#renameCancel').addEventListener('click',()=>modal.close());
+$('#renameInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault();saveRename();} });
+$('#renameInput').addEventListener('input',()=>{ $('#renameError').hidden=true; });
+
+/* delete */
+function openDelete(ids){
+  pendingDeleteIds=ids;
+  $('#deleteText').innerHTML='';
+  const p=$('#deleteText');
+  if(ids.length===1){ const c=getConv(ids[0]);
+    p.append(document.createTextNode('“'+(c?c.title:'This conversation')+'” will be removed from temporary history.')); }
+  else p.append(document.createTextNode(ids.length+' conversations will be removed from temporary history.'));
+  modal.open($('#deleteDialog'));
+}
+$('#deleteCancel').addEventListener('click',()=>modal.close());
+$('#deleteConfirm').addEventListener('click',async()=>{
+  const ids=pendingDeleteIds.slice(); modal.close();
+  try{
+    if(ids.length===1)await api.deleteConversation(ids[0]);
+    else await api.bulkAction(ids,'delete');
+    state.conversations=state.conversations.filter(c=>!ids.includes(c.id));
+    state.selectedConversationIds=state.selectedConversationIds.filter(id=>!ids.includes(id));
+    if(ids.includes(state.selectedConversationId))closePreview();
+    renderAll();
+    toast('success',ids.length===1?'Conversation deleted':ids.length+' conversations deleted');
+  }catch(err){ toast('error',err.message||'Delete failed'); }
+});
+
+/* ---------- 11. Toasts ---------- */
+const T_ICON={success:'check',info:'info',warning:'alert',error:'alert'};
+function toast(type,msg){
+  const t=el('div','toast t-'+type); t.setAttribute('role','status');
+  const ic=el('span','t-ic'); ic.innerHTML=icon(T_ICON[type]||'info');
+  const m=el('span','t-msg',msg);
+  const x=el('button','t-x'); x.innerHTML=icon('x'); x.setAttribute('aria-label','Dismiss notification');
+  t.append(ic,m,x); $('#toasts').append(t);
+  requestAnimationFrame(()=>t.classList.add('in'));
+  const kill=()=>{ clearTimeout(t._t); t.classList.remove('out'.replace('out','out')); t.classList.add('out');
+    setTimeout(()=>t.remove(),280); };
+  x.addEventListener('click',kill);
+  t._t=setTimeout(kill,3800);
+}
+
+/* ---------- 12. Conversation actions ---------- */
+function newChat(){
+  const id='new-'+uid();
+  DB.unshift({id,title:'New conversation',preview:'A fresh session with Chatify AI.',model:'Rapid',mode:'General',
+    messageCount:0,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),
+    pinned:false,favorite:false,archived:false,status:'active',tags:[],messages:[]});
+  toast('info','Starting a new chat…');
+  location.href='chat.html?id='+encodeURIComponent(id);
+}
+function openChat(id){ location.href='chat.html?id='+encodeURIComponent(id); }
+
+async function applyPatch(id,patch,{toastMsg,animateFav,animatePin}={}){
+  try{
+    await api.updateConversation(id,patch);
+    const c=getConv(id);
+    if(!c){ toast('error','Conversation not found — it may have been removed.'); renderAll(); return null; }
+    Object.assign(c,patch);
+    renderAll();
+    if(state.previewOpen&&state.selectedConversationId===id)renderPreview(c);
+    if(toastMsg)toast('success',toastMsg);
+    if(animateFav){ const b=hist().querySelector('[data-id="'+CSS.escape(id)+'"] .fav');
+      if(b){ b.classList.add('pop'); setTimeout(()=>b.classList.remove('pop'),450);} }
+    if(animatePin){ const p=hist().querySelector('[data-id="'+CSS.escape(id)+'"] .pinflag');
+      if(p)p.classList.add('drop'); }
+    return c;
+  }catch(err){ toast('error',err.message||'Update failed'); return null; }
+}
+const togglePin=id=>{ const c=getConv(id); if(!c)return;
+  applyPatch(id,{pinned:!c.pinned},{toastMsg:c.pinned?'Unpinned':'Conversation pinned',animatePin:!c.pinned}); };
+const toggleFavorite=id=>{ const c=getConv(id); if(!c)return;
+  applyPatch(id,{favorite:!c.favorite},{toastMsg:c.favorite?'Removed from favorites':'Added to favorites',animateFav:!c.favorite}); };
+const toggleArchive=id=>{ const c=getConv(id); if(!c)return;
+  applyPatch(id,{archived:!c.archived,status:c.archived?'completed':'archived'},
+    {toastMsg:c.archived?'Conversation restored':'Conversation archived'});
+  if(state.previewOpen&&state.selectedConversationId===id&&!c.archived)closePreview(); };
+
+/* ---------- 13. Selection & bulk ---------- */
+function toggleSelect(id){
+  const i=state.selectedConversationIds.indexOf(id);
+  if(i>=0)state.selectedConversationIds.splice(i,1); else state.selectedConversationIds.push(id);
+  const node=hist().querySelector('[data-id="'+CSS.escape(id)+'"]');
+  if(node){ const on=state.selectedConversationIds.includes(id);
+    node.classList.toggle('selected',on);
+    const s=node.querySelector('.sel'); if(s)s.setAttribute('aria-pressed',String(on)); }
+  updateBulkBar();
+}
+function selectAllVisible(){
+  const ids=pipeline().map(c=>c.id);
+  if(!ids.length){ toast('warning','No conversations selected'); return; }
+  state.selectedConversationIds=ids.slice();
+  renderHistory(); toast('info',ids.length+' conversations selected');
+}
+function clearSelection(){
+  state.selectedConversationIds=[];
+  $$('.conv.selected',hist()).forEach(n=>{ n.classList.remove('selected');
+    const s=n.querySelector('.sel'); if(s)s.setAttribute('aria-pressed','false'); });
+  updateBulkBar();
+}
+async function bulkApply(action){
+  const ids=state.selectedConversationIds.slice();
+  if(!ids.length){ toast('warning','No conversations selected'); return; }
+  if(action==='delete'){ openDelete(ids); return; }
+  try{
+    if(action==='pin'){ const allPinned=ids.every(id=>{const c=getConv(id);return c&&c.pinned;});
+      await api.bulkAction(ids,'patch',{pinned:!allPinned});
+      ids.forEach(id=>{const c=getConv(id);if(c)c.pinned=!allPinned;});
+      toast('success',allPinned?'Unpinned '+ids.length:'Pinned '+ids.length+' conversations'); }
+    else if(action==='favorite'){ const allFav=ids.every(id=>{const c=getConv(id);return c&&c.favorite;});
+      await api.bulkAction(ids,'patch',{favorite:!allFav});
+      ids.forEach(id=>{const c=getConv(id);if(c)c.favorite=!allFav;});
+      toast('success',allFav?'Removed '+ids.length+' from favorites':'Favorited '+ids.length+' conversations'); }
+    else if(action==='archive'){ const anyLive=ids.some(id=>{const c=getConv(id);return c&&!c.archived;});
+      await api.bulkAction(ids,'patch',anyLive?{archived:true,status:'archived'}:{archived:false,status:'completed'});
+      ids.forEach(id=>{const c=getConv(id);if(c){c.archived=anyLive;c.status=anyLive?'archived':'completed';}});
+      toast('success',anyLive?'Archived '+ids.length+' conversations':'Restored '+ids.length+' conversations'); }
+    clearSelection(); renderAll();
+  }catch(err){ toast('error','Bulk action failed'); }
+}
+$('#bulkBar').addEventListener('click',e=>{
+  const b=e.target.closest('[data-bulk]'); if(!b)return;
+  const a=b.dataset.bulk;
+  if(a==='all')selectAllVisible(); else bulkApply(a);
+});
+$('#bulkClear').addEventListener('click',clearSelection);
+
+/* ---------- 14. Filters / search / sort / views ---------- */
+function toggleFilter(kind,val){
+  const f=state.filters;
+  if(kind==='status'){
+    if(val==='all')f.statuses=[];
+    else{ const i=f.statuses.indexOf(val); i>=0?f.statuses.splice(i,1):f.statuses.push(val); }
+  }else if(kind==='mode'){ const i=f.modes.indexOf(val); i>=0?f.modes.splice(i,1):f.modes.push(val); }
+  else if(kind==='model'){ const i=f.models.indexOf(val); i>=0?f.models.splice(i,1):f.models.push(val); }
+  else f.date=f.date===val?null:val;
+  syncFilterPanel(); renderChips(); renderHistory();
+}
+function resetFilters(){
+  state.filters={statuses:[],modes:[],models:[],date:null};
+  syncFilterPanel(); renderChips(); renderHistory();
+}
+$('#filterPanel').addEventListener('click',e=>{
+  const b=e.target.closest('.fopt'); if(b)toggleFilter(b.dataset.f,b.dataset.v);
+});
+$('#btnFilterClear').addEventListener('click',resetFilters);
+const doSearch=debounce(()=>{ state.searchQuery=ui.searchInput.value; renderHistory(); },170);
+function setView(v){ state.viewMode=v; syncViewSwitch(); renderHistory(); }
+
+/* ---------- 15. Refresh ---------- */
+async function refresh(){
+  if(state.refreshing)return;
+  state.refreshing=true; $('#btnRefresh').classList.add('spinning');
+  try{
+    await api.refresh();
+    state.conversations=await api.getHistory();
+    state.selectedConversationIds=state.selectedConversationIds.filter(id=>getConv(id));
+    if(state.previewOpen&&!getConv(state.selectedConversationId))closePreview();
+    renderAll(); toast('info','History refreshed');
+  }catch(err){ toast('error','Refresh failed — showing cached session data'); }
+  finally{ state.refreshing=false; $('#btnRefresh').classList.remove('spinning'); }
+}
+
+/* ---------- 16. History area delegation ---------- */
+hist().addEventListener('click',e=>{
+  const actEl=e.target.closest('[data-action]');
+  const card=e.target.closest('[data-id]');
+  if(!card)return;
+  const id=card.dataset.id;
+  if(actEl){
+    e.preventDefault();
+    const a=actEl.dataset.action;
+    if(a==='select')toggleSelect(id);
+    else if(a==='favorite')toggleFavorite(id);
+    else if(a==='open')openChat(id);
+    else if(a==='more')openCtx(actEl,id);
+    return;
+  }
+  openPreview(id);
+});
+hist().addEventListener('dblclick',e=>{
+  const card=e.target.closest('[data-id]');
+  if(card&&!e.target.closest('[data-action]'))openChat(card.dataset.id);
+});
+hist().addEventListener('keydown',e=>{
+  const card=e.target.closest('.conv'); if(!card)return;
+  const id=card.dataset.id;
+  if(e.key==='Enter'){ e.preventDefault(); openPreview(id); }
+  else if(e.key===' '){ e.preventDefault(); toggleSelect(id); }
+  else if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();
+    const cards=$$('.conv[data-id]',hist());
+    let i=cards.indexOf(card);
+    i=e.key==='ArrowDown'?Math.min(cards.length-1,i+1):Math.max(0,i-1);
+    cards[i].focus();
+  }
+});
+
+/* ---------- 17. Background particles ---------- */
+const bg={
+  init(){
+    if(prm())return;
+    const cv=$('#bgCanvas'); const ctx=cv.getContext('2d');
+    let w,h,parts=[],raf=0;
+    const colors=['rgba(124,138,255,','rgba(69,214,255,','rgba(167,139,250,'];
+    const resize=()=>{ w=cv.width=innerWidth; h=cv.height=innerHeight; };
+    resize(); addEventListener('resize',debounce(resize,200));
+    for(let i=0;i<34;i++)parts.push({
+      x:Math.random()*innerWidth,y:Math.random()*innerHeight,
+      r:.6+Math.random()*1.5,vy:-(.06+Math.random()*.16),vx:(Math.random()-.5)*.08,
+      a:.06+Math.random()*.22,tw:Math.random()*6.28,c:colors[i%3]});
+    const loop=t=>{
+      raf=requestAnimationFrame(loop);
+      if(document.hidden)return;
+      ctx.clearRect(0,0,w,h);
+      parts.forEach(p=>{
+        p.x+=p.vx; p.y+=p.vy; p.tw+=.02;
+        if(p.y<-6){p.y=h+6;p.x=Math.random()*w;}
+        if(p.x<-6)p.x=w+6; if(p.x>w+6)p.x=-6;
+        ctx.beginPath();
+        ctx.fillStyle=p.c+(p.a*(0.7+0.3*Math.sin(p.tw)))+')';
+        ctx.arc(p.x,p.y,p.r,0,6.283); ctx.fill();
+      });
+    };
+    raf=requestAnimationFrame(loop);
+  }
+};
+
+/* ---------- 18. Sidebar / responsive ---------- */
+function openDrawer(){ document.body.classList.add('nav-open'); $('#btnMenu').setAttribute('aria-expanded','true'); }
+function closeDrawer(){ document.body.classList.remove('nav-open'); $('#btnMenu').setAttribute('aria-expanded','false'); }
+$('#btnMenu').addEventListener('click',()=>document.body.classList.contains('nav-open')?closeDrawer():openDrawer());
+$('#sidebarBackdrop').addEventListener('click',closeDrawer);
+$('#btnCollapse').addEventListener('click',()=>{
+  state.sidebarCollapsed=!state.sidebarCollapsed;
+  document.body.classList.toggle('nav-collapsed',state.sidebarCollapsed);
+  $('#btnCollapse').dataset.tip=state.sidebarCollapsed?'Expand sidebar':'Collapse sidebar';
+});
+
+/* ---------- 19. Global event wiring ---------- */
+const ui={};
+function wire(){
+  ui.searchInput=$('#searchInput');
+  ui.searchInput.addEventListener('input',()=>{ syncSearchClear(); doSearch(); });
+  ui.searchInput.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){ if(ui.searchInput.value){ ui.searchInput.value=''; state.searchQuery=''; syncSearchClear(); renderHistory(); } else ui.searchInput.blur(); }
+  });
+  $('#btnSearchClear').addEventListener('click',()=>{
+    ui.searchInput.value=''; state.searchQuery=''; syncSearchClear(); renderHistory(); ui.searchInput.focus(); });
+  $('#btnFilters').addEventListener('click',e=>{ e.stopPropagation(); showPopover($('#btnFilters'),$('#filterPanel'),'start'); });
+  $('#btnSort').addEventListener('click',e=>{ e.stopPropagation(); renderSortMenu(); showPopover($('#btnSort'),$('#sortMenu'),'end'); });
+  $('#btnPageMore').addEventListener('click',e=>{ e.stopPropagation(); showPopover($('#btnPageMore'),$('#pageMenu'),'end'); });
+  menuAction($('#pageMenu'),b=>{
+    const a=b.dataset.p; hidePopovers();
+    if(a==='select-all')selectAllVisible();
+    else if(a==='clear-sel'){ clearSelection(); toast('info','Selection cleared'); }
+    else if(a==='refresh')refresh();
+  });
+  $('#btnViewList').addEventListener('click',()=>setView('list'));
+  $('#btnViewGrid').addEventListener('click',()=>setView('grid'));
+  $('#btnViewTimeline').addEventListener('click',()=>setView('timeline'));
+  $('#btnRefresh').addEventListener('click',refresh);
+  $('#btnNewChat').addEventListener('click',newChat);
+  $('#btnNewChatSide').addEventListener('click',e=>{ e.preventDefault(); newChat(); });
+  $('#btnSbSearch').addEventListener('click',()=>{ closeDrawer(); ui.searchInput.scrollIntoView({block:'center'}); ui.searchInput.focus(); });
+  $('#btnSettings').addEventListener('click',()=>toast('info','Settings sync arrives with the backend integration.'));
+  $('#btnProfile').addEventListener('click',()=>toast('info','Guest session — accounts arrive with the backend.'));
+  /* preview */
+  $('#previewClose').addEventListener('click',closePreview);
+  $('#previewBackdrop').addEventListener('click',closePreview);
+  $('#pvOpen').addEventListener('click',()=>{ if(state.selectedConversationId)openChat(state.selectedConversationId); });
+  $('#pvRename').addEventListener('click',()=>{ if(state.selectedConversationId)openRename(state.selectedConversationId); });
+  $('#pvPin').addEventListener('click',()=>{ if(state.selectedConversationId)togglePin(state.selectedConversationId); });
+  $('#pvFav').addEventListener('click',()=>{ if(state.selectedConversationId)toggleFavorite(state.selectedConversationId); });
+  $('#pvArchive').addEventListener('click',()=>{ if(state.selectedConversationId)toggleArchive(state.selectedConversationId); });
+  $('#pvDelete').addEventListener('click',()=>{ if(state.selectedConversationId)openDelete([state.selectedConversationId]); });
+  /* outside-click closes layers */
+  document.addEventListener('pointerdown',e=>{
+    if(!openPop)return;
+    if(openPop.panel.contains(e.target)||openPop.trigger.contains(e.target))return;
+    if($('#ctxMenu').contains(e.target))return;
+    hidePopovers();
+  });
+  $('#ctxMenu').addEventListener('pointerdown',e=>e.stopPropagation());
+  addEventListener('scroll',()=>{ if(openPop)hidePopovers(); },{capture:true,passive:true});
+  addEventListener('resize',()=>{ hidePopovers(); $('#previewBackdrop').classList.toggle('show',state.previewOpen&&innerWidth<1280); });
+  /* keyboard */
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){
+      if(modal.current){ modal.close(); return; }
+      if(ctxState){ const a=ctxState.anchor; hideCtx(); if(a)a.focus(); return; }
+      if(openPop){ hidePopovers(); return; }
+      if(document.body.classList.contains('nav-open')){ closeDrawer(); return; }
+      if(state.previewOpen){ closePreview(); return; }
+      return;
     }
-
-    emptyState.classList.remove('show');
-    noResultsState.classList.remove('show');
-
-    const visible = all.slice(0, state.visibleCount);
-    listEl.innerHTML = visible.map(itemHtml).join('');
-
-    showingCountEl.textContent = visible.length;
-    totalCountEl.textContent = all.length;
-
-    if (state.visibleCount < all.length) {
-        loadMoreRow.style.display = 'flex';
-        loadMoreBtn.disabled = false;
-        loadMoreBtn.textContent = 'Load more';
-        loadMoreCount.textContent = `${all.length - visible.length} more available`;
-    } else {
-        loadMoreRow.style.display = all.length > PAGE_SIZE ? 'flex' : 'none';
-        loadMoreBtn.disabled = true;
-        loadMoreBtn.textContent = 'All caught up';
-        loadMoreCount.textContent = '';
+    const typing=/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+    if(e.key==='/'&&!typing){ e.preventDefault(); ui.searchInput.focus(); ui.searchInput.select(); }
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); ui.searchInput.focus(); }
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='a'&&!typing&&!modal.current){
+      if(e.target.closest&&e.target.closest('#historyArea')){ e.preventDefault(); selectAllVisible(); }
     }
-
-    attachItemListeners();
-}
-
-/* ============================================================================
-   ITEM ACTIONS — pin, favorite, rename, delete
-   ============================================================================ */
-
-let pendingDeleteId = null;
-
-function attachItemListeners() {
-    listEl.querySelectorAll('.history-item').forEach(li => {
-        const id = li.dataset.id;
-        const item = historyData.find(i => i.id === id);
-
-        li.querySelector('[data-action="pin"]').addEventListener('click', () => {
-            item.pinned = !item.pinned;
-            render();
-            showToast(item.pinned ? 'Pinned to top' : 'Unpinned');
-        });
-
-        li.querySelector('[data-action="favorite"]').addEventListener('click', () => {
-            item.favorite = !item.favorite;
-            render();
-        });
-
-        li.querySelector('[data-action="rename"]').addEventListener('click', () => startRename(id));
-
-        li.querySelector('[data-action="delete"]').addEventListener('click', () => {
-            pendingDeleteId = id;
-            document.getElementById('confirmTitle').textContent = `Delete "${item.title}"?`;
-            document.getElementById('confirmMessage').textContent = `This ${item.type === 'chat' ? 'conversation' : 'research session'} will be permanently removed. This can't be undone.`;
-            openConfirm();
-        });
-    });
-}
-
-function startRename(id) {
-    const item = historyData.find(i => i.id === id);
-    const titleSpan = document.getElementById(`title-${id}`);
-    if (!titleSpan) return;
-
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'item-title-input';
-    input.value = item.title;
-    input.setAttribute('aria-label', 'Rename item');
-    titleSpan.replaceWith(input);
-    input.focus();
-    input.select();
-
-    function commit() {
-        const newTitle = input.value.trim();
-        if (newTitle) {
-            item.title = newTitle;
-            showToast('Renamed');
-        }
-        render();
+    if(e.key==='Tab'&&modal.current){
+      const f=$$('button,input,[href],[tabindex]:not([tabindex="-1"])',modal.current.querySelector('.dlg-panel'))
+        .filter(x=>!x.disabled&&x.offsetParent!==null);
+      if(!f.length)return;
+      const first=f[0],last=f[f.length-1];
+      if(e.shiftKey&&document.activeElement===first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey&&document.activeElement===last){ e.preventDefault(); first.focus(); }
     }
-    function cancel() { render(); }
-
-    input.addEventListener('blur', commit);
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); commit(); }
-        if (e.key === 'Escape') { e.preventDefault(); cancel(); }
-    });
+  });
 }
 
-/* ============================================================================
-   CONFIRM MODAL
-   ============================================================================ */
-
-const confirmModal = document.getElementById('confirmModal');
-let lastFocusedBeforeModal = null;
-
-function openConfirm() {
-    lastFocusedBeforeModal = document.activeElement;
-    confirmModal.classList.add('show');
-    document.getElementById('confirmCancel').focus();
-    document.addEventListener('keydown', onModalKeydown);
+/* ---------- 20. Init ---------- */
+async function init(){
+  wire();
+  bg.init();
+  document.body.classList.add('boot');
+  state.loading=true;
+  renderSkeleton();
+  try{
+    state.conversations=await api.getHistory();
+  }catch(err){
+    toast('error','Failed to load history — retry with Refresh');
+    state.conversations=[];
+  }
+  state.loading=false;
+  renderAll();
 }
-function closeConfirm() {
-    confirmModal.classList.remove('show');
-    document.removeEventListener('keydown', onModalKeydown);
-    if (lastFocusedBeforeModal) lastFocusedBeforeModal.focus();
-    pendingDeleteId = null;
-}
-function onModalKeydown(e) {
-    if (e.key === 'Escape') closeConfirm();
-}
-
-document.getElementById('confirmCancel').addEventListener('click', closeConfirm);
-document.getElementById('confirmDelete').addEventListener('click', () => {
-    if (pendingDeleteId) {
-        historyData = historyData.filter(i => i.id !== pendingDeleteId);
-        showToast('Deleted');
-    }
-    closeConfirm();
-    render();
-});
-confirmModal.addEventListener('click', (e) => {
-    if (e.target === confirmModal) closeConfirm();
-});
-
-/* ============================================================================
-   TOOLBAR EVENTS
-   ============================================================================ */
-
-const searchInput = document.getElementById('searchInput');
-const searchClear = document.getElementById('searchClear');
-
-function debounce(fn, delay = 250) {
-    let t;
-    return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
-}
-
-searchInput.addEventListener('input', debounce(() => {
-    state.search = searchInput.value.trim();
-    state.visibleCount = PAGE_SIZE;
-    searchClear.classList.toggle('show', state.search.length > 0);
-    render();
-}, 200));
-
-searchClear.addEventListener('click', () => {
-    searchInput.value = '';
-    state.search = '';
-    state.visibleCount = PAGE_SIZE;
-    searchClear.classList.remove('show');
-    render();
-    searchInput.focus();
-});
-
-document.querySelectorAll('#typeFilter button').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('#typeFilter button').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        state.type = btn.dataset.type;
-        state.visibleCount = PAGE_SIZE;
-        render();
-    });
-});
-
-const favSwitch = document.getElementById('favSwitch');
-function toggleFav() {
-    const on = favSwitch.classList.toggle('on');
-    favSwitch.setAttribute('aria-checked', on ? 'true' : 'false');
-    state.favoritesOnly = on;
-    state.visibleCount = PAGE_SIZE;
-    render();
-}
-favSwitch.addEventListener('click', toggleFav);
-favSwitch.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleFav(); }
-});
-
-document.getElementById('sortSelect').addEventListener('change', (e) => {
-    state.sort = e.target.value;
-    render();
-});
-
-document.getElementById('loadMoreBtn').addEventListener('click', () => {
-    state.visibleCount += PAGE_SIZE;
-    render();
-});
-
-document.getElementById('clearFiltersBtn').addEventListener('click', () => {
-    state = { search: '', type: 'all', favoritesOnly: false, sort: 'newest', visibleCount: PAGE_SIZE };
-    searchInput.value = '';
-    searchClear.classList.remove('show');
-    document.querySelectorAll('#typeFilter button').forEach(b => b.classList.toggle('active', b.dataset.type === 'all'));
-    favSwitch.classList.remove('on');
-    favSwitch.setAttribute('aria-checked', 'false');
-    document.getElementById('sortSelect').value = 'newest';
-    render();
-});
-
-/* ============================================================================
-   INIT
-   ============================================================================ */
-
-render();
-console.log('Nyro AI · history.html — ready for backend integration (replace historyData with GET /api/history)');
+init();
 </script>
-
 </body>
 </html>
