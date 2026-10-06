@@ -131,13 +131,13 @@ p { color: var(--ink-2); line-height: 1.7; margin-bottom: var(--sp-3); }
         <p>If you are located in the European Union (EU) or European Economic Area (EEA), you have certain data protection rights. Nyro AI aims to take reasonable steps to allow you to correct, amend, delete, or limit the use of your Personal Data.</p>
 
         <h2>7. Your Rights</h2>
-        <p>You have the right to request access to, correction of, or deletion of your Personal Data. You also have the right to data portability. To exercise any of these rights, please contact us at privacy@novis.ai</p>
+        <p>You have the right to request access to, correction of, or deletion of your Personal Data. You also have the right to data portability. To exercise any of these rights, please contact us at privacy@nyro.ai</p>
 
         <h2>8. Changes to This Privacy Policy</h2>
         <p>We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "effective date" at the top of this Privacy Policy.</p>
 
         <h2>Contact Us</h2>
-        <p>If you have any questions about this Privacy Policy, please contact us at privacy@novis.ai</p>
+        <p>If you have any questions about this Privacy Policy, please contact us at privacy@nyro.ai</p>
     </main>
 </div>
 
@@ -150,10 +150,10 @@ function applyTheme(mode) {
         btn.classList.toggle('active', btn.dataset.theme === mode);
         btn.setAttribute('aria-pressed', btn.dataset.theme === mode ? 'true' : 'false');
     });
-    localStorage.setItem('novis_theme', mode);
+    localStorage.setItem('nyro_theme', mode);
 }
 themeButtons.forEach(btn => btn.addEventListener('click', () => applyTheme(btn.dataset.theme)));
-applyTheme(localStorage.getItem('novis_theme') || 'system');
+applyTheme(localStorage.getItem('nyro_theme') || 'system');
 </script>
 
 </body>

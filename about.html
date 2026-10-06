@@ -161,10 +161,10 @@ function applyTheme(mode) {
         btn.classList.toggle('active', btn.dataset.theme === mode);
         btn.setAttribute('aria-pressed', btn.dataset.theme === mode ? 'true' : 'false');
     });
-    localStorage.setItem('novis_theme', mode);
+    localStorage.setItem('nyro_theme', mode);
 }
 themeButtons.forEach(btn => btn.addEventListener('click', () => applyTheme(btn.dataset.theme)));
-applyTheme(localStorage.getItem('novis_theme') || 'system');
+applyTheme(localStorage.getItem('nyro_theme') || 'system');
 </script>
 
 </body>
