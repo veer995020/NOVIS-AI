@@ -4,8 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#07070d" />
-<meta name="description" content="Nyro AI — premium conversational workspace by Legend Inc." />
-<title>New Chat — Nyro AI</title>
+<meta name="description" content="Novis AI — premium conversational workspace by Legend Inc." />
+<title>New Chat — Novis AI</title>
 <style>
 /* ==========================================================================
    TOKENS
@@ -710,11 +710,11 @@ dialog::backdrop { background: rgba(4,4,10,.64); backdrop-filter: blur(4px); }
 
 <div class="app" id="app">
   <!-- LEFT SIDEBAR -->
-  <aside class="sidebar" id="sidebar" aria-label="Nyro navigation and history">
+  <aside class="sidebar" id="sidebar" aria-label="Novis navigation and history">
     <div class="sidebar-inner">
       <div class="brand">
         <div class="brand-mark" aria-hidden="true"><svg class="icon icon-lg"><use href="#i-sparkles"></use></svg></div>
-        <div class="brand-copy"><strong>Nyro AI</strong><span>Legend Inc.</span></div>
+        <div class="brand-copy"><strong>Novis AI</strong><span>Legend Inc.</span></div>
         <button type="button" class="icon-btn" data-action="toggle-sidebar" aria-label="Collapse sidebar" title="Collapse sidebar">
           <svg class="icon"><use href="#i-collapse"></use></svg>
         </button>
@@ -827,8 +827,8 @@ dialog::backdrop { background: rgba(4,4,10,.64); backdrop-filter: blur(4px); }
     <form class="composer" id="composer" aria-label="Message composer">
       <div class="attachment-tray" id="attachmentTray" aria-label="Attachments" hidden></div>
       <div class="composer-shell">
-        <label class="visually-hidden" for="composerInput">Message Nyro AI</label>
-        <textarea id="composerInput" rows="1" placeholder="Ask Nyro anything…"></textarea>
+        <label class="visually-hidden" for="composerInput">Message Novis AI</label>
+        <textarea id="composerInput" rows="1" placeholder="Ask Novis anything…"></textarea>
         <button type="submit" class="send-btn" id="sendBtn" title="Send" aria-label="Send message">
           <svg class="icon"><use href="#i-send"></use></svg>
         </button>
@@ -969,7 +969,7 @@ const MODELS = Object.freeze([
 
 const MODES = Object.freeze([
   Object.freeze({ id: "general",  name: "General",  icon: "💬", endpoint: CONFIG.endpoints.chat,
-    description: "Everyday assistance.", placeholder: "Ask Nyro anything…" }),
+    description: "Everyday assistance.", placeholder: "Ask Novis anything…" }),
   Object.freeze({ id: "research", name: "Research", icon: "🔎", endpoint: CONFIG.endpoints.research,
     description: "Structured research, comparisons, and investigation.", placeholder: "Describe the question you want researched…" }),
   Object.freeze({ id: "coding",   name: "Coding",   icon: "⌨️", endpoint: CONFIG.endpoints.code,
@@ -1197,7 +1197,7 @@ const ApiService = {
 };
 
 function describeApiError(err) {
-  if (err instanceof TimeoutError) return "The request timed out before the server responded. Check that the NYRO backend is running, then retry.";
+  if (err instanceof TimeoutError) return "The request timed out before the server responded. Check that the Novis backend is running, then retry.";
   if (err instanceof ApiError) {
     const detail = err.message ? ` Server note: ${err.message}` : "";
     switch (err.status) {
@@ -1207,16 +1207,16 @@ function describeApiError(err) {
       case 404: return "The API endpoint was not found. Verify the FastAPI routes and API base URL.";
       case 408: return "The server timed out while processing. Please retry.";
       case 429: return "Rate limit reached. Wait a moment, then try again.";
-      case 500: return "The NYRO server hit an internal error. Please retry.";
+      case 500: return "The Novis server hit an internal error. Please retry.";
       case 502:
-      case 503: return "The NYRO service is temporarily unavailable. Please retry shortly.";
+      case 503: return "The Novis service is temporarily unavailable. Please retry shortly.";
       default:  return `The request failed${err.status ? ` (HTTP ${err.status})` : ""}.` + detail;
     }
   }
   if (err && err.name === "TypeError") {
-    return "Unable to reach the NYRO backend. Start the FastAPI service (uvicorn) or fix the API base URL, then retry.";
+    return "Unable to reach the Novis backend. Start the FastAPI service (uvicorn) or fix the API base URL, then retry.";
   }
-  return "Something went wrong while contacting the NYRO backend.";
+  return "Something went wrong while contacting the Novis backend.";
 }
 
 /* ========================================================================
@@ -1440,8 +1440,8 @@ class ConversationManager {
 
 const store = new StateStore();
 const manager = new ConversationManager(store);
-window.__nyroStore = store;
-window.__nyroManager = manager;
+window.__NovisStore = store;
+window.__NovisManager = manager;
 
 /* ========================================================================
    DOM + APP VARIABLES
@@ -1826,7 +1826,7 @@ function renderHeader() {
   const pinned = Boolean(conversation?.pinned);
   els.favoriteBtn.classList.toggle("is-active", pinned);
   els.favoriteBtn.setAttribute("aria-pressed", String(pinned));
-  document.title = `${title} — NYRO AI`;
+  document.title = `${title} — Novis AI`;
 }
 
 function renderStatusChip() {
@@ -1990,8 +1990,8 @@ function createEmptyState() {
     <div class="empty-orb" aria-hidden="true">${ICONS.sparkles}</div>
     <h2>Hello, VEER</h2>
     <p class="empty-sub">
-      Nyro is a premium conversational workspace by Legend Inc. Pick a prompt below, attach files,
-      switch models or modes, or start typing. Responses require the Nyro backend to be connected.
+      Novis is a premium conversational workspace by Legend Inc. Pick a prompt below, attach files,
+      switch models or modes, or start typing. Responses require the Novis backend to be connected.
     </p>
     <div class="empty-meta">
       <span class="chip chip-model">${escapeHtml(model.name)} · ${escapeHtml(model.tier)}</span>
@@ -2146,7 +2146,7 @@ function openConversation(id) {
 
 function sendMessage(rawText) {
   if (store.isLoading()) {
-    showToast("NYRO is already generating a response.", "warning");
+    showToast("Novis is already generating a response.", "warning");
     return;
   }
   let text = (rawText ?? els.composerInput.value).trim();
@@ -2435,7 +2435,7 @@ async function shareConversation() {
     return;
   }
   const transcript = [
-    `NYRO AI — ${conversation.title}`,
+    `Novis AI — ${conversation.title}`,
     `Model: ${store.getModel().name} · Mode: ${store.getMode().name}`,
     "",
     ...conversation.messages.map(message => {

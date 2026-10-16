@@ -4,8 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#07070d" />
-<meta name="description" content="Nova AI — premium conversational workspace by Legend Inc." />
-<title>New Chat — Nova AI</title>
+<meta name="description" content="Novis AI — premium conversational workspace by Legend Inc." />
+<title>New Chat — Novis AI</title>
 <style>
 /* ==========================================================================
    TOKENS
@@ -948,11 +948,11 @@ dialog::backdrop { background: rgba(4,4,10,.64); backdrop-filter: blur(4px); }
 
 <div class="app" id="app">
   <!-- LEFT SIDEBAR -->
-  <aside class="sidebar" id="sidebar" aria-label="Nova navigation and history">
+  <aside class="sidebar" id="sidebar" aria-label="Novis navigation and history">
     <div class="sidebar-inner">
       <div class="brand">
         <div class="brand-mark" aria-hidden="true"><svg class="icon icon-lg"><use href="#i-sparkles"></use></svg></div>
-        <div class="brand-copy"><strong>Nova AI</strong><span>Legend Inc.</span></div>
+        <div class="brand-copy"><strong>Novis AI</strong><span>Legend Inc.</span></div>
         <button type="button" class="icon-btn" data-action="toggle-sidebar" aria-label="Collapse sidebar" title="Collapse sidebar">
           <svg class="icon"><use href="#i-collapse"></use></svg>
         </button>
@@ -1074,8 +1074,8 @@ dialog::backdrop { background: rgba(4,4,10,.64); backdrop-filter: blur(4px); }
 
       <div class="attachment-tray" id="attachmentTray" aria-label="Attachments" hidden></div>
       <div class="composer-shell">
-        <label class="visually-hidden" for="composerInput">Message Nova AI</label>
-        <textarea id="composerInput" rows="1" placeholder="Ask Nova anything…"></textarea>
+        <label class="visually-hidden" for="composerInput">Message Novis AI</label>
+        <textarea id="composerInput" rows="1" placeholder="Ask Novis anything…"></textarea>
         <button type="submit" class="send-btn" id="sendBtn" title="Send" aria-label="Send message">
           <svg class="icon"><use href="#i-send"></use></svg>
         </button>
@@ -1216,7 +1216,7 @@ const MODELS = Object.freeze([
 
 const MODES = Object.freeze([
   Object.freeze({ id: "general",  name: "General",  icon: "💬", endpoint: CONFIG.endpoints.chat,
-    description: "Everyday assistance.", placeholder: "Ask Nova anything…" }),
+    description: "Everyday assistance.", placeholder: "Ask Novis anything…" }),
   Object.freeze({ id: "research", name: "Research", icon: "🔎", endpoint: CONFIG.endpoints.research,
     description: "Structured research, comparisons, and investigation.", placeholder: "Describe the question you want researched…" }),
   Object.freeze({ id: "coding",   name: "Coding",   icon: "⌨️", endpoint: CONFIG.endpoints.code,
@@ -1342,23 +1342,6 @@ function randomId(prefix = "id") {
 function capitalizeFirst(value) {
   const text = String(value || "");
   return text ? text[0].toUpperCase() + text.slice(1) : "";
-}
-async function copyText(text) {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    const helper = document.createElement("textarea");
-    helper.value = text;
-    helper.style.position = "fixed";
-    helper.style.opacity = "0";
-    document.body.appendChild(helper);
-    helper.select();
-    let ok = false;
-    try { ok = document.execCommand("copy"); } catch { ok = false; }
-    helper.remove();
-    return ok;
-  }
 }
 /**
  * PHASE 3: URL Protocol Validation
@@ -1511,7 +1494,7 @@ const ApiService = {
 };
 
 function describeApiError(err) {
-  if (err instanceof TimeoutError) return "The request timed out before the server responded. Check that the NOVA backend is running, then retry.";
+  if (err instanceof TimeoutError) return "The request timed out before the server responded. Check that the NOVIS backend is running, then retry.";
   if (err instanceof ApiError) {
     const detail = err.message ? ` Server note: ${err.message}` : "";
     switch (err.status) {
@@ -1521,16 +1504,16 @@ function describeApiError(err) {
       case 404: return "The API endpoint was not found. Verify the FastAPI routes and API base URL.";
       case 408: return "The server timed out while processing. Please retry.";
       case 429: return "Rate limit reached. Wait a moment, then try again.";
-      case 500: return "The NOVA server hit an internal error. Please retry.";
+      case 500: return "The NOVIS server hit an internal error. Please retry.";
       case 502:
-      case 503: return "The NOVA service is temporarily unavailable. Please retry shortly.";
+      case 503: return "The NOVIS service is temporarily unavailable. Please retry shortly.";
       default:  return `The request failed${err.status ? ` (HTTP ${err.status})` : ""}.` + detail;
     }
   }
   if (err && err.name === "TypeError") {
-    return "Unable to reach the NOVA backend. Start the FastAPI service (uvicorn) or fix the API base URL, then retry.";
+    return "Unable to reach the NOVIS backend. Start the FastAPI service (uvicorn) or fix the API base URL, then retry.";
   }
-  return "Something went wrong while contacting the NOVA backend.";
+  return "Something went wrong while contacting the NOVIS backend.";
 }
 
 /* Map API errors to contextual notifications for toasts */
@@ -1580,7 +1563,7 @@ function getErrorNotification(err) {
   }
   return {
     msg: "Something went wrong",
-    detail: "Contact Nova backend and try again.",
+    detail: "Contact Novis backend and try again.",
     type: "error"
   };
 }
@@ -1811,8 +1794,8 @@ class ConversationManager {
 
 const store = new StateStore();
 const manager = new ConversationManager(store);
-window.__novaStore = store;
-window.__novaManager = manager;
+window.__novisStore = store;
+window.__novisManager = manager;
 
 /* ========================================================================
    DOM + APP VARIABLES
@@ -2280,7 +2263,7 @@ function renderHeader() {
   const pinned = Boolean(conversation?.pinned);
   els.favoriteBtn.classList.toggle("is-active", pinned);
   els.favoriteBtn.setAttribute("aria-pressed", String(pinned));
-  document.title = `${title} — NOVA AI`;
+  document.title = `${title} — NOVIS AI`;
 }
 
 function renderStatusChip() {
@@ -2300,23 +2283,289 @@ function renderStatusChip() {
   els.statusChip.setAttribute("aria-label", `Backend connection status: ${label}. Activate to recheck.`);
 }
 
+/**
+ * Render entire conversation
+ * Delegates to MessageRenderer module
+ */
 function renderConversation() {
-  codeRegistry.clear();
-  codeCounter = 0;
-  els.messageList.innerHTML = "";
-  const messages = store.getMessages();
-  if (!messages.length) {
-    els.messageList.appendChild(createEmptyState());
-    updateScrollBottomButton();
-    renderNav();
-    return;
-  }
-  const fragment = document.createDocumentFragment();
-  messages.forEach(message => fragment.appendChild(renderMessage(message)));
-  els.messageList.appendChild(fragment);
-  scrollToBottom(true);
-  renderNav();
+  MessageRenderer.renderConversation();
 }
+
+/* ========================================================================
+   MESSAGE RENDERER MODULE — Production-ready message rendering system
+====================================================================== */
+const MessageRenderer = (() => {
+  /**
+   * Render a single message with all features
+   * Handles: user/AI messages, markdown, code blocks, actions, timestamps, states
+   */
+  const renderMessage = (message) => {
+    const article = document.createElement("article");
+    article.className = buildMessageClassName(message);
+    article.dataset.messageId = message.id;
+    article.innerHTML = buildMessageHTML(message);
+    return article;
+  };
+
+  /**
+   * Build CSS class for message
+   */
+  const buildMessageClassName = (message) => {
+    const classes = [
+      'message',
+      `message-${message.role}`,
+      message.error && 'is-error',
+      message.pending && 'is-pending',
+      message.streaming && 'is-streaming',
+      message.liked && 'is-liked',
+      message.disliked && 'is-disliked'
+    ];
+    return classes.filter(Boolean).join(' ');
+  };
+
+  /**
+   * Build complete message HTML
+   */
+  const buildMessageHTML = (message) => {
+    const avatar = message.role === "user" ? ICONS.user : ICONS.sparkles;
+    const author = buildAuthorName(message);
+    const contentHtml = buildContentHTML(message);
+    const thinkingHtml = buildThinkingBlockHTML(message);
+    const attachmentsHtml = buildAttachmentsHTML(message.attachments);
+    const actionsHtml = buildActionsHTML(message);
+
+    return `
+      <div class="message-avatar" aria-hidden="true">${avatar}</div>
+      <div class="message-body">
+        <div class="message-meta">
+          <span class="message-author">${escapeHtml(author)}</span>
+          <time class="message-time" datetime="${message.timestamp}">${formatClock(message.timestamp)}</time>
+          ${message.error ? '<span class="message-badge message-badge-error">Error</span>' : ''}
+          ${message.pending ? '<span class="message-badge message-badge-pending">Thinking…</span>' : ''}
+        </div>
+        ${thinkingHtml}
+        ${contentHtml}
+        ${attachmentsHtml}
+        ${actionsHtml}
+      </div>`;
+  };
+
+  /**
+   * Build author name from message or current model/mode
+   */
+  const buildAuthorName = (message) => {
+    if (message.role === "user") return "You";
+    const model = message.model || store.getModel()?.name || "AI";
+    const mode = message.mode || store.getMode()?.id || "general";
+    return `${model} · ${capitalizeFirst(mode)}`;
+  };
+
+  /**
+   * Build message content based on state
+   */
+  const buildContentHTML = (message) => {
+    if (message.role === "user") {
+      return `<div class="message-content message-content-user">${escapeHtml(message.content || "").replace(/\n/g, "<br>")}</div>`;
+    }
+    
+    if (message.pending) {
+      const label = escapeHtml(message.statusLabel || "Thinking…");
+      return `<div class="message-status" role="status" aria-live="polite"><span class="typing-indicator" aria-hidden="true"><span></span><span></span><span></span></span><span>${label}</span></div>`;
+    }
+    
+    if (message.streaming) {
+      if (message.content) {
+        return `<div class="message-content message-content-streaming"><pre class="stream-pre">${escapeHtml(message.content)}<span class="cursor" aria-hidden="true"></span></pre></div>`;
+      }
+      return `<div class="message-status" role="status" aria-live="polite"><span class="typing-indicator" aria-hidden="true"><span></span><span></span><span></span></span><span>Generating…</span></div>`;
+    }
+    
+    if (message.error) {
+      const errorText = message.content || "The request failed. Please try again.";
+      return `<div class="message-content message-content-error">${escapeHtml(errorText).replace(/\n/g, "<br>")}</div>`;
+    }
+    
+    if (!message.content) {
+      return `<div class="message-empty">No response</div>`;
+    }
+    
+    return `<div class="message-content markdown">${renderMarkdown(message.content, { streaming: false })}</div>`;
+  };
+
+  /**
+   * Build thinking block with collapsible UI
+   */
+  const buildThinkingBlockHTML = (message) => {
+    if (!message.thinking && !message.thinkingActive) return "";
+    
+    const isOpen = Boolean(message.thinkingOpen);
+    const isActive = Boolean(message.thinkingActive);
+    const duration = formatThinkingTime(message.thinkingEndTime && message.thinkingStartTime
+      ? message.thinkingEndTime - message.thinkingStartTime
+      : 0);
+    const label = isActive ? "Thinking" : (duration ? `Thought for ${duration}` : "Thinking");
+    
+    let bodyContent = "";
+    if (isActive && message.thinking) {
+      bodyContent = `<div class="thinking-text">${escapeHtml(message.thinking)}<span class="cursor" aria-hidden="true"></span></div>`;
+    } else if (message.thinking) {
+      bodyContent = `<div class="thinking-text">${escapeHtml(message.thinking)}</div>`;
+    } else if (isActive) {
+      bodyContent = `<div class="thinking-text">Reasoning through the request…</div>`;
+    }
+    
+    return `
+      <div class="thinking-block ${isOpen ? "open" : ""} ${isActive ? "is-active" : ""}" data-thinking-block>
+        <button type="button" class="thinking-toggle" data-action="toggle-thinking" aria-expanded="${isOpen}" aria-controls="thinking-${message.id}">
+          <span class="thinking-icon">✨</span>
+          <span class="thinking-label">${label}</span>
+          ${isActive ? '<span class="thinking-dots" aria-hidden="true"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>' : ""}
+          <svg class="thinking-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="thinking-body" id="thinking-${message.id}" ${isOpen ? "" : "hidden"}>
+          ${bodyContent}
+        </div>
+      </div>`;
+  };
+
+  /**
+   * Build attachments section
+   */
+  const buildAttachmentsHTML = (attachments = []) => {
+    if (!attachments || !attachments.length) return "";
+    
+    const images = attachments.filter(a => a.kind === "image" && a.imageUrl);
+    const files = attachments.filter(a => !(a.kind === "image" && a.imageUrl));
+    
+    const imageHTML = images.length
+      ? `<div class="message-attachment-images">${images.map(a =>
+          `<img src="${a.imageUrl}" alt="${escapeHtml(a.name)} preview" loading="lazy" class="attachment-image" />`
+        ).join("")}</div>`
+      : "";
+    
+    const fileHTML = files.length
+      ? `<div class="message-attachment-files">${files.map(a =>
+          `<span class="attachment-file" title="${escapeHtml(a.name)}">${ICONS.file}<strong>${escapeHtml(a.name)}</strong><span>${escapeHtml(formatBytes(a.size))}</span></span>`
+        ).join("")}</div>`
+      : "";
+    
+    return imageHTML || fileHTML
+      ? `<div class="message-attachments">${imageHTML}${fileHTML}</div>`
+      : "";
+  };
+
+  /**
+   * Build message action buttons
+   * Shows different buttons based on message state
+   */
+  const buildActionsHTML = (message) => {
+    // No actions for user messages, pending, or streaming
+    if (message.role !== "assistant" || message.pending || message.streaming) {
+      return "";
+    }
+    
+    // Error state: retry + copy
+    if (message.error) {
+      return `
+        <div class="message-actions" role="toolbar" aria-label="Message actions">
+          <button type="button" class="action-btn-text" data-action="retry-message" title="Retry this request">
+            ${ICONS.refresh}<span>Retry</span>
+          </button>
+          <button type="button" class="icon-btn" data-action="copy-message" aria-label="Copy error message" title="Copy">
+            ${ICONS.copy}
+          </button>
+        </div>`;
+    }
+    
+    // Success state: copy, feedback, regenerate
+    return `
+      <div class="message-actions" role="toolbar" aria-label="Message actions">
+        <button type="button" class="icon-btn" data-action="copy-message" aria-label="Copy response" title="Copy">
+          ${ICONS.copy}
+        </button>
+        <button type="button" class="icon-btn ${message.liked ? "is-active" : ""}" data-action="like-message" 
+          aria-pressed="${Boolean(message.liked)}" aria-label="Like this response" title="Like">
+          ${ICONS.thumbUp}
+        </button>
+        <button type="button" class="icon-btn ${message.disliked ? "is-active" : ""}" data-action="dislike-message" 
+          aria-pressed="${Boolean(message.disliked)}" aria-label="Dislike this response" title="Dislike">
+          ${ICONS.thumbDown}
+        </button>
+        <button type="button" class="icon-btn" data-action="speak-message" aria-label="Read aloud" title="Read aloud">
+          ${ICONS.volume}
+        </button>
+        <button type="button" class="icon-btn" data-action="regenerate-message" aria-label="Generate new response" title="Regenerate">
+          ${ICONS.refresh}
+        </button>
+      </div>`;
+  };
+
+  /**
+   * Render entire conversation
+   */
+  const renderConversation = () => {
+    codeRegistry.clear();
+    codeCounter = 0;
+    els.messageList.innerHTML = "";
+    
+    const messages = store.getMessages();
+    if (!messages.length) {
+      els.messageList.appendChild(createEmptyState());
+      updateScrollBottomButton();
+      renderNav();
+      return;
+    }
+    
+    const fragment = document.createDocumentFragment();
+    messages.forEach(msg => fragment.appendChild(renderMessage(msg)));
+    els.messageList.appendChild(fragment);
+    
+    // Scroll to bottom after rendering all messages
+    requestAnimationFrame(() => {
+      scrollToBottom(true);
+    });
+    
+    renderNav();
+  };
+
+  /**
+   * Update a single message's rendered content
+   * Used during streaming, error states, etc.
+   */
+  const updateMessage = (messageId, updates = {}) => {
+    const article = els.messageList.querySelector(`[data-message-id="${messageId}"]`);
+    if (!article) return;
+    
+    // Find the message in store
+    const message = manager.findMessage(messageId);
+    if (!message) return;
+    
+    // Apply updates to message object
+    Object.assign(message, updates);
+    
+    // Re-render just this message
+    const newArticle = renderMessage(message);
+    article.replaceWith(newArticle);
+    
+    // Scroll if at bottom and auto-scroll enabled
+    if (ScrollManager.isNearBottom() && store.getSetting("autoScroll")) {
+      requestAnimationFrame(() => ScrollManager.autoScroll());
+    }
+  };
+
+  /**
+   * Public API
+   */
+  return {
+    renderMessage,
+    renderConversation,
+    updateMessage,
+    buildContentHTML,
+    buildActionsHTML
+  };
+})();
 
 /* ========================================================================
    THINKING BLOCK HELPERS
@@ -2370,51 +2619,12 @@ function renderThinkingBlock(message) {
   `;
 }
 
+/**
+ * Render a single message
+ * Delegates to MessageRenderer module
+ */
 function renderMessage(message) {
-  const article = document.createElement("article");
-  article.className = `message message-${message.role} ${message.error ? "is-error" : ""}`.trim();
-  article.dataset.messageId = message.id;
-
-  const avatar = message.role === "user" ? ICONS.user : ICONS.sparkles;
-  const author = message.role === "user"
-    ? "You"
-    : `${message.model || store.getModel().name} · ${capitalizeFirst(message.mode || store.getMode().id)}`;
-
-  let contentHtml = "";
-  if (message.role === "user") {
-    contentHtml = `<div class="message-content">${escapeHtml(message.content || "").replace(/\n/g, "<br>")}</div>`;
-  } else if (message.pending) {
-    const label = escapeHtml(message.statusLabel || "Thinking…");
-    contentHtml = `<div class="message-status-line" role="status"><span class="typing" aria-hidden="true"><span></span><span></span><span></span></span><span>${label}</span></div>`;
-  } else if (message.streaming) {
-    contentHtml = message.content
-      ? `<div class="message-content"><pre class="stream-pre">${escapeHtml(message.content)}<span class="cursor"></span></pre></div>`
-      : `<div class="message-status-line" role="status"><span class="typing" aria-hidden="true"><span></span><span></span><span></span></span><span>Generating…</span></div>`;
-  } else if (message.error) {
-    contentHtml = `<div class="message-content">${escapeHtml(message.content || "The request failed.").replace(/\n/g, "<br>")}</div>`;
-  } else {
-    contentHtml = message.content
-      ? `<div class="message-content markdown">${renderMarkdown(message.content, { streaming: false })}</div>`
-      : "";
-  }
-
-  // Build thinking block if present
-  const thinkingHtml = renderThinkingBlock(message);
-
-  article.innerHTML = `
-    <div class="message-avatar" aria-hidden="true">${avatar}</div>
-    <div class="message-body">
-      <div class="message-meta">
-        <span class="message-author">${escapeHtml(author)}</span>
-        <time class="message-time">${formatClock(message.timestamp)}</time>
-        ${message.error ? '<span class="message-error-badge">Error</span>' : ""}
-      </div>
-      ${thinkingHtml}
-      ${contentHtml}
-      ${renderMessageAttachments(message.attachments)}
-      ${renderMessageActions(message)}
-    </div>`;
-  return article;
+  return MessageRenderer.renderMessage(message);
 }
 
 function renderMessageAttachments(attachments = []) {
@@ -2500,8 +2710,8 @@ function createEmptyState() {
     <div class="empty-orb" aria-hidden="true">${ICONS.sparkles}</div>
     <h2>Hello, VEER</h2>
     <p class="empty-sub">
-      Nova is a premium conversational workspace by Legend Inc. Pick a prompt below, attach files,
-      switch models or modes, or start typing. Responses require the Nova backend to be connected.
+      Novis is a premium conversational workspace by Legend Inc. Pick a prompt below, attach files,
+      switch models or modes, or start typing. Responses require the Novis backend to be connected.
     </p>
     <div class="empty-meta">
       <span class="chip chip-model">${escapeHtml(model.name)} · ${escapeHtml(model.tier)}</span>
@@ -2559,26 +2769,161 @@ function renderAttachments() {
 /* ========================================================================
    SCROLLING
 ====================================================================== */
+/* ========================================================================
+   SCROLL MANAGER — intelligent auto-scroll with user intent tracking
+====================================================================== */
+const ScrollManager = (() => {
+  const SCROLL_THRESHOLD = 90; // pixels from bottom to consider "near bottom"
+  const SCROLL_DEBOUNCE = 100; // ms to debounce scroll detection
+  
+  let manualScrollTimeout = null;
+  let isUserScrolling = false;
+  let lastScrollTime = 0;
+
+  /**
+   * Check if scroll position is near bottom
+   * Allows threshold for content that's close but not exact
+   */
+  const isNearBottom = () => {
+    const scroller = els.messageScroller;
+    return scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < SCROLL_THRESHOLD;
+  };
+
+  /**
+   * Detect manual scrolling by user
+   * Sets flag to prevent auto-scroll while user is scrolling
+   */
+  const detectUserScroll = () => {
+    const now = Date.now();
+    
+    // Ignore scroll events that happen during auto-scroll (within debounce)
+    if (now - lastScrollTime < SCROLL_DEBOUNCE) {
+      return;
+    }
+
+    // User is scrolling manually - disable auto-scroll
+    isUserScrolling = true;
+
+    // Clear existing timeout
+    if (manualScrollTimeout) clearTimeout(manualScrollTimeout);
+
+    // Re-enable auto-scroll after user stops scrolling for 2 seconds
+    manualScrollTimeout = setTimeout(() => {
+      isUserScrolling = false;
+      manualScrollTimeout = null;
+      
+      // If user scrolled back to bottom, resume auto-scroll
+      if (isNearBottom() && store.getSetting("autoScroll")) {
+        updateScrollButton();
+      }
+    }, 2000);
+  };
+
+  /**
+   * Force scroll to bottom
+   * Used when user clicks "scroll to bottom" button or on demand
+   */
+  const scrollToBottom = (force = false) => {
+    const scroller = els.messageScroller;
+    const setting = store.getSetting("autoScroll");
+
+    // Scroll if: forced, auto-scroll enabled, or already near bottom
+    if (force || setting || isNearBottom()) {
+      lastScrollTime = Date.now();
+      scroller.scrollTop = scroller.scrollHeight;
+      isUserScrolling = false;  // Reset user scroll state
+    }
+
+    updateScrollButton();
+  };
+
+  /**
+   * Auto-scroll during streaming/new content
+   * Respects user intent: don't scroll if they manually scrolled up
+   */
+  const autoScroll = (force = false) => {
+    const scroller = els.messageScroller;
+    const setting = store.getSetting("autoScroll");
+
+    // Only auto-scroll if:
+    // 1. Force flag set (critical updates), OR
+    // 2. Auto-scroll enabled AND user not manually scrolling, OR
+    // 3. User is already near bottom
+    const shouldScroll = force || 
+                       (setting && !isUserScrolling) || 
+                       isNearBottom();
+
+    if (shouldScroll) {
+      lastScrollTime = Date.now();
+      scroller.scrollTop = scroller.scrollHeight;
+    }
+
+    updateScrollButton();
+  };
+
+  /**
+   * Update scroll-to-bottom button visibility
+   * Show button when user has scrolled up, hide when at bottom
+   */
+  const updateScrollButton = () => {
+    const hasMessages = store.getMessages().length > 0;
+    const buttonShouldShow = !isNearBottom() && hasMessages;
+    els.scrollBottomBtn.hidden = !buttonShouldShow;
+  };
+
+  /**
+   * Restore auto-scroll after response completes
+   * Called after streaming ends or request completes
+   */
+  const restoreAutoScroll = () => {
+    // Clear any pending manual scroll timeout
+    if (manualScrollTimeout) {
+      clearTimeout(manualScrollTimeout);
+      manualScrollTimeout = null;
+    }
+
+    // Reset user scroll state
+    isUserScrolling = false;
+
+    // If near bottom, auto-scroll is now active again
+    if (isNearBottom()) {
+      scrollToBottom(true);
+    }
+  };
+
+  /**
+   * Get current scroll state (for debugging)
+   */
+  const getScrollState = () => ({
+    isNearBottom: isNearBottom(),
+    isUserScrolling: isUserScrolling,
+    autoScrollEnabled: store.getSetting("autoScroll"),
+    lastScrollTime: lastScrollTime
+  });
+
+  return {
+    isNearBottom,
+    scrollToBottom,
+    autoScroll,
+    updateScrollButton,
+    restoreAutoScroll,
+    detectUserScroll,
+    getScrollState
+  };
+})();
+
+// Delegate to ScrollManager (keep old names for compatibility)
 function isNearBottom() {
-  const scroller = els.messageScroller;
-  return scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 90;
+  return ScrollManager.isNearBottom();
 }
 function scrollToBottom(force = false) {
-  const scroller = els.messageScroller;
-  if (force || store.getSetting("autoScroll") || isNearBottom()) {
-    scroller.scrollTop = scroller.scrollHeight;
-  }
-  userScrolledUp = !isNearBottom();
-  updateScrollBottomButton();
+  return ScrollManager.scrollToBottom(force);
 }
 function autoScroll(force = false) {
-  const allowed = force || (store.getSetting("autoScroll") && !userScrolledUp);
-  if (allowed) els.messageScroller.scrollTop = els.messageScroller.scrollHeight;
-  userScrolledUp = !isNearBottom();
-  updateScrollBottomButton();
+  return ScrollManager.autoScroll(force);
 }
 function updateScrollBottomButton() {
-  els.scrollBottomBtn.hidden = isNearBottom() || !store.getMessages().length;
+  return ScrollManager.updateScrollButton();
 }
 
 /* ========================================================================
@@ -2660,60 +3005,140 @@ function openConversation(id) {
   return true;
 }
 
+/* ========================================================================
+   SEND MESSAGE FLOW
+====================================================================== */
+const SendMessageFlow = (() => {
+  let isSending = false;
+
+  const validateBeforeSend = () => {
+    if (store.isLoading()) {
+      showToast(NOTIFICATIONS.GENERATION_IN_PROGRESS);
+      return null;
+    }
+    
+    if (isSending) {
+      console.warn("Send already in progress, preventing duplicate");
+      return null;
+    }
+
+    const composerState = ComposerValidator.getComposerState();
+    if (!composerState.isReady) {
+      const msg = composerState.validation.message || NOTIFICATIONS.NO_MESSAGE;
+      showToast(msg);
+      return null;
+    }
+
+    const attachments = store.getAttachments();
+    if (attachments.some(a => a.status === "processing" || a.status === "preparing")) {
+      showToast(NOTIFICATIONS.ATTACHMENTS_PROCESSING);
+      return null;
+    }
+    if (attachments.some(a => a.status === "error")) {
+      showToast(NOTIFICATIONS.ATTACHMENTS_FAILED);
+      return null;
+    }
+
+    return { text: composerState.input, attachments };
+  };
+
+  const createUserMessage = (text, attachments) => {
+    if (codeMode && text && !text.includes("```")) {
+      text = "```\n" + text + "\n```";
+    }
+
+    const attachmentMeta = attachments.map(a => ({
+      id: a.id, 
+      name: a.name, 
+      size: a.size, 
+      type: a.type, 
+      kind: a.kind,
+      imageUrl: a.imageUrl || null
+    }));
+
+    return {
+      role: "user",
+      content: text || "Shared attachments",
+      attachments: attachmentMeta
+    };
+  };
+
+  const updateUIAfterSend = (userMessage) => {
+    store.clearAttachments();
+    setCodeMode(false);
+    ComposerValidator.clearComposer();
+    renderAttachments();
+    renderConversation();
+    renderSidebar();
+    renderHeader();
+    scrollToBottom(true);
+    userScrolledUp = false;
+  };
+
+  const buildPayload = (text, attachments) => {
+    if (!store.getConversationId()) {
+      createConversation({ silent: true });
+    }
+
+    // Lean payload - only fields needed, store access in one place
+    return {
+      conversation_id: store.getConversationId(),
+      model: store.getModel().id,
+      mode: store.getMode().id,
+      message: text,
+      attachments: attachments.map(a => ({
+        name: a.name,
+        size: a.size,
+        type: a.type,
+        kind: a.kind
+      })),
+      tools: store.getTools()
+    };
+  };
+
+  const send = async (rawText) => {
+    const validated = validateBeforeSend();
+    if (!validated) return;
+
+    isSending = true;
+    try {
+      const { text, attachments } = validated;
+      
+      // Create and render user message
+      const userMessage = createUserMessage(text, attachments);
+      manager.addMessage(userMessage);
+      
+      // Update UI state
+      updateUIAfterSend(userMessage);
+      
+      // Build payload and send
+      const payload = buildPayload(text, attachments);
+      await runAssistantTurn(text, payload.attachments, payload);
+    } catch (err) {
+      console.error("Send message error:", err);
+      showToast("Failed to send message. Please try again.", "error");
+    } finally {
+      isSending = false;
+    }
+  };
+
+  const setSending = (value) => {
+    isSending = value;
+  };
+
+  const isSendingMessage = () => isSending;
+
+  return { send, setSending, isSendingMessage };
+})();
+
 function sendMessage(rawText) {
-  if (store.isLoading()) {
-    showToast(NOTIFICATIONS.GENERATION_IN_PROGRESS);
-    return;
-  }
-  let text = (rawText ?? els.composerInput.value).trim();
-  const attachments = store.getAttachments();
-
-  if (!text && !attachments.length) {
-    showToast(NOTIFICATIONS.NO_MESSAGE);
-    return;
-  }
-  if (text.length > CONFIG.maxMessageChars) {
-    showToast(NOTIFICATIONS.MESSAGE_TOO_LONG(CONFIG.maxMessageChars));
-    return;
-  }
-  if (attachments.some(a => a.status === "processing" || a.status === "preparing")) {
-    showToast(NOTIFICATIONS.ATTACHMENTS_PROCESSING);
-    return;
-  }
-  if (attachments.some(a => a.status === "error")) {
-    showToast(NOTIFICATIONS.ATTACHMENTS_FAILED);
-    return;
-  }
-
-  if (!store.getConversationId()) createConversation({ silent: true });
-
-  if (codeMode && text && !text.includes("```")) {
-    text = "```\n" + text + "\n```";
-  }
-
-  const attachmentMeta = attachments.map(a => ({
-    id: a.id, name: a.name, size: a.size, type: a.type, kind: a.kind,
-    imageUrl: a.imageUrl || null
-  }));
-
-  manager.addMessage({ role: "user", content: text || "Shared attachments", attachments: attachmentMeta });
-  store.clearAttachments();
-  els.composerInput.value = "";
-  setCodeMode(false);
-  autoGrowComposer();
-  updateComposerState();
-  renderAttachments();
-  renderConversation();
-  renderSidebar();
-  renderHeader();
-  scrollToBottom(true);
-  userScrolledUp = false;
-
-  runAssistantTurn(text, attachmentMeta);
+  SendMessageFlow.send(rawText);
 }
 
-async function runAssistantTurn(prompt, attachments) {
+async function runAssistantTurn(prompt, attachmentsMeta, explicitPayload = null) {
   const useStreamingUI = store.getSetting("streaming");
+  
+  // Create assistant message placeholder
   const assistant = manager.addMessage({
     role: "assistant",
     content: "",
@@ -2724,186 +3149,280 @@ async function runAssistantTurn(prompt, attachments) {
     thinking: "",
     thinkingStartTime: Date.now()
   });
+  
+  // Update UI to show typing indicator and loading state
   renderConversation();
+  ResponseHandler.showTyping();
   setLoading(true);
   renderHeader();
   renderSidebar();
 
+  // Setup request tracking and cancellation
   const controller = new AbortController();
-  const request = { controller, messageId: assistant.id, cancelled: false };
+  const request = { controller, messageId: assistant.id };
   activeRequest = request;
 
+  // Response accumulation during streaming
   let accumulated = "";
   let thinkingAccumulated = "";
   let thinkingPhaseEnded = false;
+  let hasReceivedContent = false;
   
+  // Optimized delta handler - unified logic for thinking and content
   const onDelta = (delta) => {
-    // Handle typed delta events from enhanced SSE stream
-    if (delta && typeof delta === "object") {
-      if (delta.type === "thinking") {
-        thinkingAccumulated += delta.delta;
-        if (!useStreamingUI) return;
+    const type = delta?.type || "content";
+    const content = delta?.delta ?? (typeof delta === "string" ? delta : "");
+    
+    if (!content) return;
+
+    if (type === "thinking") {
+      thinkingAccumulated += content;
+      if (useStreamingUI) {
         manager.updateMessage(assistant.id, {
           thinking: thinkingAccumulated,
           thinkingActive: true,
           statusLabel: "Thinking…"
         });
         scheduleStreamPaint(assistant.id);
-        return;
       }
-      if (delta.type === "content") {
-        // End thinking phase when content starts
-        if (!thinkingPhaseEnded && thinkingAccumulated) {
-          thinkingPhaseEnded = true;
-          manager.updateMessage(assistant.id, {
-            thinkingEndTime: Date.now(),
-            thinkingActive: false,
-            thinking: thinkingAccumulated,
-            statusLabel: "Generating…"
-          });
-        }
-        accumulated += delta.delta;
-        if (!useStreamingUI) return;
+    } else if (type === "content") {
+      // Finalize thinking phase on first content delta
+      if (!thinkingPhaseEnded && thinkingAccumulated) {
+        thinkingPhaseEnded = true;
         manager.updateMessage(assistant.id, {
-          content: accumulated, 
-          pending: false, 
-          streaming: true, 
+          thinkingEndTime: Date.now(),
+          thinkingActive: false,
+          thinking: thinkingAccumulated,
+          statusLabel: "Generating…"
+        });
+      }
+      accumulated += content;
+      if (useStreamingUI) {
+        manager.updateMessage(assistant.id, {
+          content: accumulated,
+          pending: false,
+          streaming: true,
           statusLabel: "Generating…"
         });
         setStreaming(true);
         scheduleStreamPaint(assistant.id);
-        return;
       }
     }
-    
-    // Fallback: treat as content delta (for backward compatibility)
-    accumulated += (typeof delta === "string" ? delta : "");
-    if (!useStreamingUI) return;
-    if (!thinkingPhaseEnded && thinkingAccumulated) {
-      thinkingPhaseEnded = true;
-      manager.updateMessage(assistant.id, {
-        thinkingEndTime: Date.now(),
-        thinkingActive: false,
-        thinking: thinkingAccumulated,
-        statusLabel: "Generating…"
-      });
-    }
-    manager.updateMessage(assistant.id, {
-      content: accumulated, 
-      pending: false, 
-      streaming: true, 
-      statusLabel: "Generating…"
-    });
-    setStreaming(true);
-    scheduleStreamPaint(assistant.id);
   };
 
   try {
-    const payload = {
+    // Use explicit payload or build from store state
+    const payload = explicitPayload || {
       conversation_id: store.getConversationId(),
-      message: prompt,
       model: store.getModel().id,
       mode: store.getMode().id,
-      tools: {
-        webSearch: store.getTools().webSearch,
-        files: store.getTools().files,
-        images: store.getTools().images,
-        voice: store.getTools().voice
-      },
-      attachments: attachments.map(a => ({ name: a.name, size: a.size, type: a.type, kind: a.kind }))
+      message: prompt,
+      attachments: (attachmentsMeta || []).map(a => ({
+        name: a.name,
+        size: a.size,
+        type: a.type,
+        kind: a.kind
+      })),
+      tools: store.getTools()
     };
-    const result = await ApiService.sendChat(payload, controller.signal, onDelta);
+    
+    // Call API - receive response (streaming or JSON)
+    const result = await chatApi.sendMessage(payload, controller.signal, onDelta);
+    
+    // Guard against orphaned requests (e.g., user navigated away)
     if (activeRequest !== request) return;
 
-    const finalContent = (typeof result.content === "string" && result.content)
-      ? result.content
-      : accumulated || "(The server returned an empty response.)";
+    // Hide typing indicator - response arrived
+    ResponseHandler.hideTyping();
 
-    // Mark thinking as complete if it was ongoing
+    // Finalize thinking phase if still active
     if (!thinkingPhaseEnded && thinkingAccumulated) {
       manager.updateMessage(assistant.id, {
         thinkingEndTime: Date.now(),
-        thinkingActive: false
+        thinkingActive: false,
+        thinking: thinkingAccumulated
       });
     }
 
-    manager.updateMessage(assistant.id, {
-      content: finalContent, 
-      pending: false, 
-      streaming: false, 
-      statusLabel: "",
-      thinking: thinkingAccumulated
+    // Use accumulated content from streaming, or response content if JSON
+    const responseContent = result.content || accumulated;
+
+    // Validate response - critical: never show fake successful responses
+    const validated = ResponseHandler.validateResponse({
+      content: responseContent,
+      streamed: result.streamed
     });
-    const message = manager.findMessage(assistant.id);
-    if (message) updateMessageElement(message);
-    autoScroll(true);
-  } catch (err) {
-    if (activeRequest !== request) return;
-    if (err && err.name === "AbortError") {
-      const stopped = accumulated
-        ? `${accumulated}\n\n_Generation stopped._`
-        : "_Generation stopped before the server responded._";
+    
+    if (validated.valid) {
+      // ✓ Response is valid - render AI message with actual content
+      hasReceivedContent = true;
       manager.updateMessage(assistant.id, {
-        content: stopped, 
-        pending: false, 
-        streaming: false, 
-        statusLabel: "",
-        thinkingActive: false,
-        thinkingEndTime: Date.now()
-      });
-      showToast(NOTIFICATIONS.GENERATION_STOPPED);
-    } else {
-      manager.updateMessage(assistant.id, {
-        content: describeApiError(err), 
-        pending: false, 
+        content: validated.content,
+        pending: false,
         streaming: false,
-        error: true, 
         statusLabel: "",
-        thinkingActive: false,
-        thinkingEndTime: Date.now()
+        error: false,
+        thinking: thinkingAccumulated
       });
-      /* Show contextual error notification */
-      showToast(getErrorNotification(err));
+      
+      // No toast for successful response - natural completion
+    } else {
+      // ✗ Response is invalid - show error (never fake success)
+      const fallback = ResponseHandler.getFallbackMessage(validated.reason);
+      
+      // Include any streamed content that arrived before validation failed
+      const finalContent = accumulated && accumulated.length > 0
+        ? `${accumulated}\n\n_Response validation failed_: ${fallback}`
+        : `_Response validation failed_: ${fallback}`;
+
+      manager.updateMessage(assistant.id, {
+        content: finalContent,
+        pending: false,
+        streaming: false,
+        statusLabel: "",
+        error: true,
+        thinking: thinkingAccumulated
+      });
+      
+      // Show user why response was rejected
+      showToast(`${validated.reason} - Response not rendered`, "warning");
     }
+
+    // Render updated message and scroll to it
     const message = manager.findMessage(assistant.id);
     if (message) updateMessageElement(message);
     autoScroll(true);
-  } finally {
-    if (activeRequest === request) activeRequest = null;
-    setStreaming(false);
-    setLoading(false);
+    
+    // Request completed successfully (even if validation failed, we handled it)
+    ResponseHandler.completeRequest();
     renderHeader();
     renderSidebar();
+  } catch (err) {
+    if (activeRequest !== request) return;
+    
+    // Hide typing indicator - error occurred
+    ResponseHandler.hideTyping();
+
+    // Finalize thinking phase if still active
+    if (!thinkingPhaseEnded && thinkingAccumulated) {
+      manager.updateMessage(assistant.id, {
+        thinkingEndTime: Date.now(),
+        thinkingActive: false,
+        thinking: thinkingAccumulated
+      });
+    }
+
+    // Handle abort (user cancelled) vs other errors differently
+    if (err?.name === "AbortError") {
+      // User cancelled - show partial content with stop message
+      const stopped = accumulated && accumulated.length > 0
+        ? `${accumulated}\n\n_Generation stopped._`
+        : "_Generation stopped before the server responded._";
+      
+      manager.updateMessage(assistant.id, {
+        content: stopped,
+        pending: false,
+        streaming: false,
+        statusLabel: "",
+        error: false,  // Not an error, intentional stop
+        thinkingActive: false,
+        thinkingEndTime: Date.now()
+      });
+      
+      showToast(NOTIFICATIONS.GENERATION_STOPPED);
+    } else {
+      // Request error (network, timeout, server error, etc)
+      const normalized = normalizeError(err);
+      
+      // Include partial content if streaming was active
+      const errorContent = accumulated && accumulated.length > 0
+        ? `${accumulated}\n\n_Request failed_: ${normalized.detail}`
+        : `_Request failed_: ${normalized.detail}`;
+      
+      manager.updateMessage(assistant.id, {
+        content: errorContent,
+        pending: false,
+        streaming: false,
+        error: true,
+        statusLabel: "",
+        thinkingActive: false,
+        thinkingEndTime: Date.now()
+      });
+      
+      // Show error toast with recovery hint
+      const isRecovery = MessageRecovery.isRecovering();
+      let toastMessage = normalized.message;
+      
+      if (normalized.recoverable) {
+        if (isRecovery) {
+          toastMessage = `${toastMessage} - Retry failed, you can try again`;
+        } else {
+          toastMessage = `${toastMessage} - Retry available`;
+        }
+      }
+      
+      showToast(toastMessage, normalized.recoverable ? "warning" : "error");
+    }
+    
+    // Render error state and update UI
+    const message = manager.findMessage(assistant.id);
+    if (message) updateMessageElement(message);
+    autoScroll(true);
+    
+    // Request completed (with error)
+    ResponseHandler.completeRequest();
+    renderHeader();
+    renderSidebar();
+  } finally {
+    // Request cleanup already handled in try/catch blocks via ResponseHandler.completeRequest()
+    // This ensures cleanup happens even if completeRequest isn't called (defensive)
+    if (activeRequest === request) {
+      activeRequest = null;
+    }
+    
+    // Clear recovery state (if runAssistantTurn was called via retry/regenerate)
+    MessageRecovery.clearRecovery();
   }
 }
 
 function stopGeneration(silent = false) {
   if (!activeRequest) return;
-  activeRequest.cancelled = true;
+  // Just abort - api.js and runAssistantTurn handle cleanup
   activeRequest.controller.abort();
-  if (!silent) {
-    // UI state finalizes in runAssistantTurn's catch/finally.
-  }
+  // UI state finalizes in runAssistantTurn's catch/finally
 }
 
+/**
+ * Legacy wrapper - delegates to MessageRecovery
+ * Kept for backward compatibility with existing code
+ */
 function rerunForAssistant(messageId, verb) {
-  if (store.isLoading()) {
-    showToast("Wait for the current response to finish.", "warning");
-    return;
+  // Dispatch to appropriate handler
+  if (verb && verb.includes("Retry")) {
+    MessageRecovery.retry(messageId);
+  } else if (verb && verb.includes("Regenerate")) {
+    MessageRecovery.regenerate(messageId);
+  } else {
+    // Unknown verb - don't proceed
+    showToast("Unknown recovery action", "warning");
   }
-  const userMessage = manager.findPrecedingUserMessage(messageId);
-  if (!userMessage) {
-    showToast("No user prompt found for this response.", "warning");
-    return;
-  }
-  manager.removeMessage(messageId);
-  renderConversation();
-  runAssistantTurn(userMessage.content || "", userMessage.attachments || []);
-  showToast(verb, "info");
 }
 
-function regenerateMessage(messageId) { rerunForAssistant(messageId, "Regenerating response"); }
-function retryMessage(messageId) { rerunForAssistant(messageId, "Retrying request"); }
+/**
+ * Retry a failed AI message
+ * Re-sends the same request that failed
+ */
+function retryMessage(messageId) {
+  return MessageRecovery.retry(messageId);
+}
+
+/**
+ * Regenerate the latest AI response
+ * Creates a new response with same user prompt
+ */
+function regenerateMessage(messageId) {
+  return MessageRecovery.regenerate(messageId);
+}
 
 function renameConversation(id, title) {
   if (!manager.renameConversation(id, title)) return false;
@@ -2931,21 +3450,28 @@ function searchConversations(query) {
   renderHistory();
 }
 
+/**
+ * Copy message text to clipboard
+ * Delegates to MessageUtilities module
+ */
 async function copyMessage(messageId) {
-  const message = manager.findMessage(messageId);
-  if (!message) return;
-  const ok = await copyText(message.content || "");
-  showToast(ok ? NOTIFICATIONS.TEXT_COPIED : NOTIFICATIONS.COPY_FAILED);
+  return MessageUtilities.copyMessage(messageId);
 }
 
+/**
+ * Copy code block to clipboard
+ * Delegates to MessageUtilities module
+ */
 async function copyCode(codeId) {
-  const code = codeRegistry.get(codeId);
-  if (!code) {
-    showToast("Code is not available to copy.", "warning");
-    return;
-  }
-  const ok = await copyText(code);
-  showToast(ok ? NOTIFICATIONS.CODE_COPIED : NOTIFICATIONS.COPY_FAILED);
+  return MessageUtilities.copyCode(codeId);
+}
+
+/**
+ * Legacy copyText function - delegates to MessageUtilities
+ * Kept for backward compatibility with existing code
+ */
+async function copyText(text) {
+  return MessageUtilities.copyToClipboard(text);
 }
 
 function toggleFeedback(messageId, kind) {
@@ -3032,7 +3558,7 @@ async function shareConversation() {
     return;
   }
   const transcript = [
-    `NOVA AI — ${conversation.title}`,
+    `NOVIS AI — ${conversation.title}`,
     `Model: ${store.getModel().name} · Mode: ${store.getMode().name}`,
     "",
     ...conversation.messages.map(message => {
@@ -3360,7 +3886,7 @@ const NOTIFICATIONS = {
   
   /* Backend & API errors */
   BACKEND_UNAVAILABLE: {
-    msg: "⚠ Nova backend unavailable",
+    msg: "⚠ Novis backend unavailable",
     detail: "Start the FastAPI service and try again.",
     type: "error"
   },
@@ -3389,7 +3915,7 @@ const NOTIFICATIONS = {
   NO_MESSAGE: { msg: "Type a message or attach a file first", type: "warning" },
   ATTACHMENTS_PROCESSING: { msg: "Wait for attachments to finish processing", type: "warning" },
   ATTACHMENTS_FAILED: { msg: "Remove failed attachments before sending", type: "error" },
-  GENERATION_IN_PROGRESS: { msg: "Nova is already generating a response", type: "warning" },
+  GENERATION_IN_PROGRESS: { msg: "Novis is already generating a response", type: "warning" },
   
   /* Settings & features */
   CODE_MODE_ENABLED: { msg: "Code mode enabled", type: "info" },
@@ -3606,13 +4132,21 @@ function bindEvents() {
 
   els.composer.addEventListener("submit", (event) => {
     event.preventDefault();
-    if (store.isLoading()) stopGeneration();
-    else sendMessage();
+    if (store.isLoading()) {
+      stopGeneration();
+    } else {
+      const state = ComposerValidator.getComposerState();
+      if (state.isReady) {
+        sendMessage();
+        ComposerValidator.clearComposer();
+      }
+    }
   });
 
   els.composerInput.addEventListener("input", () => {
     autoGrowComposer();
     updateCounter();
+    ComposerValidator.updateSendButton();
   });
 
   els.composerInput.addEventListener("keydown", (event) => {
@@ -3625,15 +4159,20 @@ function bindEvents() {
   els.fileInput.addEventListener("change", (event) => {
     handleUpload(event.target.files, "file");
     event.target.value = "";
+    ComposerValidator.updateSendButton();
   });
   els.imageInput.addEventListener("change", (event) => {
     handleUpload(event.target.files, "image");
     event.target.value = "";
+    ComposerValidator.updateSendButton();
   });
 
   els.attachmentTray.addEventListener("click", (event) => {
     const removeButton = event.target.closest("[data-attachment-remove]");
-    if (removeButton) removeAttachment(removeButton.dataset.attachmentRemove);
+    if (removeButton) {
+      removeAttachment(removeButton.dataset.attachmentRemove);
+      ComposerValidator.updateSendButton();
+    }
   });
 
   els.chatMain.addEventListener("dragenter", (event) => {
@@ -3661,11 +4200,14 @@ function bindEvents() {
     hideDropOverlay();
     els.uploadZone.classList.remove("active", "drag-over");
     handleUpload(event.dataTransfer?.files || [], "drop");
+    ComposerValidator.updateSendButton();
   });
 
+  // Detect user scrolling for intelligent auto-scroll management
   els.messageScroller.addEventListener("scroll", () => {
+    ScrollManager.detectUserScroll();
+    // Maintain old variable for compatibility
     userScrolledUp = !isNearBottom();
-    updateScrollBottomButton();
   });
 
   els.sidebarBackdrop.addEventListener("click", () => {
@@ -3748,6 +4290,557 @@ function bindEvents() {
 }
 
 /* ========================================================================
+   MESSAGE UTILITIES — copy text, handle clipboard, manage code blocks
+====================================================================== */
+const MessageUtilities = (() => {
+  /**
+   * Copy full message text to clipboard
+   * Handles fallback for older browsers, shows feedback
+   */
+  const copyMessage = async (messageId) => {
+    const message = manager.findMessage(messageId);
+    if (!message) {
+      showToast("Message not found", "warning");
+      return false;
+    }
+
+    const text = message.content || "";
+    if (!text) {
+      showToast("Message is empty", "warning");
+      return false;
+    }
+
+    const success = await copyToClipboard(text);
+    if (success) {
+      showToast(NOTIFICATIONS.TEXT_COPIED);
+    } else {
+      showToast(NOTIFICATIONS.COPY_FAILED || "Failed to copy", "error");
+    }
+    return success;
+  };
+
+  /**
+   * Copy code block to clipboard
+   * Extracts code from registered code blocks
+   */
+  const copyCode = async (codeId) => {
+    const code = codeRegistry.get(codeId);
+    if (!code) {
+      showToast("Code block not found", "warning");
+      return false;
+    }
+
+    if (!code.trim()) {
+      showToast("Code block is empty", "warning");
+      return false;
+    }
+
+    const success = await copyToClipboard(code);
+    if (success) {
+      showToast(NOTIFICATIONS.CODE_COPIED);
+    } else {
+      showToast(NOTIFICATIONS.COPY_FAILED || "Failed to copy code", "error");
+    }
+    return success;
+  };
+
+  /**
+   * Internal: Copy text to clipboard with fallback
+   * Tries modern API first, falls back to execCommand for older browsers
+   * Returns: true if successful, false otherwise
+   */
+  const copyToClipboard = async (text) => {
+    // Guard: ensure text is valid
+    if (!text || typeof text !== "string") {
+      return false;
+    }
+
+    // Try modern Clipboard API
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (err) {
+      // Fallback for older browsers or blocked permissions
+      return fallbackCopy(text);
+    }
+  };
+
+  /**
+   * Fallback copy using textarea + execCommand
+   * Used when Clipboard API unavailable or blocked
+   */
+  const fallbackCopy = (text) => {
+    const helper = document.createElement("textarea");
+    helper.value = text;
+    helper.style.position = "fixed";
+    helper.style.opacity = "0";
+    helper.style.pointerEvents = "none";
+    document.body.appendChild(helper);
+
+    try {
+      helper.select();
+      // Set selection range for mobile compatibility
+      helper.setSelectionRange(0, helper.value.length);
+      const success = document.execCommand("copy");
+      return success;
+    } catch (err) {
+      console.warn("Fallback copy failed:", err);
+      return false;
+    } finally {
+      document.body.removeChild(helper);
+    }
+  };
+
+  /**
+   * Copy entire conversation to clipboard
+   * Formats all messages with role labels
+   */
+  const copyConversation = async (conversationId) => {
+    const conversation = manager.getCurrentConversation();
+    if (!conversation || conversation.messages.length === 0) {
+      showToast("No messages to copy", "warning");
+      return false;
+    }
+
+    const text = conversation.messages
+      .map(msg => {
+        const role = msg.role === "user" ? "You" : "AI";
+        const content = msg.content || "(empty)";
+        return `${role}:\n${content}`;
+      })
+      .join("\n\n");
+
+    const success = await copyToClipboard(text);
+    if (success) {
+      showToast("Conversation copied to clipboard");
+    } else {
+      showToast(NOTIFICATIONS.COPY_FAILED || "Failed to copy conversation", "error");
+    }
+    return success;
+  };
+
+  return {
+    copyMessage,
+    copyCode,
+    copyConversation,
+    copyToClipboard,
+    fallbackCopy
+  };
+})();
+
+/* ========================================================================
+   MESSAGE RECOVERY — retry failed requests and regenerate AI responses
+====================================================================== */
+const MessageRecovery = (() => {
+  let recoveryInProgress = false;
+
+  /**
+   * Retry a failed AI message
+   * Re-sends the same request that failed
+   * Preserves conversation context
+   */
+  const retry = (messageId) => {
+    // Guard: prevent duplicate recovery requests
+    if (recoveryInProgress) {
+      showToast("Recovery already in progress", "warning");
+      return false;
+    }
+
+    // Guard: check loading state
+    if (store.isLoading()) {
+      showToast("Wait for the current response to finish", "warning");
+      return false;
+    }
+
+    // Find the failed message
+    const failedMessage = manager.findMessage(messageId);
+    if (!failedMessage) {
+      showToast("Message not found", "warning");
+      return false;
+    }
+
+    // Only retry AI responses that failed
+    if (failedMessage.role !== "assistant") {
+      showToast("Can only retry AI responses", "warning");
+      return false;
+    }
+
+    if (!failedMessage.error) {
+      showToast("Message did not fail - cannot retry", "warning");
+      return false;
+    }
+
+    // Find preceding user message (original request)
+    const userMessage = manager.findPrecedingUserMessage(messageId);
+    if (!userMessage) {
+      showToast("Original message context not found", "warning");
+      return false;
+    }
+
+    // Preserve: conversation state, user message, attachments
+    const conversationId = store.getConversationId();
+    if (!conversationId) {
+      showToast("Conversation context lost", "warning");
+      return false;
+    }
+
+    // Update message to show retry state (replace error with loading)
+    manager.updateMessage(messageId, {
+      content: "",
+      pending: true,
+      error: false,
+      statusLabel: "Retrying request…"
+    });
+
+    recoveryInProgress = true;
+
+    // Re-send with same context
+    renderConversation();
+    ResponseHandler.showTyping();
+    setLoading(true);
+
+    // Use existing runAssistantTurn with original context
+    runAssistantTurn(
+      userMessage.content || "",
+      userMessage.attachments || [],
+      null  // Let runAssistantTurn build fresh payload
+    ).finally(() => {
+      recoveryInProgress = false;
+    });
+
+    showToast("Retrying request…", "info");
+    return true;
+  };
+
+  /**
+   * Regenerate the latest AI response
+   * Removes old response and creates new one with same prompt
+   * Preserves conversation context
+   */
+  const regenerate = (messageId) => {
+    // Guard: prevent duplicate recovery requests
+    if (recoveryInProgress) {
+      showToast("Recovery already in progress", "warning");
+      return false;
+    }
+
+    // Guard: check loading state
+    if (store.isLoading()) {
+      showToast("Wait for the current response to finish", "warning");
+      return false;
+    }
+
+    // Find the message to regenerate
+    const aiMessage = manager.findMessage(messageId);
+    if (!aiMessage) {
+      showToast("Message not found", "warning");
+      return false;
+    }
+
+    // Only regenerate AI responses
+    if (aiMessage.role !== "assistant") {
+      showToast("Can only regenerate AI responses", "warning");
+      return false;
+    }
+
+    // Find preceding user message (original request)
+    const userMessage = manager.findPrecedingUserMessage(messageId);
+    if (!userMessage) {
+      showToast("Original message context not found", "warning");
+      return false;
+    }
+
+    // Preserve: conversation state, user message, attachments
+    const conversationId = store.getConversationId();
+    if (!conversationId) {
+      showToast("Conversation context lost", "warning");
+      return false;
+    }
+
+    // Remove old AI message (will be replaced by new response)
+    manager.removeMessage(messageId);
+
+    recoveryInProgress = true;
+
+    // Re-send with same context (creates new message)
+    renderConversation();
+    ResponseHandler.showTyping();
+    setLoading(true);
+
+    // Use existing runAssistantTurn with original context
+    runAssistantTurn(
+      userMessage.content || "",
+      userMessage.attachments || [],
+      null  // Let runAssistantTurn build fresh payload
+    ).finally(() => {
+      recoveryInProgress = false;
+    });
+
+    showToast("Regenerating response…", "info");
+    return true;
+  };
+
+  /**
+   * Check if recovery is in progress
+   */
+  const isRecovering = () => recoveryInProgress;
+
+  /**
+   * Clear recovery state (defensive)
+   */
+  const clearRecovery = () => {
+    recoveryInProgress = false;
+  };
+
+  return {
+    retry,
+    regenerate,
+    isRecovering,
+    clearRecovery
+  };
+})();
+
+/* ========================================================================
+   RESPONSE HANDLER — validate, sanitize, and handle API responses
+====================================================================== */
+const ResponseHandler = (() => {
+  /**
+   * Validate API response before rendering
+   * Never shows fake successful responses
+   */
+  const validateResponse = (result) => {
+    if (!result) {
+      return {
+        valid: false,
+        reason: "No response received",
+        content: null
+      };
+    }
+
+    const { content, streamed } = result;
+
+    // Check for null/undefined content
+    if (content === null || content === undefined) {
+      return {
+        valid: false,
+        reason: "Empty response from API",
+        content: null
+      };
+    }
+
+    // Check for empty string
+    const trimmed = String(content).trim();
+    if (trimmed.length === 0) {
+      return {
+        valid: false,
+        reason: "API returned empty response",
+        content: null
+      };
+    }
+
+    // Check for streaming mode but no content accumulated
+    if (streamed && trimmed.length === 0) {
+      return {
+        valid: false,
+        reason: "Stream ended without content",
+        content: null
+      };
+    }
+
+    // Response is valid - sanitize before rendering
+    const sanitized = sanitizeContent(trimmed);
+    if (sanitized.length === 0) {
+      return {
+        valid: false,
+        reason: "Response contained only unsafe content",
+        content: null
+      };
+    }
+
+    return {
+      valid: true,
+      reason: null,
+      content: sanitized
+    };
+  };
+
+  /**
+   * Get user-friendly fallback message for invalid responses
+   */
+  const getFallbackMessage = (reason) => {
+    const messages = {
+      "No response received": "The server did not return a response. This may be a connection issue.",
+      "Empty response from API": "The server returned an empty response. Please try again.",
+      "API returned empty response": "The AI didn't generate a response. Please try again.",
+      "Stream ended without content": "The response stream ended without generating content.",
+      "Response contained only unsafe content": "The response contained unsafe content and was blocked."
+    };
+
+    return messages[reason] || `Response validation failed: ${reason}. Please try again.`;
+  };
+
+  /**
+   * Request completion handler
+   * Called when response arrives (success or failure)
+   */
+  const completeRequest = () => {
+    if (activeRequest) {
+      activeRequest = null;
+    }
+    setStreaming(false);
+    setLoading(false);
+    
+    // Restore auto-scroll behavior after response completes
+    ScrollManager.restoreAutoScroll();
+  };
+
+  /**
+   * Clear typing indicator
+   */
+  const hideTyping = () => {
+    const indicator = document.querySelector(".typing-indicator");
+    if (indicator) {
+      indicator.style.display = "none";
+    }
+  };
+
+  /**
+   * Show typing indicator before response
+   */
+  const showTyping = () => {
+    const indicator = document.querySelector(".typing-indicator");
+    if (indicator) {
+      indicator.style.display = "inline-flex";
+    }
+  };
+
+  /**
+   * Check if response appears to be valid content
+   * Additional semantic checks beyond null/empty
+   */
+  const isContentfulResponse = (content) => {
+    if (!content || typeof content !== "string") return false;
+    
+    const trimmed = content.trim();
+    
+    // Content must have actual text
+    if (trimmed.length === 0) return false;
+    
+    // Check for minimum meaningful length (at least 10 chars)
+    if (trimmed.length < 10) return false;
+    
+    // Content shouldn't be just whitespace or repeated chars
+    const uniqueChars = new Set(trimmed).size;
+    if (uniqueChars < 3) return false;
+    
+    return true;
+  };
+
+  return {
+    validateResponse,
+    getFallbackMessage,
+    completeRequest,
+    hideTyping,
+    showTyping,
+    isContentfulResponse
+  };
+})();
+
+/* ========================================================================
+   INPUT VALIDATION SYSTEM
+====================================================================== */
+const ComposerValidator = (() => {
+  const MAX_MESSAGE_LENGTH = 8000;
+  const MIN_MESSAGE_LENGTH = 1;
+
+  const readComposer = () => {
+    const raw = els.composerInput.value;
+    return raw.trim();
+  };
+
+  const getAttachments = () => {
+    const items = els.attachmentTray.querySelectorAll("[data-attachment-id]");
+    return Array.from(items).map(item => ({
+      id: item.dataset.attachmentId,
+      type: item.dataset.attachmentType || "file"
+    }));
+  };
+
+  const validateInput = () => {
+    const text = readComposer();
+    const attachments = getAttachments();
+    
+    return {
+      text,
+      attachments,
+      isEmpty: text.length === 0 && attachments.length === 0,
+      isValid: (text.length >= MIN_MESSAGE_LENGTH || attachments.length > 0) && 
+               text.length <= MAX_MESSAGE_LENGTH,
+      lengthValid: text.length <= MAX_MESSAGE_LENGTH,
+      hasText: text.length > 0,
+      hasAttachments: attachments.length > 0,
+      charCount: text.length,
+      charLimit: MAX_MESSAGE_LENGTH
+    };
+  };
+
+  const getComposerState = () => {
+    const state = validateInput();
+    return {
+      input: state.text,
+      attachments: state.attachments,
+      isReady: state.isValid,
+      isEmpty: state.isEmpty,
+      hasContent: state.hasText || state.hasAttachments,
+      validation: {
+        textValid: state.lengthValid,
+        minMet: state.hasText || state.hasAttachments,
+        message: !state.lengthValid ? `Message too long (${state.charCount}/${state.charLimit})` : null
+      }
+    };
+  };
+
+  const updateSendButton = () => {
+    const state = getComposerState();
+    const sendBtn = els.composer?.querySelector("button[type='submit']");
+    
+    if (sendBtn) {
+      if (store.isLoading()) {
+        sendBtn.disabled = false;
+        sendBtn.classList.add("stop-gen");
+      } else {
+        sendBtn.disabled = !state.isReady;
+        sendBtn.classList.remove("stop-gen");
+      }
+    }
+  };
+
+  const clearComposer = () => {
+    els.composerInput.value = "";
+    els.attachmentTray.innerHTML = "";
+    autoGrowComposer();
+    updateCounter();
+    updateSendButton();
+  };
+
+  const focusComposer = () => {
+    els.composerInput.focus();
+  };
+
+  return {
+    readComposer,
+    getAttachments,
+    validateInput,
+    getComposerState,
+    updateSendButton,
+    clearComposer,
+    focusComposer,
+    MAX_MESSAGE_LENGTH,
+    MIN_MESSAGE_LENGTH
+  };
+})();
+
+/* ========================================================================
    INIT
 ====================================================================== */
 function initializeApp() {
@@ -3761,6 +4854,7 @@ function initializeApp() {
   renderAll();
   autoGrowComposer();
   updateLayoutState();
+  ComposerValidator.updateSendButton();
   els.composerInput.focus();
   checkHealth(false);
 }
