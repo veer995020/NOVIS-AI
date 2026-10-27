@@ -1,252 +1,267 @@
 /**
- * ModelPicker — Optimized
- * Compact model selection component for chat interface
- * 
- * Optimizations:
- * - Single style injection per app
- * - Efficient DOM caching
- * - Event delegation
- * - Minimal re-renders
- * - No global picker registry
+ * ModelPicker — compact model and mode selector for the chat header.
+ *
+ * Classic script (no ES module syntax). Requires StateStore.js loaded first.
+ *
+ * Role: a view. It reads the current model/mode from the store and renders them.
+ * It never writes to the store directly. Selections are reported through
+ * onSelectModel / onSelectMode so the app can run its own side effects
+ * (toasts, right-panel sync, placeholder updates) in one place.
+ *
+ * Usage:
+ *   const picker = new ModelPicker(store, "modelPicker", {
+ *     onSelectModel: id => setModel(id),
+ *     onSelectMode:  id => setMode(id)
+ *   });
+ *   picker.render();
  */
 
 class ModelPicker {
-    // Static style injection (once per page)
-    static _styleInjected = false;
-    static _injectStyles() {
-        if (ModelPicker._styleInjected) return;
-        
-        const style = document.createElement('style');
-        style.textContent = `
-            .model-picker { position: relative; }
-            .model-picker-trigger {
-                display: flex; align-items: center; gap: 8px; padding: 8px 12px;
-                background: var(--bg-2); border: 1px solid var(--line);
-                border-radius: var(--radius-s); color: var(--ink-0);
-                font-weight: 600; font-size: 0.9rem; cursor: pointer;
-                transition: all var(--fast); min-width: 140px; justify-content: space-between;
-            }
-            .model-picker-trigger:hover { border-color: var(--cyan); }
-            .model-picker-trigger.open { border-color: var(--cyan); background: var(--bg-1); }
-            .model-icon { font-size: 1rem; }
-            .model-name { flex: 1; text-align: left; }
-            .picker-arrow {
-                font-size: 0.7rem; opacity: 0.6; transition: transform var(--fast);
-            }
-            .model-picker-trigger.open .picker-arrow { transform: rotate(180deg); }
-            .model-picker-menu {
-                position: absolute; top: calc(100% + 4px); left: 0;
-                background: var(--bg-1); border: 1px solid var(--line);
-                border-radius: var(--radius-m); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-                z-index: 100; min-width: 220px; max-height: 400px; overflow-y: auto;
-                animation: slideDown var(--fast) ease-out;
-            }
-            @keyframes slideDown {
-                from { opacity: 0; transform: translateY(-8px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-            .menu-section { padding: var(--sp-2) 0; }
-            .menu-label {
-                font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
-                color: var(--ink-2); letter-spacing: 0.05em;
-                padding: 0 var(--sp-3); margin-bottom: var(--sp-2);
-            }
-            .menu-item {
-                display: flex; align-items: center; gap: var(--sp-2);
-                padding: 10px var(--sp-3); cursor: pointer; transition: background var(--fast);
-            }
-            .menu-item:hover { background: var(--bg-2); }
-            .menu-item.active {
-                background: var(--bg-2); border-left: 2px solid var(--cyan);
-                padding-left: calc(var(--sp-3) - 2px);
-            }
-            .menu-item-icon { font-size: 1.1rem; min-width: 24px; text-align: center; }
-            .menu-item-content { flex: 1; }
-            .menu-item-name { font-weight: 500; font-size: 0.9rem; color: var(--ink-0); }
-            .menu-item-meta { font-size: 0.75rem; color: var(--ink-2); margin-top: 2px; }
-            .menu-item-check { color: var(--cyan); font-weight: 700; font-size: 1rem; }
-            .menu-divider { height: 1px; background: var(--line); margin: 0; }
-            ::-webkit-scrollbar { width: 6px; }
-            ::-webkit-scrollbar-track { background: transparent; }
-            ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
-            ::-webkit-scrollbar-thumb:hover { background: var(--ink-2); }
-        `;
-        document.head.appendChild(style);
-        ModelPicker._styleInjected = true;
-    }
+  static _stylesInjected = false;
 
-    constructor(store, containerId) {
-        this.store = store;
-        this.containerId = containerId;
-        this.isOpen = false;
-        
-        // Cache DOM elements
-        this.container = null;
-        this.trigger = null;
-        this.menu = null;
-        this.nameEl = null;
-        this.iconEl = null;
-        
-        // Inject styles once
-        ModelPicker._injectStyles();
-        
-        // Subscribe to store changes
-        this.unsubscribe = store.subscribe(() => {
-            this.updateActiveModel();
-        });
+  static _injectStyles() {
+    if (ModelPicker._stylesInjected) return;
+    ModelPicker._stylesInjected = true;
 
-        // Bind handler for document click
-        this._handleDocumentClick = (e) => {
-            if (this.isOpen && this.container && !this.container.contains(e.target)) {
-                this.close();
-            }
-        };
-    }
+    const style = document.createElement("style");
+    style.id = "model-picker-styles";
+    style.textContent = `
+      .model-picker { position: relative; display: inline-flex; min-width: 0; }
+      .model-picker-trigger { max-width: 100%; }
+      .model-picker-trigger[aria-expanded="true"] { border-color: rgba(34,211,238,.45); }
+      .mp-menu {
+        position: absolute; top: calc(100% + 8px); left: 0; z-index: 90;
+        min-width: 250px; max-height: min(460px, 70vh); overflow-y: auto;
+        padding: 6px; border-radius: 16px;
+        border: 1px solid var(--border-2, rgba(255,255,255,.16));
+        background: rgba(14, 14, 27, .94);
+        box-shadow: var(--shadow-2, 0 18px 55px rgba(0,0,0,.34));
+        backdrop-filter: blur(20px);
+        animation: mp-in 160ms ease-out;
+      }
+      @keyframes mp-in {
+        from { opacity: 0; transform: translateY(-6px); }
+        to   { opacity: 1; transform: none; }
+      }
+      .mp-section + .mp-section { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border, rgba(255,255,255,.085)); }
+      .mp-label {
+        padding: 6px 10px 4px; color: var(--text-3, #5d5d77);
+        font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+      }
+      .mp-item {
+        display: flex; align-items: center; gap: 10px; width: 100%;
+        padding: 10px; border-radius: 11px; color: var(--text-1, #c8c8dd);
+        text-align: left; font-size: 13.5px;
+        transition: background var(--transition, 180ms ease), color var(--transition, 180ms ease);
+      }
+      .mp-item:hover, .mp-item:focus-visible { background: var(--glass, rgba(255,255,255,.045)); color: var(--text-0, #f5f5ff); }
+      .mp-item.active { background: var(--brand-soft, rgba(99,102,241,.18)); color: var(--text-0, #f5f5ff); }
+      .mp-item-icon { width: 22px; text-align: center; flex: none; }
+      .mp-item-body { flex: 1; min-width: 0; display: grid; gap: 2px; }
+      .mp-item-name { font-weight: 600; }
+      .mp-item-meta { color: var(--text-2, #8f8fa8); font-size: 11.5px; }
+      .mp-item-check { color: var(--cyan, #22d3ee); font-weight: 700; flex: none; }
+    `;
+    document.head.appendChild(style);
+  }
 
-    render() {
-        this.container = document.getElementById(this.containerId);
-        if (!this.container) return;
+  constructor(store, containerId, handlers = {}) {
+    this.store = store;
+    this.containerId = containerId;
+    this.onSelectModel = handlers.onSelectModel || (id => store.setModel(id));
+    this.onSelectMode = handlers.onSelectMode || (id => store.setMode(id));
 
-        const html = `
-            <div class="model-picker">
-                <button class="model-picker-trigger">
-                    <span class="model-icon"></span>
-                    <span class="model-name"></span>
-                    <span class="picker-arrow">▼</span>
-                </button>
-                <div class="model-picker-menu" style="display: none;">
-                    <div class="menu-section">
-                        <div class="menu-label">Models</div>
-                        <div class="model-list"></div>
-                    </div>
-                    <div class="menu-divider"></div>
-                    <div class="menu-section">
-                        <div class="menu-label">Modes</div>
-                        <div class="mode-list"></div>
-                    </div>
-                </div>
-            </div>
-        `;
+    this.container = null;
+    this.trigger = null;
+    this.menu = null;
+    this.nameEl = null;
+    this.iconEl = null;
+    this.modelList = null;
+    this.modeList = null;
+    this.isOpen = false;
 
-        this.container.innerHTML = html;
+    this._activeModelId = null;
+    this._activeModeId = null;
+    this._bound = false;
 
-        // Cache DOM references
-        this.trigger = this.container.querySelector('.model-picker-trigger');
-        this.menu = this.container.querySelector('.model-picker-menu');
-        this.nameEl = this.container.querySelector('.model-name');
-        this.iconEl = this.container.querySelector('.model-icon');
-        const modelListEl = this.container.querySelector('.model-list');
-        const modeListEl = this.container.querySelector('.mode-list');
+    ModelPicker._injectStyles();
 
-        // Render items once
-        modelListEl.innerHTML = this._renderModelList();
-        modeListEl.innerHTML = this._renderModeList();
+    // Store changes only refresh the highlighted items; no full re-render.
+    this._unsubscribe = store.subscribe(() => this.updateActiveModel());
 
-        // Setup event handlers
-        this.trigger.addEventListener('click', () => this.toggle());
-        
-        // Event delegation for menu items
-        this.menu.addEventListener('click', (e) => {
-            const modelBtn = e.target.closest('[data-model-id]');
-            if (modelBtn) {
-                this.selectModel(modelBtn.dataset.modelId);
-                return;
-            }
-            
-            const modeBtn = e.target.closest('[data-mode-id]');
-            if (modeBtn) {
-                this.selectMode(modeBtn.dataset.modeId);
-            }
-        });
-
-        // Document click handler
-        document.addEventListener('click', this._handleDocumentClick, { passive: true });
-
-        this.updateActiveModel();
-    }
-
-    _renderModelList() {
-        return this.store.getModels()
-            .map(model => `
-                <div class="menu-item ${model.id === this.store.getModel().id ? 'active' : ''}" data-model-id="${model.id}">
-                    <div class="menu-item-icon">${model.icon}</div>
-                    <div class="menu-item-content">
-                        <div class="menu-item-name">${model.name}</div>
-                        <div class="menu-item-meta">${model.tier}</div>
-                    </div>
-                    ${model.id === this.store.getModel().id ? '<div class="menu-item-check">✓</div>' : ''}
-                </div>
-            `)
-            .join('');
-    }
-
-    _renderModeList() {
-        return this.store.getModes()
-            .map(mode => `
-                <div class="menu-item ${mode.id === this.store.getMode().id ? 'active' : ''}" data-mode-id="${mode.id}">
-                    <div class="menu-item-icon">${mode.icon}</div>
-                    <div class="menu-item-content">
-                        <div class="menu-item-name">${mode.name}</div>
-                    </div>
-                    ${mode.id === this.store.getMode().id ? '<div class="menu-item-check">✓</div>' : ''}
-                </div>
-            `)
-            .join('');
-    }
-
-    updateActiveModel() {
-        if (!this.nameEl || !this.iconEl) return;
-        
-        const model = this.store.getModel();
-        this.nameEl.textContent = model.name;
-        this.iconEl.textContent = model.icon;
-
-        // Update active states
-        if (this.container) {
-            this.container.querySelectorAll('[data-model-id]').forEach(el => {
-                el.classList.toggle('active', el.dataset.modelId === model.id);
-            });
-        }
-    }
-
-    selectModel(modelId) {
-        this.store.setModel(modelId);
+    this._onDocumentClick = (event) => {
+      if (this.isOpen && this.container && !this.container.contains(event.target)) this.close();
+    };
+    this._onContainerClick = (event) => this._onClick(event);
+    this._onKeydown = (event) => {
+      if (event.key === "Escape" && this.isOpen) {
         this.close();
+        this.trigger?.focus();
+      }
+    };
+    document.addEventListener("click", this._onDocumentClick);
+    document.addEventListener("keydown", this._onKeydown);
+  }
+
+  /** Escape text for safe insertion into HTML. */
+  static _esc(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  /** @returns {boolean} true if the mount point was found and rendered */
+  render() {
+    this.container = document.getElementById(this.containerId);
+    if (!this.container) return false;
+
+    this.container.innerHTML = `
+      <div class="model-picker">
+        <button type="button" class="model-picker-trigger chip chip-model" aria-haspopup="menu" aria-expanded="false"
+                title="Change model" aria-label="Change model">
+          <span class="model-picker-icon" aria-hidden="true"></span>
+          <span class="model-picker-name"></span>
+          <svg class="icon chevron" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
+        </button>
+        <div class="mp-menu" role="menu" hidden>
+          <div class="mp-section">
+            <div class="mp-label">Models</div>
+            <div class="mp-model-list"></div>
+          </div>
+          <div class="mp-section">
+            <div class="mp-label">Modes</div>
+            <div class="mp-mode-list"></div>
+          </div>
+        </div>
+      </div>`;
+
+    this.trigger = this.container.querySelector(".model-picker-trigger");
+    this.menu = this.container.querySelector(".mp-menu");
+    this.nameEl = this.container.querySelector(".model-picker-name");
+    this.iconEl = this.container.querySelector(".model-picker-icon");
+    this.modelList = this.container.querySelector(".mp-model-list");
+    this.modeList = this.container.querySelector(".mp-mode-list");
+
+    this.modelList.innerHTML = this._renderItems(this.store.getModels(), "model-id", m => m.id, m => m.icon, m => m.name, m => m.tier);
+    this.modeList.innerHTML = this._renderItems(this.store.getModes(), "mode-id", m => m.id, m => m.icon, m => m.name, () => "");
+
+    // Delegated handlers live on the container, which persists across renders.
+    if (!this._bound) {
+      this.container.addEventListener("click", this._onContainerClick);
+      this._bound = true;
     }
 
-    selectMode(modeId) {
-        this.store.setMode(modeId);
-        this.close();
-    }
+    this._activeModelId = null;
+    this._activeModeId = null;
+    this.updateActiveModel();
+    return true;
+  }
 
-    toggle() {
-        if (this.isOpen) this.close();
-        else this.open();
-    }
+  _renderItems(items, attr, idOf, iconOf, nameOf, metaOf) {
+    return items.map(item => {
+      const meta = metaOf(item);
+      return `
+        <button type="button" class="mp-item" role="menuitemradio" aria-checked="false" data-${attr}="${ModelPicker._esc(idOf(item))}">
+          <span class="mp-item-icon" aria-hidden="true">${ModelPicker._esc(iconOf(item) || "•")}</span>
+          <span class="mp-item-body">
+            <span class="mp-item-name">${ModelPicker._esc(nameOf(item))}</span>
+            ${meta ? `<span class="mp-item-meta">${ModelPicker._esc(meta)}</span>` : ""}
+          </span>
+          <span class="mp-item-check" aria-hidden="true"></span>
+        </button>`;
+    }).join("");
+  }
 
-    open() {
-        if (!this.trigger || !this.menu) return;
-        this.trigger.classList.add('open');
-        this.menu.style.display = 'block';
-        this.isOpen = true;
+  _onClick(event) {
+    if (event.target.closest(".model-picker-trigger")) {
+      this.toggle();
+      return;
     }
+    const modelItem = event.target.closest("[data-model-id]");
+    if (modelItem) {
+      this.selectModel(modelItem.dataset.modelId);
+      return;
+    }
+    const modeItem = event.target.closest("[data-mode-id]");
+    if (modeItem) this.selectMode(modeItem.dataset.modeId);
+  }
 
-    close() {
-        if (!this.trigger || !this.menu) return;
-        this.trigger.classList.remove('open');
-        this.menu.style.display = 'none';
-        this.isOpen = false;
-    }
+  /** Refresh the trigger label and item highlights. Cheap; runs on every store change. */
+  updateActiveModel() {
+    if (!this.trigger) return;
 
-    destroy() {
-        this.unsubscribe();
-        document.removeEventListener('click', this._handleDocumentClick);
-        this.container = null;
-        this.trigger = null;
-        this.menu = null;
+    const model = this.store.getModel();
+    const mode = this.store.getMode();
+
+    if (model && this._activeModelId !== model.id) {
+      this._activeModelId = model.id;
+      this.nameEl.textContent = model.name;
+      this.iconEl.textContent = model.icon || "";
+      this._markActive(this.modelList, "data-model-id", model.id);
     }
+    if (mode && this._activeModeId !== mode.id) {
+      this._activeModeId = mode.id;
+      this._markActive(this.modeList, "data-mode-id", mode.id);
+    }
+  }
+
+  _markActive(root, attr, activeId) {
+    root.querySelectorAll(`[${attr}]`).forEach(el => {
+      const on = el.getAttribute(attr) === activeId;
+      el.classList.toggle("active", on);
+      el.setAttribute("aria-checked", String(on));
+      el.querySelector(".mp-item-check").textContent = on ? "✓" : "";
+    });
+  }
+
+  selectModel(modelId) {
+    this.close();
+    this.onSelectModel(modelId);
+  }
+
+  selectMode(modeId) {
+    this.close();
+    this.onSelectMode(modeId);
+  }
+
+  toggle() {
+    if (this.isOpen) this.close();
+    else this.open();
+  }
+
+  open() {
+    if (!this.trigger) return;
+    this.menu.hidden = false;
+    this.trigger.setAttribute("aria-expanded", "true");
+    this.trigger.classList.add("open");
+    this.isOpen = true;
+    this.menu.querySelector(".mp-item.active")?.focus({ preventScroll: true });
+  }
+
+  close() {
+    if (!this.trigger || !this.isOpen) return;
+    this.menu.hidden = true;
+    this.trigger.setAttribute("aria-expanded", "false");
+    this.trigger.classList.remove("open");
+    this.isOpen = false;
+  }
+
+  destroy() {
+    this._unsubscribe();
+    document.removeEventListener("click", this._onDocumentClick);
+    document.removeEventListener("keydown", this._onKeydown);
+    if (this.container) {
+      this.container.removeEventListener("click", this._onContainerClick);
+      this.container.innerHTML = "";
+    }
+    this.container = this.trigger = this.menu = null;
+    this.nameEl = this.iconEl = this.modelList = this.modeList = null;
+    this._bound = false;
+    this.isOpen = false;
+  }
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = ModelPicker;
+// Node / test harness support. Harmless in the browser.
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = ModelPicker;
 }

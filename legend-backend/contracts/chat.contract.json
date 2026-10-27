@@ -1,0 +1,1122 @@
+{
+  "api_version": "0.1.0",
+  "contract_version": 1,
+  "endpoints": {
+    "GET /api/chat/options": {
+      "response": "ChatOptions"
+    },
+    "GET /api/conversations/{conversation_id}": {
+      "errors": [
+        "404 conversation_not_found"
+      ],
+      "response": "Conversation"
+    },
+    "GET /api/models": {
+      "response": "ModelList"
+    },
+    "GET /health": {
+      "response": "HealthReport",
+      "statuses": {
+        "200": "ok or degraded",
+        "503": "down"
+      }
+    },
+    "GET /health/live": {
+      "response": "ProbeReport"
+    },
+    "GET /health/ready": {
+      "response": "ProbeReport",
+      "statuses": {
+        "200": "ready",
+        "503": "not_ready"
+      }
+    },
+    "PATCH /api/conversations/{conversation_id}": {
+      "errors": [
+        "404 conversation_not_found",
+        "409 version_conflict"
+      ],
+      "request": "ConversationUpdate",
+      "response": "Conversation"
+    },
+    "POST /api/chat": {
+      "error": "ErrorEnvelope",
+      "request": "ChatRequest",
+      "response": "ChatResponse",
+      "statuses": {
+        "200": "status is completed or stopped",
+        "409": "ErrorEnvelope with code conversation_busy when the request cannot start, or ChatResponse with status error and code conversation_busy when the reply could not be saved",
+        "422": "the request failed validation",
+        "502": "status is error with code generation_failed",
+        "503": "status is error with code model_unavailable",
+        "504": "status is error with code generation_timeout"
+      }
+    },
+    "POST /api/chat/stream": {
+      "events": "StreamEvent",
+      "request": "ChatRequest"
+    },
+    "POST /api/chat/{request_id}/stop": {
+      "response": "StopResponse"
+    },
+    "POST /api/code": {
+      "error": "ErrorEnvelope",
+      "mode": "code",
+      "request": "TaskRequest",
+      "response": "ChatResponse",
+      "statuses": {
+        "200": "status is completed or stopped",
+        "409": "ErrorEnvelope with code conversation_busy when the request cannot start, or ChatResponse with status error and code conversation_busy when the reply could not be saved",
+        "422": "the request failed validation",
+        "502": "status is error with code generation_failed",
+        "503": "status is error with code model_unavailable",
+        "504": "status is error with code generation_timeout"
+      }
+    },
+    "POST /api/conversations": {
+      "request": "ConversationCreate",
+      "response": "Conversation",
+      "status": "201"
+    },
+    "POST /api/conversations/{conversation_id}/clear": {
+      "errors": [
+        "404 conversation_not_found",
+        "409 version_conflict",
+        "409 conversation_busy"
+      ],
+      "request": "ConversationClear",
+      "response": "Conversation"
+    },
+    "POST /api/research": {
+      "error": "ErrorEnvelope",
+      "mode": "research",
+      "request": "TaskRequest",
+      "response": "ChatResponse",
+      "statuses": {
+        "200": "status is completed or stopped",
+        "409": "ErrorEnvelope with code conversation_busy when the request cannot start, or ChatResponse with status error and code conversation_busy when the reply could not be saved",
+        "422": "the request failed validation",
+        "502": "status is error with code generation_failed",
+        "503": "status is error with code model_unavailable",
+        "504": "status is error with code generation_timeout"
+      }
+    },
+    "POST /api/write": {
+      "error": "ErrorEnvelope",
+      "mode": "write",
+      "request": "TaskRequest",
+      "response": "ChatResponse",
+      "statuses": {
+        "200": "status is completed or stopped",
+        "409": "ErrorEnvelope with code conversation_busy when the request cannot start, or ChatResponse with status error and code conversation_busy when the reply could not be saved",
+        "422": "the request failed validation",
+        "502": "status is error with code generation_failed",
+        "503": "status is error with code model_unavailable",
+        "504": "status is error with code generation_timeout"
+      }
+    }
+  },
+  "limits": {
+    "conversation_id_max_length": 64,
+    "message_max_chars": 8000,
+    "name_max_length": 64,
+    "reply_max_chars": 100000
+  },
+  "schemas": {
+    "ChatOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "available_models": {
+          "description": "Model ids with a configured route.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Available Models",
+          "type": "array"
+        },
+        "default_mode": {
+          "title": "Default Mode",
+          "type": "string"
+        },
+        "default_model": {
+          "title": "Default Model",
+          "type": "string"
+        },
+        "models": {
+          "description": "Every model id the API accepts.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Models",
+          "type": "array"
+        },
+        "modes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Modes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "models",
+        "available_models",
+        "default_model",
+        "modes",
+        "default_mode"
+      ],
+      "title": "ChatOptions",
+      "type": "object"
+    },
+    "ChatRequest": {
+      "additionalProperties": false,
+      "description": "Input for POST /api/chat, where the caller chooses the mode.",
+      "properties": {
+        "conversation_id": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Omit to start a new conversation.",
+          "title": "Conversation Id"
+        },
+        "message": {
+          "description": "The user's message.",
+          "maxLength": 8000,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "mode": {
+          "default": "standard",
+          "description": "Mode name from GET /api/chat/options.",
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$",
+          "title": "Mode",
+          "type": "string"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Model id from GET /api/chat/options. Omit to use rapid.",
+          "title": "Model"
+        }
+      },
+      "required": [
+        "message"
+      ],
+      "title": "ChatRequest",
+      "type": "object"
+    },
+    "ChatResponse": {
+      "$defs": {
+        "ChatStatus": {
+          "enum": [
+            "completed",
+            "stopped",
+            "error"
+          ],
+          "title": "ChatStatus",
+          "type": "string"
+        },
+        "ErrorCode": {
+          "enum": [
+            "validation_error",
+            "not_found",
+            "method_not_allowed",
+            "payload_too_large",
+            "bad_request",
+            "unauthorized",
+            "rate_limited",
+            "generation_failed",
+            "generation_timeout",
+            "model_unavailable",
+            "conversation_not_found",
+            "version_conflict",
+            "conversation_busy",
+            "capacity_exceeded",
+            "internal_error",
+            "http_error"
+          ],
+          "title": "ErrorCode",
+          "type": "string"
+        },
+        "ErrorDetail": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "$ref": "#/$defs/ErrorCode"
+            },
+            "details": {
+              "anyOf": [
+                {
+                  "items": {
+                    "$ref": "#/$defs/FieldIssue"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Details"
+            },
+            "message": {
+              "maxLength": 500,
+              "minLength": 1,
+              "title": "Message",
+              "type": "string"
+            }
+          },
+          "required": [
+            "code",
+            "message"
+          ],
+          "title": "ErrorDetail",
+          "type": "object"
+        },
+        "FieldIssue": {
+          "additionalProperties": false,
+          "properties": {
+            "field": {
+              "description": "Dotted location, e.g. body.message",
+              "maxLength": 200,
+              "title": "Field",
+              "type": "string"
+            },
+            "message": {
+              "maxLength": 500,
+              "title": "Message",
+              "type": "string"
+            }
+          },
+          "required": [
+            "field",
+            "message"
+          ],
+          "title": "FieldIssue",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "maxLength": 100000,
+          "title": "Content",
+          "type": "string"
+        },
+        "conversation_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Conversation Id",
+          "type": "string"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ErrorDetail"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "mode": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Mode",
+          "type": "string"
+        },
+        "model": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ChatStatus"
+        }
+      },
+      "required": [
+        "conversation_id",
+        "model",
+        "mode",
+        "content",
+        "status"
+      ],
+      "title": "ChatResponse",
+      "type": "object"
+    },
+    "Conversation": {
+      "$defs": {
+        "Message": {
+          "description": "One turn in a conversation.",
+          "properties": {
+            "content": {
+              "title": "Content",
+              "type": "string"
+            },
+            "created_at": {
+              "format": "date-time",
+              "title": "Created At",
+              "type": "string"
+            },
+            "id": {
+              "title": "Id",
+              "type": "string"
+            },
+            "role": {
+              "enum": [
+                "user",
+                "assistant"
+              ],
+              "title": "Role",
+              "type": "string"
+            }
+          },
+          "required": [
+            "role",
+            "content"
+          ],
+          "title": "Message",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "message_count": {
+          "description": "Messages stored, including any omitted by `limit`.",
+          "minimum": 0,
+          "title": "Message Count",
+          "type": "integer"
+        },
+        "messages": {
+          "description": "The most recent messages, oldest first.",
+          "items": {
+            "$ref": "#/$defs/Message"
+          },
+          "title": "Messages",
+          "type": "array"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Title"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        },
+        "version": {
+          "description": "Increases on every change. Send it back on updates.",
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "version",
+        "created_at",
+        "updated_at",
+        "message_count",
+        "messages"
+      ],
+      "title": "Conversation",
+      "type": "object"
+    },
+    "ConversationClear": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_version": {
+          "description": "The version you read. The clear is refused if it has changed.",
+          "minimum": 1,
+          "title": "Expected Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "expected_version"
+      ],
+      "title": "ConversationClear",
+      "type": "object"
+    },
+    "ConversationCreate": {
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional display title.",
+          "title": "Title"
+        }
+      },
+      "title": "ConversationCreate",
+      "type": "object"
+    },
+    "ConversationUpdate": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_version": {
+          "description": "The version you read. The update is refused if it has changed.",
+          "minimum": 1,
+          "title": "Expected Version",
+          "type": "integer"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "New title, or null to remove it.",
+          "title": "Title"
+        }
+      },
+      "required": [
+        "title",
+        "expected_version"
+      ],
+      "title": "ConversationUpdate",
+      "type": "object"
+    },
+    "ErrorEnvelope": {
+      "$defs": {
+        "ErrorCode": {
+          "enum": [
+            "validation_error",
+            "not_found",
+            "method_not_allowed",
+            "payload_too_large",
+            "bad_request",
+            "unauthorized",
+            "rate_limited",
+            "generation_failed",
+            "generation_timeout",
+            "model_unavailable",
+            "conversation_not_found",
+            "version_conflict",
+            "conversation_busy",
+            "capacity_exceeded",
+            "internal_error",
+            "http_error"
+          ],
+          "title": "ErrorCode",
+          "type": "string"
+        },
+        "ErrorDetail": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "$ref": "#/$defs/ErrorCode"
+            },
+            "details": {
+              "anyOf": [
+                {
+                  "items": {
+                    "$ref": "#/$defs/FieldIssue"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Details"
+            },
+            "message": {
+              "maxLength": 500,
+              "minLength": 1,
+              "title": "Message",
+              "type": "string"
+            }
+          },
+          "required": [
+            "code",
+            "message"
+          ],
+          "title": "ErrorDetail",
+          "type": "object"
+        },
+        "FieldIssue": {
+          "additionalProperties": false,
+          "properties": {
+            "field": {
+              "description": "Dotted location, e.g. body.message",
+              "maxLength": 200,
+              "title": "Field",
+              "type": "string"
+            },
+            "message": {
+              "maxLength": 500,
+              "title": "Message",
+              "type": "string"
+            }
+          },
+          "required": [
+            "field",
+            "message"
+          ],
+          "title": "FieldIssue",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "$ref": "#/$defs/ErrorDetail"
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Request Id"
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "title": "ErrorEnvelope",
+      "type": "object"
+    },
+    "HealthReport": {
+      "additionalProperties": false,
+      "properties": {
+        "checks": {
+          "additionalProperties": {
+            "enum": [
+              "ok",
+              "degraded",
+              "down"
+            ],
+            "type": "string"
+          },
+          "description": "server: ok when running. models: degraded when no model has a route. conversations: degraded above 90% of the conversation limit.",
+          "title": "Checks",
+          "type": "object"
+        },
+        "status": {
+          "description": "ok: all checks pass. degraded: serving, but a check is not ok. down: not serving.",
+          "enum": [
+            "ok",
+            "degraded",
+            "down"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "uptime_seconds": {
+          "minimum": 0,
+          "title": "Uptime Seconds",
+          "type": "number"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "version",
+        "uptime_seconds",
+        "checks"
+      ],
+      "title": "HealthReport",
+      "type": "object"
+    },
+    "Message": {
+      "description": "One turn in a conversation.",
+      "properties": {
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "user",
+            "assistant"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "content"
+      ],
+      "title": "Message",
+      "type": "object"
+    },
+    "ModelList": {
+      "$defs": {
+        "ModelInfo": {
+          "additionalProperties": false,
+          "properties": {
+            "available": {
+              "description": "False when the model has no route in this deployment.",
+              "title": "Available",
+              "type": "boolean"
+            },
+            "default": {
+              "description": "True for the model used when `model` is omitted.",
+              "title": "Default",
+              "type": "boolean"
+            },
+            "id": {
+              "description": "Use this value in the `model` field.",
+              "title": "Id",
+              "type": "string"
+            },
+            "name": {
+              "description": "Display name.",
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "name",
+            "available",
+            "default"
+          ],
+          "title": "ModelInfo",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "default_model": {
+          "title": "Default Model",
+          "type": "string"
+        },
+        "models": {
+          "items": {
+            "$ref": "#/$defs/ModelInfo"
+          },
+          "title": "Models",
+          "type": "array"
+        }
+      },
+      "required": [
+        "models",
+        "default_model"
+      ],
+      "title": "ModelList",
+      "type": "object"
+    },
+    "ProbeReport": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "ok",
+            "ready",
+            "not_ready"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "uptime_seconds": {
+          "minimum": 0,
+          "title": "Uptime Seconds",
+          "type": "number"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "version",
+        "uptime_seconds"
+      ],
+      "title": "ProbeReport",
+      "type": "object"
+    },
+    "StopResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "title": "Request Id",
+          "type": "string"
+        },
+        "stopped": {
+          "title": "Stopped",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "request_id",
+        "stopped"
+      ],
+      "title": "StopResponse",
+      "type": "object"
+    },
+    "StreamEvent": {
+      "$defs": {
+        "ChatResponse": {
+          "additionalProperties": false,
+          "properties": {
+            "content": {
+              "maxLength": 100000,
+              "title": "Content",
+              "type": "string"
+            },
+            "conversation_id": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Conversation Id",
+              "type": "string"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ErrorDetail"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            },
+            "mode": {
+              "maxLength": 64,
+              "minLength": 1,
+              "title": "Mode",
+              "type": "string"
+            },
+            "model": {
+              "maxLength": 64,
+              "minLength": 1,
+              "title": "Model",
+              "type": "string"
+            },
+            "status": {
+              "$ref": "#/$defs/ChatStatus"
+            }
+          },
+          "required": [
+            "conversation_id",
+            "model",
+            "mode",
+            "content",
+            "status"
+          ],
+          "title": "ChatResponse",
+          "type": "object"
+        },
+        "ChatStatus": {
+          "enum": [
+            "completed",
+            "stopped",
+            "error"
+          ],
+          "title": "ChatStatus",
+          "type": "string"
+        },
+        "ErrorCode": {
+          "enum": [
+            "validation_error",
+            "not_found",
+            "method_not_allowed",
+            "payload_too_large",
+            "bad_request",
+            "unauthorized",
+            "rate_limited",
+            "generation_failed",
+            "generation_timeout",
+            "model_unavailable",
+            "conversation_not_found",
+            "version_conflict",
+            "conversation_busy",
+            "capacity_exceeded",
+            "internal_error",
+            "http_error"
+          ],
+          "title": "ErrorCode",
+          "type": "string"
+        },
+        "ErrorDetail": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "$ref": "#/$defs/ErrorCode"
+            },
+            "details": {
+              "anyOf": [
+                {
+                  "items": {
+                    "$ref": "#/$defs/FieldIssue"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Details"
+            },
+            "message": {
+              "maxLength": 500,
+              "minLength": 1,
+              "title": "Message",
+              "type": "string"
+            }
+          },
+          "required": [
+            "code",
+            "message"
+          ],
+          "title": "ErrorDetail",
+          "type": "object"
+        },
+        "FieldIssue": {
+          "additionalProperties": false,
+          "properties": {
+            "field": {
+              "description": "Dotted location, e.g. body.message",
+              "maxLength": 200,
+              "title": "Field",
+              "type": "string"
+            },
+            "message": {
+              "maxLength": 500,
+              "title": "Message",
+              "type": "string"
+            }
+          },
+          "required": [
+            "field",
+            "message"
+          ],
+          "title": "FieldIssue",
+          "type": "object"
+        },
+        "StreamDeltaEvent": {
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "maxLength": 100000,
+              "title": "Text",
+              "type": "string"
+            },
+            "type": {
+              "const": "delta",
+              "default": "delta",
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "title": "StreamDeltaEvent",
+          "type": "object"
+        },
+        "StreamDoneEvent": {
+          "additionalProperties": false,
+          "properties": {
+            "request_id": {
+              "maxLength": 64,
+              "minLength": 1,
+              "title": "Request Id",
+              "type": "string"
+            },
+            "response": {
+              "$ref": "#/$defs/ChatResponse"
+            },
+            "type": {
+              "const": "done",
+              "default": "done",
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          "required": [
+            "request_id",
+            "response"
+          ],
+          "title": "StreamDoneEvent",
+          "type": "object"
+        },
+        "StreamStartEvent": {
+          "additionalProperties": false,
+          "properties": {
+            "conversation_id": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Conversation Id",
+              "type": "string"
+            },
+            "request_id": {
+              "description": "Pass to the stop endpoint.",
+              "maxLength": 64,
+              "minLength": 1,
+              "title": "Request Id",
+              "type": "string"
+            },
+            "type": {
+              "const": "start",
+              "default": "start",
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          "required": [
+            "request_id",
+            "conversation_id"
+          ],
+          "title": "StreamStartEvent",
+          "type": "object"
+        }
+      },
+      "discriminator": {
+        "mapping": {
+          "delta": "#/$defs/StreamDeltaEvent",
+          "done": "#/$defs/StreamDoneEvent",
+          "start": "#/$defs/StreamStartEvent"
+        },
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/StreamStartEvent"
+        },
+        {
+          "$ref": "#/$defs/StreamDeltaEvent"
+        },
+        {
+          "$ref": "#/$defs/StreamDoneEvent"
+        }
+      ]
+    },
+    "TaskRequest": {
+      "additionalProperties": false,
+      "description": "Input shared by every chat-style endpoint. A task endpoint fixes the mode itself.",
+      "properties": {
+        "conversation_id": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Omit to start a new conversation.",
+          "title": "Conversation Id"
+        },
+        "message": {
+          "description": "The user's message.",
+          "maxLength": 8000,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Model id from GET /api/chat/options. Omit to use rapid.",
+          "title": "Model"
+        }
+      },
+      "required": [
+        "message"
+      ],
+      "title": "TaskRequest",
+      "type": "object"
+    }
+  }
+}

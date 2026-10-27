@@ -1,453 +1,349 @@
 /**
- * NOVA State Store — Complete & Optimized
- * Single source of truth for all application state
- * 
- * Optimizations:
- * - Batched notifications with requestAnimationFrame
- * - Early-exit equality checks on all setters
- * - Memoized computed properties
- * - Efficient array operations
- * - Resource cleanup and memory management
+ * Novis / Novis — application state store
+ *
+ * Single source of truth for UI state. Classic script (no ES module syntax).
+ *
+ * Catalog ownership: the store resolves model and mode ids to catalog entries,
+ * so callers may pass either an id ("sonet") or an entry ({ id: "sonet", ... }).
+ * Unknown ids fall back to the configured defaults.
+ *
+ * Notifications: subscribers are called at most once per animation frame with
+ * { changes, path, newValue, state }. `changes` lists every path touched in that
+ * frame; prefer re-reading `state` over relying on a single path.
+ *
+ * Usage:
+ *   const store = new StateStore(buildInitialState(), {
+ *     models: MODELS, modes: MODES,
+ *     defaultModelId: "rapid", defaultModeId: "general"
+ *   });
  */
 
 class StateStore {
   /**
-   * Initialize state store with initial state
-   * @param {Object} initialState - Initial application state
+   * @param {Object} initialState  starting state (ids allowed for model/mode)
+   * @param {Object} catalog
+   *   models, modes             arrays of entries with a unique `id`
+   *   defaultModelId/ModeId     ids used when a lookup misses
    */
-  constructor(initialState) {
-    this.initialState = JSON.parse(JSON.stringify(initialState));
-    this.state = JSON.parse(JSON.stringify(initialState));
-    this.subscribers = [];
-    this._notificationFrame = null;
-    this._memoCache = new Map();
+  constructor(initialState = {}, catalog = {}) {
+    this._models = Object.freeze([...(catalog.models || [])]);
+    this._modes = Object.freeze([...(catalog.modes || [])]);
+    this._modelIndex = new Map(this._models.map(m => [m.id, m]));
+    this._modeIndex = new Map(this._modes.map(m => [m.id, m]));
+    this._defaultModelId = catalog.defaultModelId;
+    this._defaultModeId = catalog.defaultModeId;
+
+    this.subscribers = new Set();
+    this._pendingPaths = new Set();
+    this._pendingValue = undefined;
+    this._pendingPath = null;
+    this._frame = null;
+
+    this.initialState = initialState;
+    this.state = this._hydrate(StateStore._clone(initialState));
   }
 
-  /**
-   * Subscribe to state changes
-   * @param {Function} callback - Called with { path, newValue, state }
-   * @returns {Function} Unsubscribe function
-   */
-  subscribe(callback) {
-    this.subscribers.push(callback);
-    return () => {
-      this.subscribers = this.subscribers.filter(cb => cb !== callback);
-    };
+  /* ----------------------------------------------------------------------
+     INTERNALS
+  ---------------------------------------------------------------------- */
+
+  static _clone(value) {
+    return typeof structuredClone === "function"
+      ? structuredClone(value)
+      : JSON.parse(JSON.stringify(value));
   }
 
-  /**
-   * Notify subscribers of state change (batched with rAF)
-   * @param {string} path - State path that changed
-   * @param {*} newValue - New value at path
-   */
-  _notify(path, newValue) {
-    if (!this._notificationFrame) {
-      this._notificationFrame = requestAnimationFrame(() => {
-        this.subscribers.forEach(callback => {
-          callback({ path, newValue, state: this.state });
-        });
-        this._notificationFrame = null;
+  _hydrate(state) {
+    state.model = this.resolveModel(state.model);
+    state.mode = this.resolveMode(state.mode);
+    return state;
+  }
+
+  _lookup(index, fallbackId, value) {
+    const id = value && typeof value === "object" ? value.id : value;
+    return index.get(id) || index.get(fallbackId) || null;
+  }
+
+  _notify(path, value) {
+    if (this.subscribers.size === 0) return; // nothing listening: skip the work
+
+    this._pendingPath = path;
+    this._pendingValue = value;
+    this._pendingPaths.add(path);
+    if (this._frame !== null) return; // already scheduled for this frame
+
+    this._frame = StateStore._schedule(() => {
+      const changes = Array.from(this._pendingPaths);
+      const event = {
+        changes,
+        path: this._pendingPath,
+        newValue: this._pendingValue,
+        state: this.state
+      };
+      this._pendingPaths.clear();
+      this._frame = null;
+      this.subscribers.forEach(callback => {
+        try {
+          callback(event);
+        } catch (err) {
+          console.error("StateStore subscriber failed:", err);
+        }
       });
+    });
+  }
+
+  static _schedule(fn) {
+    return typeof requestAnimationFrame === "function"
+      ? { id: requestAnimationFrame(fn), cancel: cancelAnimationFrame }
+      : { id: setTimeout(fn, 16), cancel: clearTimeout };
+  }
+
+  /* ----------------------------------------------------------------------
+     SUBSCRIPTION
+  ---------------------------------------------------------------------- */
+
+  /** @returns {Function} unsubscribe */
+  subscribe(callback) {
+    this.subscribers.add(callback);
+    return () => this.subscribers.delete(callback);
+  }
+
+  destroy() {
+    if (this._frame) {
+      this._frame.cancel(this._frame.id);
+      this._frame = null;
     }
+    this._pendingPaths.clear();
+    this.subscribers.clear();
   }
 
-  /**
-   * Get entire state
-   */
-  getState() {
-    return this.state;
+  /* ----------------------------------------------------------------------
+     CATALOG
+  ---------------------------------------------------------------------- */
+
+  getModels() { return this._models; }
+  getModes() { return this._modes; }
+
+  /** Resolve an id or entry to a model entry, falling back to the default. */
+  resolveModel(value) {
+    return this._lookup(this._modelIndex, this._defaultModelId, value);
   }
 
-  /**
-   * Get conversation data
-   */
-  getConversation() {
-    return {
-      id: this.state.conversation_id,
-      messages: this.state.messages
-    };
+  /** Resolve an id or entry to a mode entry, falling back to the default. */
+  resolveMode(value) {
+    return this._lookup(this._modeIndex, this._defaultModeId, value);
   }
 
-  /**
-   * Get all messages
-   */
-  getMessages() {
-    return this.state.messages;
-  }
+  /* ----------------------------------------------------------------------
+     READ
+  ---------------------------------------------------------------------- */
 
-  /**
-   * Get current conversation ID
-   */
-  getConversationId() {
-    return this.state.conversation_id;
-  }
+  getState() { return this.state; }
 
-  /**
-   * Get current model
-   */
-  getModel() {
-    return this.state.model;
-  }
+  /** Deep copy of state, safe to serialize. */
+  snapshot() { return StateStore._clone(this.state); }
 
-  /**
-   * Get current mode
-   */
-  getMode() {
-    return this.state.mode;
-  }
+  getConversationId() { return this.state.conversation_id; }
+  getMessages() { return this.state.messages; }
+  getModel() { return this.state.model; }
+  getMode() { return this.state.mode; }
+  isLoading() { return this.state.loading; }
+  isStreaming() { return this.state.streaming; }
+  getConnection() { return this.state.connection; }
+  getSidebar() { return this.state.sidebar; }
+  getTools() { return this.state.tools; }
+  getSettings() { return this.state.settings; }
+  getSetting(key) { return this.state.settings[key]; }
+  getAttachments() { return this.state.attachments; }
+  getAttachment(id) { return this.state.attachments.find(a => a.id === id) || null; }
+  getAttachmentCount() { return this.state.attachments.length; }
 
-  /**
-   * Check if loading
-   */
-  isLoading() {
-    return this.state.loading;
-  }
+  /* ----------------------------------------------------------------------
+     WRITE — every setter is a no-op when the value is unchanged
+  ---------------------------------------------------------------------- */
 
-  /**
-   * Check if streaming
-   */
-  isStreaming() {
-    return this.state.streaming;
-  }
-
-  /**
-   * Get sidebar state
-   */
-  getSidebar() {
-    return this.state.sidebar;
-  }
-
-  /**
-   * Get tools state
-   */
-  getTools() {
-    return this.state.tools;
-  }
-
-  /**
-   * Get all settings
-   */
-  getSettings() {
-    return this.state.settings;
-  }
-
-  /**
-   * Get specific setting
-   */
-  getSetting(key) {
-    return this.state.settings[key];
-  }
-
-  /**
-   * Get all attachments
-   */
-  getAttachments() {
-    return this.state.attachments || [];
-  }
-
-  /**
-   * Get attachment by ID
-   */
-  getAttachment(id) {
-    return (this.state.attachments || []).find(a => a.id === id) || null;
-  }
-
-  /**
-   * Get attachment count
-   */
-  getAttachmentCount() {
-    return (this.state.attachments || []).length;
-  }
-
-  // ============================================================================
-  // SETTERS WITH OPTIMIZATIONS
-  // ============================================================================
-
-  /**
-   * Set conversation ID
-   */
   setConversationId(id) {
-    if (this.state.conversation_id !== id) {
-      this.state.conversation_id = id;
-      this._notify("conversation_id", id);
-    }
+    if (this.state.conversation_id === id) return false;
+    this.state.conversation_id = id;
+    this._notify("conversation_id", id);
+    return true;
   }
 
-  /**
-   * Set all messages
-   */
   setMessages(messages) {
     this.state.messages = messages;
     this._notify("messages", messages);
   }
 
-  /**
-   * Add single message
-   */
   addMessage(message) {
     this.state.messages.push(message);
     this._notify("messages.add", message);
   }
 
-  /**
-   * Clear all messages
-   */
   clearMessages() {
-    if (this.state.messages.length > 0) {
-      this.state.messages = [];
-      this._notify("messages.clear", []);
-    }
+    if (this.state.messages.length === 0) return false;
+    this.state.messages = [];
+    this._notify("messages.clear", []);
+    return true;
   }
 
-  /**
-   * Set model (optimized)
-   */
-  setModel(model) {
-    if (this.state.model !== model) {
-      this.state.model = model;
-      this._notify("model", model);
-    }
+  /** Accepts a model id or entry. Returns true if the model changed. */
+  setModel(value) {
+    const next = this.resolveModel(value);
+    if (!next || this.state.model === next) return false;
+    this.state.model = next;
+    this._notify("model", next);
+    return true;
   }
 
-  /**
-   * Set mode (optimized)
-   */
-  setMode(mode) {
-    if (this.state.mode !== mode) {
-      this.state.mode = mode;
-      this._notify("mode", mode);
-    }
+  /** Accepts a mode id or entry. Returns true if the mode changed. */
+  setMode(value) {
+    const next = this.resolveMode(value);
+    if (!next || this.state.mode === next) return false;
+    this.state.mode = next;
+    this._notify("mode", next);
+    return true;
   }
 
-  /**
-   * Set loading state (optimized)
-   */
-  setLoading(isLoading) {
-    const value = Boolean(isLoading);
-    if (this.state.loading !== value) {
-      this.state.loading = value;
-      this._notify("loading", this.state.loading);
-    }
+  setLoading(value) {
+    const next = Boolean(value);
+    if (this.state.loading === next) return false;
+    this.state.loading = next;
+    this._notify("loading", next);
+    return true;
   }
 
-  /**
-   * Set streaming state (optimized)
-   */
-  setStreaming(isStreaming) {
-    const value = Boolean(isStreaming);
-    if (this.state.streaming !== value) {
-      this.state.streaming = value;
-      this._notify("streaming", this.state.streaming);
-    }
+  setStreaming(value) {
+    const next = Boolean(value);
+    if (this.state.streaming === next) return false;
+    this.state.streaming = next;
+    this._notify("streaming", next);
+    return true;
   }
 
-  /**
-   * Toggle sidebar open/close
-   */
-  toggleSidebar() {
-    this.state.sidebar.open = !this.state.sidebar.open;
-    this._notify("sidebar.open", this.state.sidebar.open);
+  /** @param {"checking"|"online"|"offline"} value */
+  setConnection(value) {
+    if (this.state.connection === value) return false;
+    this.state.connection = value;
+    this._notify("connection", value);
+    return true;
   }
 
-  /**
-   * Set sidebar open state (optimized)
-   */
-  setSidebarOpen(isOpen) {
-    const value = Boolean(isOpen);
-    if (this.state.sidebar.open !== value) {
-      this.state.sidebar.open = value;
-      this._notify("sidebar.open", this.state.sidebar.open);
-    }
+  setSidebarOpen(value) {
+    const next = Boolean(value);
+    if (this.state.sidebar.open === next) return false;
+    this.state.sidebar.open = next;
+    this._notify("sidebar.open", next);
+    return true;
   }
 
-  /**
-   * Set sidebar search query (optimized)
-   */
+  toggleSidebar() { return this.setSidebarOpen(!this.state.sidebar.open); }
+
   setSidebarSearch(query) {
-    const value = String(query || "");
-    if (this.state.sidebar.searchQuery !== value) {
-      this.state.sidebar.searchQuery = value;
-      this._notify("sidebar.searchQuery", this.state.sidebar.searchQuery);
-    }
+    const next = String(query || "");
+    if (this.state.sidebar.searchQuery === next) return false;
+    this.state.sidebar.searchQuery = next;
+    this._notify("sidebar.searchQuery", next);
+    return true;
   }
 
-  /**
-   * Toggle tools panel
-   */
-  toggleTools() {
-    this.state.tools.open = !this.state.tools.open;
-    this._notify("tools.open", this.state.tools.open);
+  setToolsOpen(value) {
+    const next = Boolean(value);
+    if (this.state.tools.open === next) return false;
+    this.state.tools.open = next;
+    this._notify("tools.open", next);
+    return true;
   }
 
-  /**
-   * Set tools open state (optimized)
-   */
-  setToolsOpen(isOpen) {
-    const value = Boolean(isOpen);
-    if (this.state.tools.open !== value) {
-      this.state.tools.open = value;
-      this._notify("tools.open", this.state.tools.open);
-    }
-  }
+  toggleTools() { return this.setToolsOpen(!this.state.tools.open); }
 
-  /**
-   * Set specific tool state (optimized)
-   */
+  /** Sets a boolean tool flag. The panel-open flag is not a tool. */
   setTool(key, value) {
-    if (key in this.state.tools && key !== "open") {
-      const boolValue = Boolean(value);
-      if (this.state.tools[key] !== boolValue) {
-        this.state.tools[key] = boolValue;
-        this._notify(`tools.${key}`, this.state.tools[key]);
-      }
-    }
+    if (key === "open" || !(key in this.state.tools)) return false;
+    const next = Boolean(value);
+    if (this.state.tools[key] === next) return false;
+    this.state.tools[key] = next;
+    this._notify(`tools.${key}`, next);
+    return true;
   }
 
-  /**
-   * Toggle setting value
-   */
-  toggleSetting(key) {
-    if (typeof this.state.settings[key] === "boolean") {
-      this.state.settings[key] = !this.state.settings[key];
-      this._notify(`settings.${key}`, this.state.settings[key]);
-    }
-  }
-
-  /**
-   * Set setting value (optimized)
-   */
+  /** Sets a known boolean setting. Unknown keys are ignored. */
   setSetting(key, value) {
-    if (key in this.state.settings) {
-      const boolValue = Boolean(value);
-      if (this.state.settings[key] !== boolValue) {
-        this.state.settings[key] = boolValue;
-        this._notify(`settings.${key}`, this.state.settings[key]);
-      }
-    }
+    if (!(key in this.state.settings)) return false;
+    const next = Boolean(value);
+    if (this.state.settings[key] === next) return false;
+    this.state.settings[key] = next;
+    this._notify(`settings.${key}`, next);
+    return true;
   }
 
-  /**
-   * Update multiple settings at once (optimized)
-   */
+  toggleSetting(key) {
+    if (typeof this.state.settings[key] !== "boolean") return false;
+    return this.setSetting(key, !this.state.settings[key]);
+  }
+
+  /** Applies several known settings in one notification. */
   updateSettings(updates) {
-    let hasChanges = false;
-    Object.keys(updates).forEach(key => {
-      if (key in this.state.settings && this.state.settings[key] !== updates[key]) {
-        this.state.settings[key] = updates[key];
-        hasChanges = true;
-      }
-    });
-    if (hasChanges) {
-      this._notify("settings", this.state.settings);
+    let changed = false;
+    for (const [key, value] of Object.entries(updates)) {
+      if (!(key in this.state.settings) || this.state.settings[key] === value) continue;
+      this.state.settings[key] = value;
+      changed = true;
     }
+    if (changed) this._notify("settings", this.state.settings);
+    return changed;
   }
 
-  /**
-   * Add attachment (optimized)
-   */
   addAttachment(attachment) {
-    if (!this.state.attachments) {
-      this.state.attachments = [];
-    }
     this.state.attachments.push(attachment);
     this._notify("attachments.add", attachment);
   }
 
-  /**
-   * Update attachment by ID (optimized)
-   */
+  /** Patches an attachment in place. Returns the updated item, or null if missing. */
   updateAttachment(id, patch) {
-    if (!this.state.attachments) return false;
-    
-    const attachment = this.state.attachments.find(item => item.id === id);
-    if (attachment) {
-      Object.assign(attachment, patch);
-      this._notify("attachments.update", attachment);
-      return true;
-    }
-    return false;
+    const item = this.getAttachment(id);
+    if (!item) return null;
+    Object.assign(item, patch);
+    this._notify("attachments.update", item);
+    return item;
   }
 
-  /**
-   * Remove attachment by ID (optimized)
-   */
   removeAttachment(id) {
-    if (!this.state.attachments || this.state.attachments.length === 0) {
-      return false;
-    }
-    
     const before = this.state.attachments.length;
-    this.state.attachments = this.state.attachments.filter(item => item.id !== id);
-    
-    if (this.state.attachments.length !== before) {
-      this._notify("attachments.remove", id);
-      return true;
-    }
-    return false;
+    this.state.attachments = this.state.attachments.filter(a => a.id !== id);
+    const removed = this.state.attachments.length !== before;
+    if (removed) this._notify("attachments.remove", id);
+    return removed;
   }
 
-  /**
-   * Clear all attachments
-   */
   clearAttachments() {
-    if (this.state.attachments && this.state.attachments.length > 0) {
-      this.state.attachments = [];
-      this._notify("attachments.clear", []);
-    }
+    if (this.state.attachments.length === 0) return false;
+    this.state.attachments = [];
+    this._notify("attachments.clear", []);
+    return true;
   }
 
-  /**
-   * Reset all state to initial values
-   */
-  reset() {
-    this.state = JSON.parse(JSON.stringify(this.initialState));
-    this._notify("reset", this.state);
-  }
-
-  /**
-   * Get deep copy of state (snapshot)
-   */
-  snapshot() {
-    return JSON.parse(JSON.stringify(this.state));
-  }
-
-  /**
-   * Batch update multiple state values (optimized)
-   */
+  /** Applies several top-level keys in one notification. Unknown keys are ignored. */
   batchUpdate(updates) {
-    let hasChanges = false;
-    Object.keys(updates).forEach(key => {
-      if (key in this.state && this.state[key] !== updates[key]) {
-        this.state[key] = updates[key];
-        hasChanges = true;
-      }
-    });
-    if (hasChanges) {
-      this._notify("batch", updates);
+    let changed = false;
+    for (const [key, value] of Object.entries(updates)) {
+      if (!(key in this.state) || this.state[key] === value) continue;
+      this.state[key] = key === "model" ? this.resolveModel(value)
+        : key === "mode" ? this.resolveMode(value)
+        : value;
+      changed = true;
     }
+    if (changed) this._notify("batch", updates);
+    return changed;
   }
 
-  /**
-   * Debug: Log current state
-   */
-  debug() {
-    console.log("📊 State Store:", this.snapshot());
-  }
-
-  /**
-   * Cleanup and destroy store
-   */
-  destroy() {
-    if (this._notificationFrame) {
-      cancelAnimationFrame(this._notificationFrame);
-      this._notificationFrame = null;
-    }
-    this._memoCache.clear();
-    this.subscribers = [];
+  /** Restores the initial state. */
+  reset() {
+    this.state = this._hydrate(StateStore._clone(this.initialState));
+    this._notify("reset", this.state);
   }
 }
 
-// Export for use
+// Node / test harness support. Harmless in the browser.
 if (typeof module !== "undefined" && module.exports) {
   module.exports = StateStore;
 }

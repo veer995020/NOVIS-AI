@@ -1,28 +1,35 @@
 /**
- * Chatify AI — Centralized API Client
- * 
- * Single source of truth for all API communication.
- * - No scattered fetch calls
- * - Consistent headers and timeout handling
- * - JSON + streaming support
- * - Error normalization
- * - Request lifecycle management (abort, retry, regenerate)
- * - Completely separate from UI logic
- * 
- * Import: import { ChatApiClient } from './api.js';
- * Use: const client = new ChatApiClient(config);
+ * Novis AI / Novis — centralized API client
+ *
+ * Classic script (no ES module syntax) so it works from file:// next to chat.html.
+ * Loads before the app script and exposes these globals:
+ *   ApiError, TimeoutError, AbortError, ChatApiClient,
+ *   buildPayload, normalizeError, getApiErrorMessage, getApiErrorDetail,
+ *   chatApi (shared singleton), initializeApi(config)
+ *
+ * Responsibilities: transport, streaming (SSE), timeouts, cancellation,
+ * error normalization. No DOM or UI code.
  */
 
+const API_DEFAULTS = Object.freeze({
+  apiBase: "",
+  endpoints: Object.freeze({
+    chat: "/chat", research: "/research", code: "/code", write: "/write",
+    models: "/models", health: "/health"
+  }),
+  requestTimeoutMs: 60000,
+  healthTimeoutMs: 5000
+});
+
 /* ========================================================================
-   ERROR CLASSES
+   ERRORS
 ========================================================================== */
-export class ApiError extends Error {
+class ApiError extends Error {
   constructor(status, message = "") {
     super(message || `Request failed with status ${status}`);
     this.name = "ApiError";
     this.status = status;
   }
-
   isClientError() { return this.status >= 400 && this.status < 500; }
   isServerError() { return this.status >= 500 && this.status < 600; }
   isNotFound() { return this.status === 404; }
@@ -32,7 +39,7 @@ export class ApiError extends Error {
   isTimeout() { return this.status === 408; }
 }
 
-export class TimeoutError extends Error {
+class TimeoutError extends Error {
   constructor(timeoutMs) {
     super(`Request timed out after ${timeoutMs}ms`);
     this.name = "TimeoutError";
@@ -40,228 +47,226 @@ export class TimeoutError extends Error {
   }
 }
 
-export class AbortError extends Error {
+class AbortError extends Error {
   constructor() {
     super("Request was cancelled by user");
     this.name = "AbortError";
   }
 }
 
+/** Map native AbortError DOMExceptions onto our AbortError class. */
+function toClientError(err) {
+  if (err?.name === "AbortError" && !(err instanceof AbortError)) return new AbortError();
+  return err;
+}
+
 /* ========================================================================
-   UTILITIES
+   TRANSPORT HELPERS
 ========================================================================== */
 
 /**
- * Fetch with built-in timeout support
- * Converts timeout to TimeoutError, external abort to AbortError
+ * Forward an external abort signal onto a controller.
+ * Returns a detach function so callers can clean up the listener.
  */
-async function fetchWithTimeout(url, options = {}, timeoutMs) {
+function linkAbort(signal, controller) {
+  if (!signal) return () => {};
+  const onAbort = () => controller.abort();
+  signal.addEventListener("abort", onAbort, { once: true });
+  return () => signal.removeEventListener("abort", onAbort);
+}
+
+/**
+ * fetch() with a response-header timeout. The timer is cleared as soon as
+ * headers arrive, so long-running SSE bodies are not cut off by the timeout.
+ * init.signal (if any) aborts the request as AbortError.
+ */
+async function fetchWithTimeout(url, init, timeoutMs) {
+  const external = init.signal;
+  if (external?.aborted) throw new AbortError();
+
   const controller = new AbortController();
   let timedOut = false;
-  
-  // Set up internal timeout
-  const timer = setTimeout(() => {
-    timedOut = true;
-    controller.abort();
-  }, timeoutMs);
-
-  // Link external abort signal if provided
-  const external = options.signal;
-  if (external) {
-    if (external.aborted) {
-      clearTimeout(timer);
-      throw new AbortError();
-    }
-    external.addEventListener("abort", () => controller.abort(), { once: true });
-  }
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
+  const detach = linkAbort(external, controller);
 
   try {
-    return await fetch(url, { ...options, signal: controller.signal });
+    return await fetch(url, { ...init, signal: controller.signal });
   } catch (err) {
     if (timedOut) throw new TimeoutError(timeoutMs);
-    if (err?.name === "AbortError") throw new AbortError();
-    throw err; // Network error (TypeError)
+    throw toClientError(err); // AbortError on cancel, TypeError on network failure
   } finally {
     clearTimeout(timer);
+    detach();
+  }
+}
+
+/** Read `detail | error | message` from a non-OK JSON body, or "" if unavailable. */
+async function readErrorDetail(response) {
+  try {
+    const body = await response.json();
+    return String(body?.detail || body?.error || body?.message || "");
+  } catch {
+    return "";
   }
 }
 
 /**
- * Parse server-sent events (SSE) stream
- * Handles typed deltas: thinking and content
- * Returns final content when stream ends
+ * Parse an SSE stream. Calls onDelta({ type: "thinking"|"content", delta })
+ * for each chunk and returns the final `content` field if the server sent one.
+ * Throws ApiError if the stream carries an error frame.
  */
-async function readSseStream(response, onDelta) {
+async function readSseStream(response, onDelta, signal) {
   const reader = response.body.getReader();
+  // Cancel the body on abort so a stalled read cannot hang the UI.
+  const onAbort = () => reader.cancel().catch(() => {});
+  if (signal?.aborted) onAbort();
+  else signal?.addEventListener("abort", onAbort, { once: true });
   const decoder = new TextDecoder();
   let buffer = "";
   let finalContent = null;
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+  // Returns true when the stream signalled completion ([DONE]).
+  const handleLine = (rawLine) => {
+    const line = rawLine.trim();
+    if (!line.startsWith("data:")) return false;
+    const data = line.slice(5).trim();
+    if (data === "[DONE]") return true;
 
-    buffer += decoder.decode(value, { stream: true });
-    let newlineIndex;
-
-    while ((newlineIndex = buffer.indexOf("\n")) >= 0) {
-      const line = buffer.slice(0, newlineIndex).trim();
-      buffer = buffer.slice(newlineIndex + 1);
-
-      if (!line.startsWith("data:")) continue;
-
-      const data = line.slice(5).trim();
-      if (data === "[DONE]") return finalContent;
-
-      try {
-        const parsed = JSON.parse(data);
-
-        // Check for server-side errors in stream
-        if (parsed.error) {
-          throw new ApiError(parsed.status || 500, String(parsed.error));
-        }
-
-        // Thinking phase
-        if (parsed.thinking_delta) {
-          onDelta({ type: "thinking", delta: parsed.thinking_delta });
-        }
-
-        // Content phase
-        if (typeof parsed.delta === "string") {
-          onDelta({ type: "content", delta: parsed.delta });
-        }
-
-        // Final content (may appear in stream)
-        if (typeof parsed.content === "string") {
-          finalContent = parsed.content;
-        }
-      } catch (parseErr) {
-        // Re-throw API errors, ignore malformed frames
-        if (parseErr instanceof ApiError) throw parseErr;
-      }
+    let parsed;
+    try {
+      parsed = JSON.parse(data);
+    } catch {
+      return false; // keep-alive or malformed frame: ignore
     }
+    if (parsed.error) throw new ApiError(parsed.status || 500, String(parsed.error));
+    if (parsed.thinking_delta) onDelta({ type: "thinking", delta: parsed.thinking_delta });
+    if (typeof parsed.delta === "string") onDelta({ type: "content", delta: parsed.delta });
+    if (typeof parsed.content === "string") finalContent = parsed.content;
+    return false;
+  };
+
+  // Drain complete lines from the buffer; returns true on [DONE].
+  const drain = () => {
+    let newline;
+    while ((newline = buffer.indexOf("\n")) >= 0) {
+      const line = buffer.slice(0, newline);
+      buffer = buffer.slice(newline + 1);
+      if (handleLine(line)) return true;
+    }
+    return false;
+  };
+
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (signal?.aborted) throw new AbortError();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      if (drain()) return finalContent;
+    }
+    // Flush decoder and any final line that lacked a trailing newline.
+    buffer += decoder.decode();
+    if (buffer) { handleLine(buffer); buffer = ""; }
+    return finalContent;
+  } catch (err) {
+    throw toClientError(signal?.aborted ? new AbortError() : err);
+  } finally {
+    // Release the connection and listener whenever reading stops.
+    signal?.removeEventListener("abort", onAbort);
+    reader.cancel().catch(() => {});
   }
-
-  return finalContent;
 }
 
-/**
- * Resolve endpoint from mode config
- * Allows modes to have different endpoints (e.g., research, coding, writing)
- */
-function resolveEndpoint(mode) {
-  if (typeof mode === "string") return `/chat`; // Default fallback
-  if (mode?.endpoint) return mode.endpoint;
-  return `/chat`;
-}
+/* ========================================================================
+   PAYLOAD
+========================================================================== */
 
 /**
- * Build request payload from components
- * Normalizes payload structure, handles mode/model resolution
- * Keeps payload logic in API layer, not UI
+ * Build the chat request body. Accepts ids or objects for model/mode.
+ * Keeps payload shape in one place so the UI never assembles it by hand.
  */
-export function buildPayload(options) {
-  const {
-    conversationId,
-    model,        // string or object with .id
-    mode,         // string or object with .id and .endpoint
-    message,
-    attachments = [],
-    tools = {}
-  } = options;
-
+function buildPayload({
+  conversationId = null,
+  model,
+  mode,
+  message = "",
+  attachments = [],
+  tools = {}
+} = {}) {
   return {
     conversation_id: conversationId || null,
     model: typeof model === "string" ? model : model?.id || "sonet",
     mode: typeof mode === "string" ? mode : mode?.id || "general",
     message: message || "",
-    attachments: attachments.map(a => ({
-      name: a.name,
-      size: a.size,
-      type: a.type,
-      kind: a.kind
-    })),
+    attachments: attachments.map(({ name, size, type, kind }) => ({ name, size, type, kind })),
     tools: {
-      webSearch: tools.webSearch || false,
-      files: tools.files || false,
-      images: tools.images || false,
-      voice: tools.voice || false
+      webSearch: Boolean(tools.webSearch),
+      files: Boolean(tools.files),
+      images: Boolean(tools.images),
+      voice: Boolean(tools.voice)
     }
   };
 }
 
 /* ========================================================================
-   CHAT API CLIENT
+   CLIENT
 ========================================================================== */
-export class ChatApiClient {
+class ChatApiClient {
+  /**
+   * @param {Object} config
+   *   apiBase           string   prefix for all paths ("" = same origin)
+   *   endpoints         object   { chat, research, code, write, models, health }
+   *   modeEndpoints     object   { [modeId]: path } — routes each mode to its endpoint
+   *   requestTimeoutMs  number
+   *   healthTimeoutMs   number
+   */
   constructor(config = {}) {
-    // API configuration
-    this.apiBase = config.apiBase || "";
-    this.endpoints = config.endpoints || {
-      chat: "/chat",
-      research: "/research",
-      code: "/code",
-      write: "/write",
-      models: "/models",
-      health: "/health"
-    };
-
-    // Timeouts
-    this.requestTimeoutMs = config.requestTimeoutMs || 60000;
-    this.healthTimeoutMs = config.healthTimeoutMs || 5000;
-
-    // Request tracking
-    this.activeRequests = new Map(); // id -> { controller, cancelled }
+    this.apiBase = config.apiBase ?? API_DEFAULTS.apiBase;
+    this.endpoints = Object.freeze({ ...API_DEFAULTS.endpoints, ...(config.endpoints || {}) });
+    this.modeEndpoints = Object.freeze({ ...(config.modeEndpoints || {}) });
+    this.requestTimeoutMs = config.requestTimeoutMs || API_DEFAULTS.requestTimeoutMs;
+    this.healthTimeoutMs = config.healthTimeoutMs || API_DEFAULTS.healthTimeoutMs;
+    this.activeRequests = new Map(); // requestId -> { controller, cancelled }
   }
 
-  /**
-   * Build full URL from endpoint path
-   */
   buildUrl(path) {
     return this.apiBase.replace(/\/$/, "") + path;
   }
 
-  /**
-   * Create unique request ID for tracking
-   */
   createRequestId() {
     return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
   }
 
   /**
-   * Send chat message (single message or streaming)
-   * 
-   * @param {Object} payload - Message payload
-   *   - conversation_id: string | null
-   *   - model: string
-   *   - mode: string | object (supports endpoint)
-   *   - message: string
-   *   - attachments: array
-   *   - tools: object
-   * @param {AbortSignal} signal - Optional abort signal
-   * @param {Function} onDelta - Optional callback for streaming deltas
-   * @returns {Promise<{content: string, streamed: boolean}>}
+   * Resolve the endpoint path for a mode. Accepts a mode id, or an object
+   * with `endpoint` / `id`. Unknown modes fall back to the chat endpoint.
+   */
+  resolveEndpoint(mode) {
+    if (mode && typeof mode === "object" && mode.endpoint) return mode.endpoint;
+    const id = typeof mode === "string" ? mode : mode?.id;
+    return this.modeEndpoints[id] || this.endpoints.chat;
+  }
+
+  /**
+   * Send a chat message. Streams when the server answers with text/event-stream
+   * and an onDelta callback is provided; otherwise reads one JSON body.
+   *
+   * @param {Object} payload     from buildPayload()
+   * @param {AbortSignal} signal optional external cancel
+   * @param {Function} onDelta   optional ({ type, delta }) => void
+   * @returns {Promise<{content: string, streamed: boolean, requestId: string}>}
    */
   async sendMessage(payload, signal, onDelta) {
+    if (signal?.aborted) throw new AbortError();
+
     const requestId = this.createRequestId();
     const controller = new AbortController();
-
-    // Track request for potential abort/retry
+    const detach = linkAbort(signal, controller);
     this.activeRequests.set(requestId, { controller, cancelled: false });
 
     try {
-      // Link external abort signal if provided
-      if (signal) {
-        if (signal.aborted) throw new AbortError();
-        signal.addEventListener("abort", () => controller.abort(), { once: true });
-      }
-
-      // Resolve endpoint from mode
-      const endpoint = resolveEndpoint(payload.mode);
-
-      // Send request
       const response = await fetchWithTimeout(
-        this.buildUrl(endpoint),
+        this.buildUrl(this.resolveEndpoint(payload.mode)),
         {
           method: "POST",
           headers: {
@@ -274,101 +279,51 @@ export class ChatApiClient {
         this.requestTimeoutMs
       );
 
-      // Handle error responses
       if (!response.ok) {
-        let detail = "";
-        try {
-          const body = await response.json();
-          detail = body.detail || body.error || body.message || "";
-        } catch {
-          // Non-JSON error body
-        }
-        throw new ApiError(response.status, detail ? String(detail) : "");
+        throw new ApiError(response.status, await readErrorDetail(response));
       }
 
-      // Parse response based on content type
       const contentType = (response.headers.get("content-type") || "").toLowerCase();
-
       if (contentType.includes("text/event-stream") && response.body && onDelta) {
-        // Streaming response
-        const content = await readSseStream(response, onDelta);
-        return {
-          content: content || "",
-          streamed: true,
-          requestId
-        };
-      } else {
-        // JSON response
-        const data = await response.json();
-        if (data?.error) {
-          throw new ApiError(response.status || 500, String(data.error));
-        }
-        return {
-          content: typeof data?.content === "string" ? data.content : "",
-          streamed: false,
-          requestId
-        };
+        const content = await readSseStream(response, onDelta, controller.signal);
+        return { content: content || "", streamed: true, requestId };
       }
+
+      const data = await response.json();
+      if (data?.error) throw new ApiError(response.status, String(data.error));
+      return {
+        content: typeof data?.content === "string" ? data.content : "",
+        streamed: false,
+        requestId
+      };
+    } catch (err) {
+      throw toClientError(err);
     } finally {
+      detach();
       this.activeRequests.delete(requestId);
     }
   }
 
-  /**
-   * Stop an in-flight request
-   * Gracefully aborts with cancellation flag for cleanup
-   * 
-   * @param {string} requestId - Request ID returned from sendMessage
-   */
+  /** Cancel one in-flight request. Returns false if it is not active. */
   stopRequest(requestId) {
     const request = this.activeRequests.get(requestId);
     if (!request) return false;
-
     request.cancelled = true;
     request.controller.abort();
     this.activeRequests.delete(requestId);
     return true;
   }
 
-  /**
-   * Retry a failed request
-   * Typically used after a network error or timeout
-   * Can override original payload
-   * 
-   * @param {Object} payload - Original or updated payload
-   * @param {AbortSignal} signal - Abort signal
-   * @param {Function} onDelta - Stream callback
-   * @returns {Promise<{content, streamed, requestId}>}
-   */
-  async retryRequest(payload, signal, onDelta) {
-    // Retry is just a fresh sendMessage call with the same payload
-    // Caller decides if payload should be modified before retry
+  /** Retry and regenerate are the same call at the API layer; the UI decides what to remove. */
+  retryRequest(payload, signal, onDelta) {
     return this.sendMessage(payload, signal, onDelta);
   }
 
-  /**
-   * Regenerate an assistant response
-   * Calls sendMessage with the original user prompt
-   * Used when user clicks "Regenerate"
-   * 
-   * @param {Object} payload - Payload with original message
-   * @param {AbortSignal} signal - Abort signal
-   * @param {Function} onDelta - Stream callback
-   * @returns {Promise<{content, streamed, requestId}>}
-   */
-  async regenerateMessage(payload, signal, onDelta) {
-    // Regenerate is identical to retry from API perspective
-    // Difference is in caller's UI behavior (removing old response first, etc)
+  regenerateMessage(payload, signal, onDelta) {
     return this.sendMessage(payload, signal, onDelta);
   }
 
-  /**
-   * Check API health
-   * Lightweight endpoint to verify backend is running
-   * 
-   * @param {AbortSignal} signal - Optional abort signal
-   * @returns {Promise<boolean>}
-   */
+  /** Lightweight liveness check. Never throws. */
   async health(signal) {
     try {
       const response = await fetchWithTimeout(
@@ -382,188 +337,137 @@ export class ChatApiClient {
     }
   }
 
-  /**
-   * Fetch available models from backend
-   * 
-   * @param {AbortSignal} signal - Optional abort signal
-   * @returns {Promise<Array>}
-   */
+  /** Fetch the backend model list. Returns [] when the shape is unexpected. */
   async getModels(signal) {
     const response = await fetchWithTimeout(
       this.buildUrl(this.endpoints.models),
       { method: "GET", signal },
       this.requestTimeoutMs
     );
-
-    if (!response.ok) {
-      throw new ApiError(response.status);
-    }
+    if (!response.ok) throw new ApiError(response.status);
 
     const data = await response.json();
     return Array.isArray(data) ? data : Array.isArray(data?.models) ? data.models : [];
   }
 
-  /**
-   * Get request status
-   * Useful for checking if a request is still in-flight
-   * 
-   * @param {string} requestId - Request ID to check
-   * @returns {Object|null} - Request object or null if not found
-   */
   getRequestStatus(requestId) {
     return this.activeRequests.get(requestId) || null;
   }
 
-  /**
-   * Stop all in-flight requests
-   * Useful for cleanup on navigation or app shutdown
-   */
   stopAllRequests() {
-    for (const [, request] of this.activeRequests) {
-      request.controller.abort();
-    }
+    for (const { controller } of this.activeRequests.values()) controller.abort();
     this.activeRequests.clear();
   }
 
-  /**
-   * Get list of all active request IDs
-   * Useful for debugging
-   */
   getActiveRequestIds() {
     return Array.from(this.activeRequests.keys());
   }
 }
 
 /* ========================================================================
-   ERROR NORMALIZATION
+   ERROR NORMALIZATION — maps any thrown value to a UI-ready object
 ========================================================================== */
+const API_ERROR_MESSAGES = Object.freeze({
+  400: "Invalid request",
+  401: "Authentication required",
+  403: "Permission denied",
+  404: "Endpoint not found",
+  408: "Request timed out",
+  429: "Rate limit exceeded",
+  500: "Server error",
+  502: "Service unavailable",
+  503: "Service unavailable"
+});
+
+const API_ERROR_DETAILS = Object.freeze({
+  400: "The server rejected this request as invalid. Check your message and try again.",
+  401: "Authentication is required. Configure your credentials and try again.",
+  403: "Your account does not have permission for this action.",
+  404: "The API endpoint was not found. Verify the backend configuration.",
+  408: "The server timed out while processing. Please retry.",
+  429: "Rate limit reached. Wait a moment and try again.",
+  500: "The server encountered an internal error. Please retry.",
+  502: "The service is temporarily unavailable. Please try again shortly.",
+  503: "The service is temporarily unavailable. Please try again shortly."
+});
+
+/** User-facing title for an ApiError. */
+function getApiErrorMessage(err) {
+  if (!(err instanceof ApiError)) return "API error";
+  return API_ERROR_MESSAGES[err.status] || `Request failed (HTTP ${err.status})`;
+}
+
+/** User-facing explanation for an ApiError. */
+function getApiErrorDetail(err) {
+  if (!(err instanceof ApiError)) return "";
+  if (err.status === 400 && err.message) {
+    return `${API_ERROR_DETAILS[400]} Server: ${err.message}`;
+  }
+  return API_ERROR_DETAILS[err.status] || err.message || "Check your connection and try again.";
+}
 
 /**
- * Convert any error to a normalized error object
- * Useful for consistent error handling in UI
- * 
- * @param {Error} err - Any error
- * @returns {Object} - {type, status, message, detail, recoverable}
+ * Convert any error to { type, status, message, detail, recoverable }.
+ * The UI renders this shape and never inspects raw errors.
  */
-export function normalizeError(err) {
+function normalizeError(err) {
   if (err instanceof TimeoutError) {
     return {
-      type: "timeout",
-      status: 408,
-      message: "Request timed out",
+      type: "timeout", status: 408, message: "Request timed out",
       detail: "The server took too long to respond. Please check your connection and try again.",
       recoverable: true
     };
   }
-
   if (err instanceof AbortError) {
     return {
-      type: "abort",
-      status: 0,
-      message: "Request cancelled",
-      detail: "You cancelled this request.",
-      recoverable: true
+      type: "abort", status: 0, message: "Request cancelled",
+      detail: "You cancelled this request.", recoverable: true
     };
   }
-
   if (err instanceof ApiError) {
-    const detail = getApiErrorDetail(err);
     return {
       type: "api",
       status: err.status,
       message: getApiErrorMessage(err),
-      detail,
+      detail: getApiErrorDetail(err),
       recoverable: !err.isClientError() || err.isRateLimit() || err.isTimeout()
     };
   }
-
   if (err?.name === "TypeError") {
-    // Network error (offline, CORS, DNS, etc)
     return {
-      type: "network",
-      status: 0,
-      message: "Network error",
+      type: "network", status: 0, message: "Network error",
       detail: "Unable to reach the server. Check your internet connection and try again.",
       recoverable: true
     };
   }
-
-  // Unknown error
   return {
-    type: "unknown",
-    status: 0,
-    message: "Something went wrong",
+    type: "unknown", status: 0, message: "Something went wrong",
     detail: "An unexpected error occurred. Please try again.",
     recoverable: true
   };
 }
 
-/**
- * Get user-facing message for API error
- */
-export function getApiErrorMessage(err) {
-  if (!(err instanceof ApiError)) return "API error";
-
-  switch (err.status) {
-    case 400: return "Invalid request";
-    case 401: return "Authentication required";
-    case 403: return "Permission denied";
-    case 404: return "Endpoint not found";
-    case 408: return "Request timed out";
-    case 429: return "Rate limit exceeded";
-    case 500: return "Server error";
-    case 502: return "Service unavailable";
-    case 503: return "Service unavailable";
-    default: return `Request failed (HTTP ${err.status})`;
-  }
-}
-
-/**
- * Get detailed explanation for API error
- */
-export function getApiErrorDetail(err) {
-  if (!(err instanceof ApiError)) return "";
-
-  switch (err.status) {
-    case 400:
-      return "The server rejected this request as invalid. Check your message and try again." +
-        (err.message ? ` Server: ${err.message}` : "");
-    case 401:
-      return "Authentication is required. Configure your credentials and try again.";
-    case 403:
-      return "Your account does not have permission for this action.";
-    case 404:
-      return "The API endpoint was not found. Verify the backend configuration.";
-    case 408:
-      return "The server timed out while processing. Please retry.";
-    case 429:
-      return "Rate limit reached. Wait a moment and try again.";
-    case 500:
-      return "The server encountered an internal error. Please retry.";
-    case 502:
-    case 503:
-      return "The service is temporarily unavailable. Please try again shortly.";
-    default:
-      return err.message || "Check your connection and try again.";
-  }
-}
-
 /* ========================================================================
-   SINGLETON EXPORT
+   SINGLETON
 ========================================================================== */
 
-/**
- * Default singleton instance for convenience
- * Usage: import { chatApi } from './api.js'; chatApi.sendMessage(payload);
- */
-export const chatApi = new ChatApiClient();
+/** Shared client. Configure once at startup with initializeApi(). */
+const chatApi = new ChatApiClient();
 
 /**
- * Initialize the singleton with custom config
- * Must be called once on app startup
- * Usage: initializeApi({ apiBase: 'http://localhost:8000', ... });
+ * Reconfigure the shared client. Call once during app startup, before the first request.
+ * Usage: initializeApi({ apiBase: "http://localhost:8000", modeEndpoints: { research: "/research" } });
  */
-export function initializeApi(config) {
+function initializeApi(config) {
   Object.assign(chatApi, new ChatApiClient(config));
   return chatApi;
+}
+
+// Node / test harness support. Harmless in the browser.
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    ApiError, TimeoutError, AbortError, ChatApiClient,
+    buildPayload, normalizeError, getApiErrorMessage, getApiErrorDetail,
+    chatApi, initializeApi
+  };
 }
