@@ -20,7 +20,7 @@ def test_api_call_without_the_key_is_401_with_challenge() -> None:
     response = _keyed().post("/api/chat", json={"message": "hi"})
     assert response.status_code == 401
     assert response.headers["www-authenticate"] == "Bearer"
-    assert response.json()["error"]["code"] == "unauthorized"
+    assert response.json()["error"]["code"] == "UNAUTHORIZED"
 
 
 @pytest.mark.parametrize("header", [f"Bearer {KEY[:-1]}", "Bearer ", "Basic " + KEY, KEY, ""])
@@ -86,7 +86,7 @@ def test_other_hosts_are_refused_with_400() -> None:
     for host in ("evil.example", "api.example.com.evil.example", "[::1]", "127.0.0.1"):
         response = client.get("/api/models", headers={"Host": host})
         assert response.status_code == 400, host
-        assert response.json()["error"]["code"] == "bad_request"
+        assert response.json()["error"]["code"] == "BAD_REQUEST"
 
 
 def test_health_probes_ignore_the_host_allowlist() -> None:
@@ -105,7 +105,7 @@ def test_rate_limit_returns_429_with_retry_after() -> None:
     statuses = [client.get("/api/models").status_code for _ in range(5)]
     assert statuses == [200, 200, 200, 429, 429]
     limited = client.get("/api/models")
-    assert limited.json()["error"]["code"] == "rate_limited"
+    assert limited.json()["error"]["code"] == "RATE_LIMITED"
     assert int(limited.headers["retry-after"]) >= 1
 
 

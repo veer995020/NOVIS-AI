@@ -4,9 +4,10 @@ import pytest
 from pydantic import ValidationError
 
 from backend.config import DEFAULT_MODELS, DEFAULT_MODES, Settings
-from backend.schemas.chat import ChatRequest, ChatStatus
 from backend.schemas.events import StreamDoneEvent
 from backend.schemas.options import configure_allowed_options
+from backend.schemas.request import ChatRequest
+from backend.schemas.response import ChatStatus
 from backend.services.chat import ChatService
 from backend.services.conversation_store import ConversationStore
 from backend.services.errors import ConversationBusyError
@@ -53,7 +54,7 @@ def test_complete_stores_both_turns_in_the_named_conversation() -> None:
         conversation = await store.create()
         req = ChatRequest(message="alpha beta", model="rapid", conversation_id=conversation.id)
         response = await service.complete(req)
-        assert response.status is ChatStatus.COMPLETED
+        assert response.status is ChatStatus.SUCCESS
         assert response.error is None
         assert response.conversation_id == conversation.id
         history = await store.history(conversation.id)
@@ -66,6 +67,7 @@ def test_missing_conversation_id_creates_one() -> None:
     async def scenario() -> None:
         service, store = _service()
         response = await service.complete(ChatRequest(message="hello", model="rapid"))
+        assert response.conversation_id is not None
         assert (await store.get(response.conversation_id)).id == response.conversation_id
 
     asyncio.run(scenario())
@@ -103,8 +105,8 @@ def test_reply_is_not_saved_when_the_lease_was_lost() -> None:
         assert isinstance(done, StreamDoneEvent)
         assert done.response.status is ChatStatus.ERROR
         assert done.response.error is not None
-        assert done.response.error.code.value == "conversation_busy"
-        assert done.response.content == ""
+        assert done.response.error.code.value == "CONVERSATION_BUSY"
+        assert done.response.content is None
         assert [m.role for m in await store.history(conversation.id)] == []
 
     asyncio.run(scenario())
@@ -125,6 +127,6 @@ def test_conversation_dropped_mid_turn_is_reported_not_raised() -> None:
         assert isinstance(done, StreamDoneEvent)
         assert done.response.status is ChatStatus.ERROR
         assert done.response.error is not None
-        assert done.response.error.code.value == "conversation_not_found"
+        assert done.response.error.code.value == "CONVERSATION_NOT_FOUND"
 
     asyncio.run(scenario())

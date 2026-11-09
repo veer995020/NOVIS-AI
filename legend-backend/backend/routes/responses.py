@@ -5,15 +5,36 @@ from typing import Any
 
 from fastapi.responses import JSONResponse
 
-from backend.schemas.chat import ChatResponse, ChatStatus
-from backend.schemas.errors import ErrorCode
+from backend.schemas.errors import ErrorCode, ErrorEnvelope
+from backend.schemas.response import ChatResponse, ChatStatus
 
 # OpenAPI documentation for the error statuses a chat-style endpoint can return.
+# Each status names the body shape that is most common for it. Where a status can
+# carry either shape, the description says so.
 CHAT_RESPONSES: dict[int | str, dict[str, Any]] = {
-    502: {"model": ChatResponse, "description": "Reply generation failed."},
-    409: {"model": ChatResponse, "description": "The conversation changed during the turn."},
-    503: {"model": ChatResponse, "description": "The requested model is not available."},
-    504: {"model": ChatResponse, "description": "Reply generation timed out."},
+    404: {
+        "model": ErrorEnvelope,
+        "description": "conversation_not_found: the conversation id is unknown. The request did not start.",
+    },
+    409: {
+        "model": ErrorEnvelope,
+        "description": "conversation_busy: an earlier turn is still running on this conversation. "
+        "The request did not start. Rarely, the reply could not be saved: then the body is a "
+        "ChatResponse with status error and code conversation_busy.",
+    },
+    502: {
+        "model": ChatResponse,
+        "description": "generation_failed: the model call failed or returned no text. status is error.",
+    },
+    503: {
+        "model": ChatResponse,
+        "description": "model_unavailable: no route serves the model. status is error. "
+        "Also returned as an ErrorEnvelope with code capacity_exceeded when the server is at its turn limit.",
+    },
+    504: {
+        "model": ChatResponse,
+        "description": "generation_timeout: generation took longer than the server allows. status is error.",
+    },
 }
 
 _STATUS_BY_CODE = {

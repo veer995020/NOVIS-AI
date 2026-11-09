@@ -13,14 +13,22 @@ from typing import Any
 
 from pydantic import TypeAdapter
 
-from backend.config import APP_VERSION, MAX_MESSAGE_CHARS, MAX_REPLY_CHARS
-from backend.schemas.chat import (
-    ChatOptions,
-    ChatRequest,
-    ChatResponse,
-    Message,
-    StopResponse,
-    TaskRequest,
+from backend.config import (
+    APP_VERSION,
+    DEFAULT_MODE,
+    DEFAULT_MODEL,
+    MAX_MESSAGE_CHARS,
+    MAX_REPLY_CHARS,
+)
+from backend.schemas.attachments import (
+    ATTACHMENT_MAX_CHARS,
+    ATTACHMENT_MAX_COUNT,
+    ATTACHMENT_MEDIA_TYPES,
+    ATTACHMENT_NAME_FORBIDDEN_CHARACTERS,
+    ATTACHMENT_NAME_MAX_LENGTH,
+    ATTACHMENTS_MAX_TOTAL_CHARS,
+    Attachment,
+    AttachmentMeta,
 )
 from backend.schemas.conversations import (
     Conversation,
@@ -32,19 +40,28 @@ from backend.schemas.errors import ErrorEnvelope
 from backend.schemas.events import StreamEvent
 from backend.schemas.health import HealthReport, ProbeReport
 from backend.schemas.models import ModelList
+from backend.schemas.request import ChatRequest, TaskRequest
+from backend.schemas.response import (
+    CHAT_PATHS,
+    ChatOptions,
+    ChatResponse,
+    Message,
+    StopResponse,
+)
 from backend.services.tasks import TASK_SPECS
 
-CONTRACT_VERSION = 1
+CONTRACT_VERSION = 5
 CONTRACT_PATH = Path(__file__).resolve().parents[2] / "contracts" / "chat.contract.json"
 
 # Status codes shared by every chat-style JSON endpoint.
 CHAT_STATUSES = {
-    "200": "status is completed or stopped",
+    "200": "status is success or stopped; content is the reply",
     "422": "the request failed validation",
-    "502": "status is error with code generation_failed",
-    "409": "ErrorEnvelope with code conversation_busy when the request cannot start, or ChatResponse with status error and code conversation_busy when the reply could not be saved",
-    "503": "status is error with code model_unavailable",
-    "504": "status is error with code generation_timeout",
+    "415": "the request body is not application/json",
+    "502": "status is error with code GENERATION_FAILED; content is null",
+    "409": "chat endpoints: status is error with code CONVERSATION_BUSY; other endpoints: ErrorEnvelope with code CONVERSATION_BUSY",
+    "503": "status is error with code MODEL_UNAVAILABLE; content is null",
+    "504": "status is error with code GENERATION_TIMEOUT; content is null",
 }
 
 
@@ -62,6 +79,7 @@ def _build_endpoints() -> dict[str, Any]:
         "PATCH /api/conversations/{conversation_id}": {"request": "ConversationUpdate", "response": "Conversation", "errors": ["404 conversation_not_found", "409 version_conflict"]},
         "POST /api/conversations/{conversation_id}/clear": {"request": "ConversationClear", "response": "Conversation", "errors": ["404 conversation_not_found", "409 version_conflict", "409 conversation_busy"]},
         "GET /api/chat/options": {"response": "ChatOptions"},
+        "GET /api/contract": {"response": "Contract", "public": True},
         "GET /api/models": {"response": "ModelList"},
         "GET /health": {"response": "HealthReport", "statuses": {"200": "ok or degraded", "503": "down"}},
         "GET /health/live": {"response": "ProbeReport"},
@@ -88,6 +106,43 @@ def build_contract() -> dict[str, Any]:
             "reply_max_chars": MAX_REPLY_CHARS,
             "conversation_id_max_length": 64,
             "name_max_length": 64,
+            "attachments_max_count": ATTACHMENT_MAX_COUNT,
+            "attachment_max_chars": ATTACHMENT_MAX_CHARS,
+            "attachments_max_total_chars": ATTACHMENTS_MAX_TOTAL_CHARS,
+            "attachment_name_max_length": ATTACHMENT_NAME_MAX_LENGTH,
+            "attachment_media_types": list(ATTACHMENT_MEDIA_TYPES),
+            "attachment_name_forbidden_characters": list(ATTACHMENT_NAME_FORBIDDEN_CHARACTERS),
+        },
+        "defaults": {
+            "conversation_id": None,
+            "model": DEFAULT_MODEL,
+            "mode": DEFAULT_MODE,
+            "attachments": [],
+        },
+        "error_formats": {
+            "http": {
+                "schema": "ErrorEnvelope",
+                "shape": {
+                    "error": {"code": "string", "message": "string", "details": "FieldIssue[] | null"},
+                    "request_id": "string | null",
+                },
+                "description": "Failures on every other endpoint: not found, conflicts, capacity, size, "
+                "method, rate limit, access, host, internal.",
+            },
+            "chat_outcome": {
+                "schema": "ChatResponse",
+                "paths": sorted(CHAT_PATHS),
+                "description": "Every outcome of a chat or task endpoint is a ChatResponse: a reply "
+                "(status success or stopped, content a string, error null), or a failure (status error, "
+                "content null, error an ErrorDetail). This includes refusals and validation failures. "
+                "Every field is always present. The request id is in the X-Request-ID header.",
+            },
+            "field_issue": {
+                "schema": "FieldIssue",
+                "field_format": "body.<field>, with list indexes and sub-fields, e.g. "
+                "body.attachments.0.media_type",
+                "message": "Human-readable reason. Never contains the submitted value.",
+            },
         },
         "endpoints": _build_endpoints(),
         "schemas": {
@@ -95,6 +150,8 @@ def build_contract() -> dict[str, Any]:
             "TaskRequest": TaskRequest.model_json_schema(),
             "ChatResponse": ChatResponse.model_json_schema(),
             "ChatOptions": ChatOptions.model_json_schema(),
+            "Attachment": Attachment.model_json_schema(),
+            "AttachmentMeta": AttachmentMeta.model_json_schema(),
             "ModelList": ModelList.model_json_schema(),
             "HealthReport": HealthReport.model_json_schema(),
             "ProbeReport": ProbeReport.model_json_schema(),

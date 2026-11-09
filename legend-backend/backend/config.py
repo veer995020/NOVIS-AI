@@ -13,7 +13,7 @@ Environment variables:
   MODEL_ROUTES             model=provider:provider_model, comma-separated
                            e.g. rapid=<provider>:<provider model name> (default: none)
   CHAT_MODES               comma-separated mode names
-  MAX_REQUEST_BYTES        largest accepted request body      (default: 65536)
+  MAX_REQUEST_BYTES        largest accepted request body      (default: 2097152)
   MAX_HISTORY_MESSAGES     messages kept per conversation     (default: 200)
   MAX_CONTEXT_MESSAGES     messages sent to the model         (default: 20)
   MAX_CONVERSATIONS        conversations kept in memory       (default: 1000)
@@ -23,7 +23,9 @@ Environment variables:
   API_ACCESS_KEY              shared bearer key for every API call; required in production
   ALLOWED_HOSTS               comma-separated Host names accepted; required in production
   RATE_LIMIT_PER_MINUTE       requests per client per minute, 0 disables (default: 120)
+  RATE_LIMIT_GENERATION_PER_MINUTE  reply requests per client per minute, 0 disables (default: 30)
   TRUST_FORWARDED_FOR         true only behind a proxy that sets X-Forwarded-For (default: false)
+  SERVE_FRONTEND              serve the chat page at /app/chat.html (default: true)
 
 A model with no route answers with model_unavailable. Nothing is generated for it.
 """
@@ -51,9 +53,9 @@ MODEL_DISPLAY_NAMES = {
     "rapid": "Rapid",
 }
 
-DEFAULT_MODES = ("standard", "research", "code", "write", "creative")
-REQUIRED_MODES = ("standard", "research", "code", "write")
-DEFAULT_MODE = "standard"
+DEFAULT_MODES = ("general", "research", "coding", "writing")
+REQUIRED_MODES = ("general", "research", "coding", "writing")
+DEFAULT_MODE = "general"
 
 ENVIRONMENTS = ("development", "test", "production")
 LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR")
@@ -68,7 +70,7 @@ _FALSE_VALUES = frozenset({"0", "false", "no", "off"})
 
 # (env var, Settings attribute, minimum, maximum, default)
 _INT_SETTINGS: tuple[tuple[str, str, int, int, int], ...] = (
-    ("MAX_REQUEST_BYTES", "max_request_bytes", 1024, 10 * 1024 * 1024, 64 * 1024),
+    ("MAX_REQUEST_BYTES", "max_request_bytes", 1024, 10 * 1024 * 1024, 2 * 1024 * 1024),
     ("MAX_HISTORY_MESSAGES", "max_history_messages", 1, 10_000, 200),
     ("MAX_CONTEXT_MESSAGES", "max_context_messages", 1, 200, 20),
     ("MAX_CONVERSATIONS", "max_conversations", 1, 100_000, 1000),
@@ -76,6 +78,7 @@ _INT_SETTINGS: tuple[tuple[str, str, int, int, int], ...] = (
     ("CONVERSATION_IDLE_SECONDS", "conversation_idle_seconds", 60, 604800, 3600),
     ("MAX_CONCURRENT_TURNS", "max_concurrent_turns", 1, 1000, 32),
     ("RATE_LIMIT_PER_MINUTE", "rate_limit_per_minute", 0, 100000, 120),
+    ("RATE_LIMIT_GENERATION_PER_MINUTE", "rate_limit_generation_per_minute", 0, 100000, 30),
 )
 
 # (model id, provider name, provider model name)
@@ -110,14 +113,14 @@ class Secret:
 
 @dataclass(frozen=True)
 class Settings:
-    app_name: str = "Legend Inc. - Novis AI Backend"
+    app_name: str = "Legend Inc. - Chatify AI Backend"
     version: str = APP_VERSION
     environment: str = "development"
     log_level: str = "INFO"
     log_format: str = "json"
     enable_docs: bool = False
     cors_origins: tuple[str, ...] = ()
-    max_request_bytes: int = 64 * 1024
+    max_request_bytes: int = 2 * 1024 * 1024
     model_routes: tuple[ModelBinding, ...] = ()
     modes: tuple[str, ...] = DEFAULT_MODES
     max_history_messages: int = 200
@@ -129,7 +132,9 @@ class Settings:
     api_access_key: Secret | None = None
     allowed_hosts: tuple[str, ...] = ()
     rate_limit_per_minute: int = 120
+    rate_limit_generation_per_minute: int = 30
     trust_forwarded_for: bool = False
+    serve_frontend: bool = True
 
     @property
     def is_production(self) -> bool:
@@ -315,6 +320,7 @@ def load_settings(source: Mapping[str, str] | None = None) -> Settings:
         api_access_key=env.secret("API_ACCESS_KEY"),
         allowed_hosts=tuple(host.lower() for host in env.csv("ALLOWED_HOSTS", ())),
         trust_forwarded_for=env.flag("TRUST_FORWARDED_FOR", False),
+        serve_frontend=env.flag("SERVE_FRONTEND", True),
         **int_values,
     )
     problems = env.problems + route_problems + _settings_problems(settings)

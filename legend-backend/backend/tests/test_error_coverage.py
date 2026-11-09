@@ -11,8 +11,9 @@ from fastapi import HTTPException
 
 from backend.config import Secret, Settings
 from backend.main import create_app
-from backend.schemas.chat import ChatResponse, ChatStatus
-from backend.schemas.errors import ErrorCode, ErrorEnvelope
+from backend.schemas.errors import ErrorCode
+from backend.schemas.response import ChatResponse, ChatStatus
+from backend.tests._bodies import parse_error_body
 from backend.tests.fakes import app_with, crashing, replying, sleeping, timing_out
 
 MAX_BODY = 1024
@@ -59,7 +60,7 @@ async def _scenario_model_unavailable():
 
 async def _scenario_conversation_not_found():
     async with _async_client(app_with(replying("ok"))) as c:
-        return await c.post("/api/chat", json={"conversation_id": "no-such-conversation", "message": "hi"})
+        return await c.get("/api/conversations/no-such-conversation")
 
 
 async def _scenario_version_conflict():
@@ -134,6 +135,20 @@ async def _scenario_rate_limited():
         return await c.get("/api/models")
 
 
+async def _scenario_unsupported_media_type():
+    async with _async_client(app_with(replying("ok"))) as c:
+        return await c.post("/api/chat", content=b"hello", headers={"Content-Type": "text/plain"})
+
+
+async def _scenario_forbidden_origin():
+    app = app_with(replying("ok"), cors_origins=("https://app.example.com",))
+    async with _async_client(app) as c:
+        return await c.options(
+            "/api/chat",
+            headers={"Origin": "https://evil.example", "Access-Control-Request-Method": "POST"},
+        )
+
+
 SCENARIOS = {
     ErrorCode.VALIDATION_ERROR: (_scenario_validation_error, 422, ENVELOPE),
     ErrorCode.NOT_FOUND: (_scenario_not_found, 404, ENVELOPE),
@@ -148,7 +163,9 @@ SCENARIOS = {
     ErrorCode.CAPACITY_EXCEEDED: (_scenario_capacity_exceeded, 503, ENVELOPE),
     ErrorCode.INTERNAL_ERROR: (_scenario_internal_error, 500, ENVELOPE),
     ErrorCode.HTTP_ERROR: (_scenario_http_error, 418, ENVELOPE),
+    ErrorCode.UNSUPPORTED_MEDIA_TYPE: (_scenario_unsupported_media_type, 415, ENVELOPE),
     ErrorCode.BAD_REQUEST: (_scenario_bad_request_host, 400, ENVELOPE),
+    ErrorCode.FORBIDDEN: (_scenario_forbidden_origin, 403, ENVELOPE),
     ErrorCode.UNAUTHORIZED: (_scenario_unauthorized, 401, ENVELOPE),
     ErrorCode.RATE_LIMITED: (_scenario_rate_limited, 429, ENVELOPE),
 }
@@ -167,11 +184,11 @@ def test_error_code_is_produced_by_a_real_request(code: ErrorCode) -> None:
     assert "internal detail that must not leak" not in response.text
 
     if shape == ENVELOPE:
-        envelope = ErrorEnvelope.model_validate_json(response.text)
+        envelope = parse_error_body(response.text)
         assert envelope.error.code.value == code.value
-        assert envelope.request_id
+        assert response.headers.get("x-request-id")
     else:
         reply = ChatResponse.model_validate_json(response.text)
         assert reply.status is ChatStatus.ERROR
         assert reply.error is not None and reply.error.code.value == code.value
-        assert reply.content == ""
+        assert reply.content is None

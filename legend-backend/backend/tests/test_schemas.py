@@ -32,7 +32,7 @@ def _req(**overrides) -> dict:
 
 def test_minimal_request_gets_defaults() -> None:
     req = ChatRequest.model_validate(_req())
-    assert req.mode == "standard"
+    assert req.mode == "general"
     assert req.conversation_id is None
 
 
@@ -53,7 +53,7 @@ def test_model_and_mode_must_be_strings() -> None:
     with pytest.raises(ValidationError):
         ChatRequest.model_validate(_req(model=1))
     with pytest.raises(ValidationError):
-        ChatRequest.model_validate(_req(mode=["standard"]))
+        ChatRequest.model_validate(_req(mode=["general"]))
 
 
 def test_unknown_fields_are_rejected() -> None:
@@ -107,7 +107,7 @@ def test_mode_must_be_in_allowlist() -> None:
 
 
 def test_custom_allowlist_replaces_defaults() -> None:
-    configure_allowed_options(("alpha",), ("standard",))
+    configure_allowed_options(("alpha",), ("general",))
     assert ChatRequest.model_validate(_req(model="alpha")).model == "alpha"
     with pytest.raises(ValidationError):
         ChatRequest.model_validate(_req(model="rapid"))
@@ -130,36 +130,36 @@ def test_invalid_conversation_ids(cid: object) -> None:
 
 def test_success_response_shape() -> None:
     response = ChatResponse(
-        conversation_id="c1", model="rapid", mode="standard",
-        content="hi", status=ChatStatus.COMPLETED,
+        conversation_id="c1", model="rapid", mode="general",
+        content="hi", status=ChatStatus.SUCCESS, error=None,
     )
     assert response.error is None
 
 
-def test_error_response_requires_error_and_empty_content() -> None:
+def test_error_response_requires_error_and_null_content() -> None:
     detail = ErrorDetail(code=ErrorCode.GENERATION_FAILED, message="failed")
     ok = ChatResponse(
-        conversation_id="c1", model="rapid", mode="standard",
-        content="", status=ChatStatus.ERROR, error=detail,
+        conversation_id="c1", model="rapid", mode="general",
+        content=None, status=ChatStatus.ERROR, error=detail,
     )
     assert ok.status is ChatStatus.ERROR
     with pytest.raises(ValidationError):
         ChatResponse(
-            conversation_id="c1", model="rapid", mode="standard",
-            content="", status=ChatStatus.ERROR, error=None,
+            conversation_id="c1", model="rapid", mode="general",
+            content=None, status=ChatStatus.ERROR, error=None,
         )
     with pytest.raises(ValidationError):
         ChatResponse(
-            conversation_id="c1", model="rapid", mode="standard",
-            content="partial", status=ChatStatus.ERROR, error=detail,
+            conversation_id="c1", model="rapid", mode="general",
+            content="", status=ChatStatus.ERROR, error=detail,
         )
 
 
 def test_success_response_rejects_error_field() -> None:
     with pytest.raises(ValidationError):
         ChatResponse(
-            conversation_id="c1", model="rapid", mode="standard", content="hi",
-            status=ChatStatus.COMPLETED,
+            conversation_id="c1", model="rapid", mode="general", content="hi",
+            status=ChatStatus.SUCCESS,
             error=ErrorDetail(code=ErrorCode.INTERNAL_ERROR, message="x"),
         )
 
@@ -167,6 +167,6 @@ def test_success_response_rejects_error_field() -> None:
 def test_response_content_length_limit() -> None:
     with pytest.raises(ValidationError):
         ChatResponse(
-            conversation_id="c1", model="rapid", mode="standard",
-            content="a" * (MAX_REPLY_CHARS + 1), status=ChatStatus.COMPLETED,
+            conversation_id="c1", model="rapid", mode="general",
+            content="a" * (MAX_REPLY_CHARS + 1), status=ChatStatus.SUCCESS, error=None,
         )

@@ -96,6 +96,39 @@ def sleeping(text: str, seconds: float) -> ScriptedProvider:
     return ScriptedProvider(script)
 
 
+def echoing() -> ScriptedProvider:
+    """Replies with the last user turn, exactly as the model received it. Test double only."""
+
+    async def script(messages, cancel):
+        last_user = next(m["content"] for m in reversed(messages) if m["role"] == "user")
+        yield last_user
+
+    return ScriptedProvider(script)
+
+
+def flaky_then_echo() -> ScriptedProvider:
+    """Fails the first call, then echoes. Lets a test check that retry works. Test double only."""
+    calls = {"n": 0}
+
+    async def script(messages, cancel):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise ProviderError("first attempt fails")
+        last_user = next(m["content"] for m in reversed(messages) if m["role"] == "user")
+        yield last_user
+
+    return ScriptedProvider(script)
+
+
+def counting() -> ScriptedProvider:
+    """Replies with how many messages the model was given, so a test can see conversation context."""
+
+    async def script(messages, cancel):
+        yield f"{len(messages)} messages in context"
+
+    return ScriptedProvider(script)
+
+
 def settings_for_tests(**overrides) -> Settings:
     return Settings(model_routes=ROUTES, **overrides)
 

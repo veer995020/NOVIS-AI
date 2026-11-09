@@ -100,4 +100,4 @@ def test_real_server_rejects_an_oversize_chunked_body() -> None:
         chunks = (b"x" * 1000 for _ in range(5))
         response = client.post("/api/chat", content=chunks, headers={"Content-Type": "application/json"})
     assert response.status_code == 413
-    assert response.json()["error"]["code"] == "payload_too_large"
+    assert response.json()["error"]["code"] == "PAYLOAD_TOO_LARGE"

@@ -1,9 +1,9 @@
-# Legend Inc. - Novis AI Backend
+# Legend Inc. - Chatify AI Backend
 
 FastAPI backend. In-memory only (no database). Stack: Python, FastAPI, Pydantic, Uvicorn, asyncio.
 
 ## Verified environment
-- Python 3.14.4 (see `.python-version`): full suite passes (298 tests).
+- Python 3.14.4 (see `.python-version`): full suite passes (753 tests, including the browser test when its packages are installed).
 - Python 3.15.0a8: `config.py` and the logging module pass their tests (19 tests, with `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`) and the
   package compiles. FastAPI and Pydantic can't run yet: the alpha can't load the compiled
   `pydantic-core` wheel (`undefined symbol: PyType_FromSlots`). Retest on a 3.15 beta or
@@ -33,7 +33,7 @@ Model routing and mode routing are separate:
 - **Mode routing** (`backend/prompts/system.py`, `backend/services/tasks.py`) decides the instructions
   the model receives. The mode is set by the request or by the task endpoint.
 
-A model with no route is not generated for. The response is 503 with `model_unavailable`, and
+A model with no route is not generated for. The response is 503 with `MODEL_UNAVAILABLE`, and
 `GET /api/chat/options` lists it as not available. No placeholder text is ever returned in its place.
 
 Providers live in `backend/services/providers/`:
@@ -50,8 +50,8 @@ Providers live in `backend/services/providers/`:
 | `LOG_FORMAT` | `json` | `json` or `text`. |
 | `ENABLE_DOCS` | `false` | Serves `/docs` and `/openapi.json`. |
 | `CORS_ORIGINS` | none | Comma-separated exact origins. `*` is rejected. |
-| `MAX_REQUEST_BYTES` | `65536` | Larger bodies get 413. |
-| `CHAT_MODES` | all modes | Must include `standard`, `research`, `code`, and `write`. |
+| `MAX_REQUEST_BYTES` | `2097152` | Larger bodies get 413. Sized for the largest legal request, including attachments. |
+| `CHAT_MODES` | all modes | Must include `general`, `research`, `coding`, and `writing`. |
 | `MAX_HISTORY_MESSAGES` / `MAX_CONTEXT_MESSAGES` / `MAX_CONVERSATIONS` | `200` / `20` / `1000` | Memory and context limits. |
 | `GENERATION_TIMEOUT_SECONDS` | `60` | Longest allowed reply generation, 1 to 600. |
 | `CONVERSATION_IDLE_SECONDS` | `3600` | Idle time before a conversation is dropped, 60 to 604800. |
@@ -76,7 +76,7 @@ from the code. After any schema change, regenerate it:
 | `message` | yes | string, 1 to 8000 characters after trimming, no control characters except newline, tab, and carriage return |
 | `model` | no, default `rapid` | one of `brainstormer`, `mythical`, `sonet`, `rapid` |
 | `conversation_id` | no | An id from `POST /api/conversations`, or from an earlier response. Omit to start a new conversation. An unknown id is a 404. |
-| `mode` | no, default `standard` | `POST /api/chat` only. Task endpoints fix their own mode and reject this field. |
+| `mode` | no, default `general` | one of `general`, `research`, `coding`, `writing`. `POST /api/chat` only. Task endpoints fix their own mode and reject this field. |
 
 Types are strict and unknown fields are rejected. Clients should load the options from
 `GET /api/chat/options` rather than hard-coding them.
@@ -84,14 +84,18 @@ Types are strict and unknown fields are rejected. Clients should load the option
 ### Response: `ChatResponse`
 | Field | Type | Notes |
 |---|---|---|
-| `conversation_id` | string | Use it for follow-up messages |
-| `model` | string | The resolved model id, so a missing model shows up as `rapid` |
-| `mode` | string | The mode that was used |
-| `content` | string | The reply; empty when `status` is `error` |
-| `status` | `completed` \| `stopped` \| `error` | `stopped` keeps the partial reply |
-| `error` | object or null | `{code, message, details}`; present only when `status` is `error` |
+| `conversation_id` | string or null | Use it for follow-up messages |
+| `model` | string or null | The model used. A failed request shows the requested or default model, or null |
+| `mode` | string or null | The mode used |
+| `content` | string or null | The reply when `status` is `success` or `stopped`; always null on `error` |
+| `status` | `success` \| `stopped` \| `error` | `stopped` keeps the partial reply |
+| `error` | object or null | `{code, message, details}`; non-null only when `status` is `error`. Every field is always present, as a key |
+
+Every chat endpoint returns this shape for every outcome, including refusals and validation failures.
+The request id for those is in the `X-Request-ID` header.
 
 ### Endpoints
+- Root aliases for the chat page: `POST /chat`, `/research`, `/code`, `/write`, and `GET /models`. Same behaviour as the `/api` routes; left out of `/docs`.
 - `GET  /api/models`: every model id, whether it is available, and which is the default. Provider names are never shown.
 - `GET  /health`: `ok`, `degraded`, or `down`, with checks for `server`, `models`, and `conversations`. Returns 503 only when `down`.
 - `GET  /health/live`: the process is running
@@ -113,29 +117,30 @@ The JSON endpoints return these status codes, and a failure is never reported as
 
 | Status | Meaning |
 |---|---|
-| 200 | `completed` or `stopped` |
+| 200 | `success` or `stopped` |
 | 422 | the request failed validation |
-| 502 | `error` with `generation_failed` (provider error, empty reply, or unexpected failure) |
-| 404 | `conversation_not_found`: the conversation id is unknown, or was dropped |
-| 409 | `conversation_busy`: an earlier turn is still running on this conversation. Or `version_conflict`: the version you sent is stale |
-| 503 | `error` with `model_unavailable` (no route for the model). Or `capacity_exceeded`: the server is full of busy conversations |
-| 400 | `bad_request`: the Host header is not in `ALLOWED_HOSTS` |
-| 401 | `unauthorized`: `API_ACCESS_KEY` is set and the bearer key is missing or wrong. The response carries `WWW-Authenticate: Bearer` |
-| 429 | `rate_limited`: the client is over `RATE_LIMIT_PER_MINUTE`. The response carries `Retry-After` in seconds |
-| 504 | `error` with `generation_timeout` |
+| 502 | `error` with `GENERATION_FAILED` (provider error, empty reply, or a reply over the size limit) |
+| 404 | `CONVERSATION_NOT_FOUND`: the conversation id is unknown, or was dropped |
+| 409 | `CONVERSATION_BUSY`: an earlier turn is still running on this conversation. Or `VERSION_CONFLICT`: the version you sent is stale |
+| 503 | `error` with `MODEL_UNAVAILABLE` (no route for the model). Or `CAPACITY_EXCEEDED`: the server is full of busy conversations |
+| 400 | `BAD_REQUEST`: the Host header is not in `ALLOWED_HOSTS` |
+| 401 | `UNAUTHORIZED`: `API_ACCESS_KEY` is set and the bearer key is missing or wrong. The response carries `WWW-Authenticate: Bearer` |
+| 429 | `RATE_LIMITED`: the client is over `RATE_LIMIT_PER_MINUTE`. The response carries `Retry-After` in seconds |
+| 504 | `error` with `GENERATION_TIMEOUT` |
 
 On the streaming endpoint the HTTP status is sent before generation starts, so failures arrive in the
 final `done` event with `status: "error"`.
 
 ### Errors
-Invalid requests get **422** with a `validation_error` and one entry per problem:
+Invalid requests get **422** with `VALIDATION_ERROR`, a sentence for the first problem, and one entry per problem:
 
-    {"error": {"code": "validation_error", "message": "Request validation failed.",
-               "details": [{"field": "body.model", "message": "Unknown model. Allowed values: brainstormer, mythical, sonet, rapid."}]},
-     "request_id": "..."}
+    {"conversation_id": null, "model": "rapid", "mode": "general", "content": null, "status": "error",
+     "error": {"code": "VALIDATION_ERROR", "message": "The model field is invalid: Unknown model. Allowed values: brainstormer, mythical, sonet, rapid.",
+               "details": [{"field": "body.model", "type": "unknown_model", "message": "Unknown model. Allowed values: brainstormer, mythical, sonet, rapid."}]}}
 
-Request-level errors use that envelope, including `not_found`, `payload_too_large` (413), and
-`internal_error` (500). Provider details never reach the response. They are logged with the request ID
+On chat endpoints that envelope is the ChatResponse shape. Every other endpoint uses the ErrorEnvelope
+`{"error": {...}, "request_id": "..."}`, including `NOT_FOUND`, `PAYLOAD_TOO_LARGE` (413), and
+`INTERNAL_ERROR` (500). Provider details never reach the response. They are logged with the request ID
 and the response is generic. Every response carries an `X-Request-ID` header.
 
 ## Chat flow and outcomes
@@ -143,10 +148,10 @@ Each request is validated, then routed to a model. The flow takes the conversati
 prompt from the conversation and the mode, and generates the reply under the timeout. The question and
 answer are saved together only when a reply exists.
 
-- `completed`: text was generated and saved.
+- `success`: text was generated and saved.
 - `stopped`: the client stopped the stream. The partial reply is kept and saved.
 - `error`: a provider error, an empty reply, a timeout, an unrouted model, a conversation that vanished
-  or was taken over mid-turn, or an unexpected failure. Its `content` is empty and nothing is saved.
+  or was taken over mid-turn, or an unexpected failure. Its `content` is null and nothing is saved.
 
 ## Conversation state (temporary)
 Conversations are the only context the server keeps. They exist in process memory only.
@@ -207,21 +212,25 @@ The full audit, with each finding, its fix, the test that pins it, and the resid
 ## Performance
 Measured with `python scripts/benchmark.py` on the test machine. Compare runs on the same machine.
 
-- Conversation store, cost of one `get()`: 1.33 µs with 100 conversations, 1.33 µs with 1,000, and 1.41 µs with 5,000.
+- Conversation store, cost of one `get()`: 1.77 µs with 100 conversations, 1.81 µs with 1,000, and 1.86 µs with 5,000.
   Before the optimisation the same operation took 9.3 µs, 81 µs, and 462 µs at those sizes, because every
   operation scanned every conversation for expiry. Expiry now stops at the first fresh conversation.
-- Request path, `GET /api/models` over the ASGI transport: about 3,800 requests/s, with and without the rate limiter.
-  The limiter costs under 1%.
+- Request path, `GET /api/models` over the ASGI transport: about 2,400 requests/s with the rate limiter off and
+  about 2,300 with it on (about 3% in this run).
+- Chat request path, `POST /api/chat` with a 400-character message and a test provider: about 720 µs per request
+  (ASGI transport, no network). It was about 1,000 µs before the unsafe-character check became one pass over the text.
+- Largest legal request (two full 64,000-character attachments, 131 KB of JSON): about 2 ms when the reply is short.
 - Reads return at most 200 messages. Use `?limit=` to send less.
 
 ## Layout
     backend/
       main.py              app factory, lifespan, provider and router wiring
       config.py            environment loading, validation, secret handling, route parsing
-      error_handlers.py    central error responses (ErrorEnvelope)
+      error_handlers.py    central error responses (ChatResponse on chat endpoints, ErrorEnvelope elsewhere)
       middleware.py        request IDs, request logging, security headers, body size limit
-      schemas/             the contract: chat.py (requests and responses), errors.py, events.py (SSE),
-                           options.py (allowlists), contract.py (JSON export)
+      schemas/             the contract: request.py (inputs), response.py (outputs), common.py,
+                           attachments.py, errors.py, events.py (SSE), options.py (allowlists),
+                           contract.py (JSON export)
       routes/              HTTP layer: health.py, models.py, chat.py, tasks.py, conversations.py, responses.py
       services/
         chat.py            the chat flow: validate-to-respond, timeouts, rollback
@@ -232,10 +241,34 @@ Measured with `python scripts/benchmark.py` on the test machine. Compare runs on
       prompts/             mode instructions and message assembly (mode routing)
       utils/               ids, clock, logging setup, log redaction, SSE framing
       tests/               unit and HTTP tests; fakes.py holds the scripted test provider
+    CONTRACT.md                    the API contract: types, defaults, constraints, error formats
     contracts/chat.contract.json   generated contract for the frontend
     backend/requirements.lock.txt  full transitive dependency tree that was tested (3.14.4)
     requirements.txt       runtime dependencies (pinned)
     requirements-dev.txt   adds pytest and httpx for testing
+
+## Chat page
+`frontend/chat.html` is the page as supplied. It is served at `/app/chat.html` on the same origin as the API, and
+it has not been modified. It calls the root paths (`POST /chat`, `/research`, `/code`, `/write`, `GET /models`,
+`GET /health`), sends JSON, and reads the reply's `content`. The error text comes from the top-level `detail`.
+
+What works with this page:
+- Messages, replies, follow-up messages in the same conversation, and retry of a failed message.
+- Error states: a validation message names the field, a dropped connection and a timeout offer Retry, and a
+  reply is never shown before the server returns it.
+
+What does not work with this page:
+- Attachments. The page sends each file's name, size, and type, but not its text, so the server refuses the
+  message with a 422 that names `attachments.N.content`. Sending file text needs a change to the page.
+- For a 503 the page shows its own text ("temporarily unavailable"), not the server's reason.
+
+The browser test drives this page in jsdom against live servers. It needs Node 18 or later:
+
+    cd frontend
+    npm install
+
+The Python suite runs it when the packages are installed. `npm test` is not useful here: the test needs the
+servers that the Python suite starts.
 
 ## Test (from project root)
     python -m pytest -q

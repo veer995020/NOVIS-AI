@@ -1,9 +1,19 @@
 {
   "api_version": "0.1.0",
-  "contract_version": 1,
+  "contract_version": 5,
+  "defaults": {
+    "attachments": [],
+    "conversation_id": null,
+    "mode": "general",
+    "model": "rapid"
+  },
   "endpoints": {
     "GET /api/chat/options": {
       "response": "ChatOptions"
+    },
+    "GET /api/contract": {
+      "public": true,
+      "response": "Contract"
     },
     "GET /api/conversations/{conversation_id}": {
       "errors": [
@@ -44,12 +54,13 @@
       "request": "ChatRequest",
       "response": "ChatResponse",
       "statuses": {
-        "200": "status is completed or stopped",
-        "409": "ErrorEnvelope with code conversation_busy when the request cannot start, or ChatResponse with status error and code conversation_busy when the reply could not be saved",
+        "200": "status is success or stopped; content is the reply",
+        "409": "chat endpoints: status is error with code CONVERSATION_BUSY; other endpoints: ErrorEnvelope with code CONVERSATION_BUSY",
+        "415": "the request body is not application/json",
         "422": "the request failed validation",
-        "502": "status is error with code generation_failed",
-        "503": "status is error with code model_unavailable",
-        "504": "status is error with code generation_timeout"
+        "502": "status is error with code GENERATION_FAILED; content is null",
+        "503": "status is error with code MODEL_UNAVAILABLE; content is null",
+        "504": "status is error with code GENERATION_TIMEOUT; content is null"
       }
     },
     "POST /api/chat/stream": {
@@ -61,16 +72,17 @@
     },
     "POST /api/code": {
       "error": "ErrorEnvelope",
-      "mode": "code",
+      "mode": "coding",
       "request": "TaskRequest",
       "response": "ChatResponse",
       "statuses": {
-        "200": "status is completed or stopped",
-        "409": "ErrorEnvelope with code conversation_busy when the request cannot start, or ChatResponse with status error and code conversation_busy when the reply could not be saved",
+        "200": "status is success or stopped; content is the reply",
+        "409": "chat endpoints: status is error with code CONVERSATION_BUSY; other endpoints: ErrorEnvelope with code CONVERSATION_BUSY",
+        "415": "the request body is not application/json",
         "422": "the request failed validation",
-        "502": "status is error with code generation_failed",
-        "503": "status is error with code model_unavailable",
-        "504": "status is error with code generation_timeout"
+        "502": "status is error with code GENERATION_FAILED; content is null",
+        "503": "status is error with code MODEL_UNAVAILABLE; content is null",
+        "504": "status is error with code GENERATION_TIMEOUT; content is null"
       }
     },
     "POST /api/conversations": {
@@ -93,36 +105,195 @@
       "request": "TaskRequest",
       "response": "ChatResponse",
       "statuses": {
-        "200": "status is completed or stopped",
-        "409": "ErrorEnvelope with code conversation_busy when the request cannot start, or ChatResponse with status error and code conversation_busy when the reply could not be saved",
+        "200": "status is success or stopped; content is the reply",
+        "409": "chat endpoints: status is error with code CONVERSATION_BUSY; other endpoints: ErrorEnvelope with code CONVERSATION_BUSY",
+        "415": "the request body is not application/json",
         "422": "the request failed validation",
-        "502": "status is error with code generation_failed",
-        "503": "status is error with code model_unavailable",
-        "504": "status is error with code generation_timeout"
+        "502": "status is error with code GENERATION_FAILED; content is null",
+        "503": "status is error with code MODEL_UNAVAILABLE; content is null",
+        "504": "status is error with code GENERATION_TIMEOUT; content is null"
       }
     },
     "POST /api/write": {
       "error": "ErrorEnvelope",
-      "mode": "write",
+      "mode": "writing",
       "request": "TaskRequest",
       "response": "ChatResponse",
       "statuses": {
-        "200": "status is completed or stopped",
-        "409": "ErrorEnvelope with code conversation_busy when the request cannot start, or ChatResponse with status error and code conversation_busy when the reply could not be saved",
+        "200": "status is success or stopped; content is the reply",
+        "409": "chat endpoints: status is error with code CONVERSATION_BUSY; other endpoints: ErrorEnvelope with code CONVERSATION_BUSY",
+        "415": "the request body is not application/json",
         "422": "the request failed validation",
-        "502": "status is error with code generation_failed",
-        "503": "status is error with code model_unavailable",
-        "504": "status is error with code generation_timeout"
+        "502": "status is error with code GENERATION_FAILED; content is null",
+        "503": "status is error with code MODEL_UNAVAILABLE; content is null",
+        "504": "status is error with code GENERATION_TIMEOUT; content is null"
+      }
+    }
+  },
+  "error_formats": {
+    "chat_outcome": {
+      "description": "Every outcome of a chat or task endpoint is a ChatResponse: a reply (status success or stopped, content a string, error null), or a failure (status error, content null, error an ErrorDetail). This includes refusals and validation failures. Every field is always present. The request id is in the X-Request-ID header.",
+      "paths": [
+        "/api/chat",
+        "/api/chat/stream",
+        "/api/code",
+        "/api/research",
+        "/api/write",
+        "/chat",
+        "/code",
+        "/research",
+        "/write"
+      ],
+      "schema": "ChatResponse"
+    },
+    "field_issue": {
+      "field_format": "body.<field>, with list indexes and sub-fields, e.g. body.attachments.0.media_type",
+      "message": "Human-readable reason. Never contains the submitted value.",
+      "schema": "FieldIssue"
+    },
+    "http": {
+      "description": "Failures on every other endpoint: not found, conflicts, capacity, size, method, rate limit, access, host, internal.",
+      "schema": "ErrorEnvelope",
+      "shape": {
+        "error": {
+          "code": "string",
+          "details": "FieldIssue[] | null",
+          "message": "string"
+        },
+        "request_id": "string | null"
       }
     }
   },
   "limits": {
+    "attachment_max_chars": 64000,
+    "attachment_media_types": [
+      "text/plain",
+      "text/markdown",
+      "text/csv",
+      "application/json"
+    ],
+    "attachment_name_forbidden_characters": [
+      "/",
+      "\\",
+      "<",
+      ">",
+      ":",
+      "\"",
+      "|",
+      "?",
+      "*"
+    ],
+    "attachment_name_max_length": 255,
+    "attachments_max_count": 3,
+    "attachments_max_total_chars": 128000,
     "conversation_id_max_length": 64,
     "message_max_chars": 8000,
     "name_max_length": 64,
     "reply_max_chars": 100000
   },
   "schemas": {
+    "Attachment": {
+      "additionalProperties": false,
+      "description": "A text file sent with a message. Content is sent to the model for that turn only.\n\nThe page sends `type` (the browser's media type), `size`, and `kind`. Those names are accepted.\n`size` and `kind` are informational and are not trusted: the size is measured from the content.",
+      "properties": {
+        "content": {
+          "description": "The file's text, UTF-8. At most 64000 characters.",
+          "maxLength": 64000,
+          "minLength": 1,
+          "title": "Content",
+          "type": "string"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "maxLength": 32,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Informational. Not used.",
+          "title": "Kind"
+        },
+        "media_type": {
+          "description": "The file's media type.",
+          "enum": [
+            "text/plain",
+            "text/markdown",
+            "text/csv",
+            "application/json"
+          ],
+          "title": "Media Type",
+          "type": "string"
+        },
+        "name": {
+          "description": "File name, for example notes.md.",
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "size": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Informational. Not trusted.",
+          "title": "Size"
+        }
+      },
+      "required": [
+        "name",
+        "media_type",
+        "content"
+      ],
+      "title": "Attachment",
+      "type": "object"
+    },
+    "AttachmentMeta": {
+      "additionalProperties": false,
+      "description": "What conversation history keeps about an attachment. The content is not kept.",
+      "properties": {
+        "media_type": {
+          "enum": [
+            "text/plain",
+            "text/markdown",
+            "text/csv",
+            "application/json"
+          ],
+          "title": "Media Type",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "size_bytes": {
+          "description": "Size of the content in UTF-8 bytes.",
+          "maximum": 256000,
+          "minimum": 1,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "media_type",
+        "size_bytes"
+      ],
+      "title": "AttachmentMeta",
+      "type": "object"
+    },
     "ChatOptions": {
       "additionalProperties": false,
       "properties": {
@@ -169,9 +340,114 @@
       "type": "object"
     },
     "ChatRequest": {
+      "$defs": {
+        "Attachment": {
+          "additionalProperties": false,
+          "description": "A text file sent with a message. Content is sent to the model for that turn only.\n\nThe page sends `type` (the browser's media type), `size`, and `kind`. Those names are accepted.\n`size` and `kind` are informational and are not trusted: the size is measured from the content.",
+          "properties": {
+            "content": {
+              "description": "The file's text, UTF-8. At most 64000 characters.",
+              "maxLength": 64000,
+              "minLength": 1,
+              "title": "Content",
+              "type": "string"
+            },
+            "kind": {
+              "anyOf": [
+                {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Informational. Not used.",
+              "title": "Kind"
+            },
+            "media_type": {
+              "description": "The file's media type.",
+              "enum": [
+                "text/plain",
+                "text/markdown",
+                "text/csv",
+                "application/json"
+              ],
+              "title": "Media Type",
+              "type": "string"
+            },
+            "name": {
+              "description": "File name, for example notes.md.",
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Name",
+              "type": "string"
+            },
+            "size": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Informational. Not trusted.",
+              "title": "Size"
+            }
+          },
+          "required": [
+            "name",
+            "media_type",
+            "content"
+          ],
+          "title": "Attachment",
+          "type": "object"
+        },
+        "ToolFlags": {
+          "additionalProperties": false,
+          "description": "The page's tool switches. Web search is not available here and is refused when on.\nThe other switches do not change the answer, so they are accepted and not acted on.",
+          "properties": {
+            "files": {
+              "default": false,
+              "title": "Files",
+              "type": "boolean"
+            },
+            "images": {
+              "default": false,
+              "title": "Images",
+              "type": "boolean"
+            },
+            "voice": {
+              "default": false,
+              "title": "Voice",
+              "type": "boolean"
+            },
+            "webSearch": {
+              "default": false,
+              "title": "Websearch",
+              "type": "boolean"
+            }
+          },
+          "title": "ToolFlags",
+          "type": "object"
+        }
+      },
       "additionalProperties": false,
       "description": "Input for POST /api/chat, where the caller chooses the mode.",
       "properties": {
+        "attachments": {
+          "description": "Text files for this turn. At most 3, and 128000 characters in total.",
+          "items": {
+            "$ref": "#/$defs/Attachment"
+          },
+          "maxItems": 3,
+          "title": "Attachments",
+          "type": "array"
+        },
         "conversation_id": {
           "anyOf": [
             {
@@ -196,11 +472,10 @@
           "type": "string"
         },
         "mode": {
-          "default": "standard",
+          "default": "general",
           "description": "Mode name from GET /api/chat/options.",
           "maxLength": 64,
           "minLength": 1,
-          "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$",
           "title": "Mode",
           "type": "string"
         },
@@ -209,7 +484,6 @@
             {
               "maxLength": 64,
               "minLength": 1,
-              "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$",
               "type": "string"
             },
             {
@@ -219,6 +493,18 @@
           "default": null,
           "description": "Model id from GET /api/chat/options. Omit to use rapid.",
           "title": "Model"
+        },
+        "tools": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolFlags"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The page's tool switches."
         }
       },
       "required": [
@@ -230,8 +516,9 @@
     "ChatResponse": {
       "$defs": {
         "ChatStatus": {
+          "description": "success: a complete reply. stopped: the user stopped it; content is the partial reply.\nerror: no reply; see error.",
           "enum": [
-            "completed",
+            "success",
             "stopped",
             "error"
           ],
@@ -240,22 +527,24 @@
         },
         "ErrorCode": {
           "enum": [
-            "validation_error",
-            "not_found",
-            "method_not_allowed",
-            "payload_too_large",
-            "bad_request",
-            "unauthorized",
-            "rate_limited",
-            "generation_failed",
-            "generation_timeout",
-            "model_unavailable",
-            "conversation_not_found",
-            "version_conflict",
-            "conversation_busy",
-            "capacity_exceeded",
-            "internal_error",
-            "http_error"
+            "VALIDATION_ERROR",
+            "NOT_FOUND",
+            "METHOD_NOT_ALLOWED",
+            "PAYLOAD_TOO_LARGE",
+            "UNSUPPORTED_MEDIA_TYPE",
+            "BAD_REQUEST",
+            "FORBIDDEN",
+            "UNAUTHORIZED",
+            "RATE_LIMITED",
+            "GENERATION_FAILED",
+            "GENERATION_TIMEOUT",
+            "MODEL_UNAVAILABLE",
+            "CONVERSATION_NOT_FOUND",
+            "VERSION_CONFLICT",
+            "CONVERSATION_BUSY",
+            "CAPACITY_EXCEEDED",
+            "INTERNAL_ERROR",
+            "HTTP_ERROR"
           ],
           "title": "ErrorCode",
           "type": "string"
@@ -305,13 +594,21 @@
               "type": "string"
             },
             "message": {
+              "description": "Human-readable reason. Never the submitted value.",
               "maxLength": 500,
               "title": "Message",
+              "type": "string"
+            },
+            "type": {
+              "description": "Stable machine-readable error type, e.g. string_too_short or missing.",
+              "maxLength": 100,
+              "title": "Type",
               "type": "string"
             }
           },
           "required": [
             "field",
+            "type",
             "message"
           ],
           "title": "FieldIssue",
@@ -319,18 +616,46 @@
         }
       },
       "additionalProperties": false,
+      "description": "The one shape every chat outcome takes, including validation failures and refusals.\n\nEvery field is always present. A field with no value is null, never omitted.\n  success or stopped: content is the reply (a string), error is null.\n  error:              content is null, error is an ErrorDetail.",
       "properties": {
         "content": {
-          "maxLength": 100000,
-          "title": "Content",
-          "type": "string"
+          "anyOf": [
+            {
+              "maxLength": 100000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Content"
         },
         "conversation_id": {
-          "maxLength": 64,
-          "minLength": 1,
-          "pattern": "^[A-Za-z0-9_-]+$",
-          "title": "Conversation Id",
-          "type": "string"
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Conversation Id"
+        },
+        "detail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The error message as plain text, equal to error.message. Null unless status is error. Clients that read a top-level detail string (the chat page does) show it without parsing error.",
+          "title": "Detail"
         },
         "error": {
           "anyOf": [
@@ -340,20 +665,33 @@
             {
               "type": "null"
             }
-          ],
-          "default": null
+          ]
         },
         "mode": {
-          "maxLength": 64,
-          "minLength": 1,
-          "title": "Mode",
-          "type": "string"
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mode"
         },
         "model": {
-          "maxLength": 64,
-          "minLength": 1,
-          "title": "Model",
-          "type": "string"
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Model"
         },
         "status": {
           "$ref": "#/$defs/ChatStatus"
@@ -364,16 +702,62 @@
         "model",
         "mode",
         "content",
-        "status"
+        "status",
+        "error"
       ],
       "title": "ChatResponse",
       "type": "object"
     },
     "Conversation": {
       "$defs": {
-        "Message": {
-          "description": "One turn in a conversation.",
+        "AttachmentMeta": {
+          "additionalProperties": false,
+          "description": "What conversation history keeps about an attachment. The content is not kept.",
           "properties": {
+            "media_type": {
+              "enum": [
+                "text/plain",
+                "text/markdown",
+                "text/csv",
+                "application/json"
+              ],
+              "title": "Media Type",
+              "type": "string"
+            },
+            "name": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Name",
+              "type": "string"
+            },
+            "size_bytes": {
+              "description": "Size of the content in UTF-8 bytes.",
+              "maximum": 256000,
+              "minimum": 1,
+              "title": "Size Bytes",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "name",
+            "media_type",
+            "size_bytes"
+          ],
+          "title": "AttachmentMeta",
+          "type": "object"
+        },
+        "Message": {
+          "additionalProperties": false,
+          "description": "One turn in a conversation. Attachment content is never stored, only its metadata.",
+          "properties": {
+            "attachments": {
+              "items": {
+                "$ref": "#/$defs/AttachmentMeta"
+              },
+              "maxItems": 3,
+              "title": "Attachments",
+              "type": "array"
+            },
             "content": {
               "title": "Content",
               "type": "string"
@@ -541,22 +925,24 @@
       "$defs": {
         "ErrorCode": {
           "enum": [
-            "validation_error",
-            "not_found",
-            "method_not_allowed",
-            "payload_too_large",
-            "bad_request",
-            "unauthorized",
-            "rate_limited",
-            "generation_failed",
-            "generation_timeout",
-            "model_unavailable",
-            "conversation_not_found",
-            "version_conflict",
-            "conversation_busy",
-            "capacity_exceeded",
-            "internal_error",
-            "http_error"
+            "VALIDATION_ERROR",
+            "NOT_FOUND",
+            "METHOD_NOT_ALLOWED",
+            "PAYLOAD_TOO_LARGE",
+            "UNSUPPORTED_MEDIA_TYPE",
+            "BAD_REQUEST",
+            "FORBIDDEN",
+            "UNAUTHORIZED",
+            "RATE_LIMITED",
+            "GENERATION_FAILED",
+            "GENERATION_TIMEOUT",
+            "MODEL_UNAVAILABLE",
+            "CONVERSATION_NOT_FOUND",
+            "VERSION_CONFLICT",
+            "CONVERSATION_BUSY",
+            "CAPACITY_EXCEEDED",
+            "INTERNAL_ERROR",
+            "HTTP_ERROR"
           ],
           "title": "ErrorCode",
           "type": "string"
@@ -606,13 +992,21 @@
               "type": "string"
             },
             "message": {
+              "description": "Human-readable reason. Never the submitted value.",
               "maxLength": 500,
               "title": "Message",
+              "type": "string"
+            },
+            "type": {
+              "description": "Stable machine-readable error type, e.g. string_too_short or missing.",
+              "maxLength": 100,
+              "title": "Type",
               "type": "string"
             }
           },
           "required": [
             "field",
+            "type",
             "message"
           ],
           "title": "FieldIssue",
@@ -690,8 +1084,55 @@
       "type": "object"
     },
     "Message": {
-      "description": "One turn in a conversation.",
+      "$defs": {
+        "AttachmentMeta": {
+          "additionalProperties": false,
+          "description": "What conversation history keeps about an attachment. The content is not kept.",
+          "properties": {
+            "media_type": {
+              "enum": [
+                "text/plain",
+                "text/markdown",
+                "text/csv",
+                "application/json"
+              ],
+              "title": "Media Type",
+              "type": "string"
+            },
+            "name": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Name",
+              "type": "string"
+            },
+            "size_bytes": {
+              "description": "Size of the content in UTF-8 bytes.",
+              "maximum": 256000,
+              "minimum": 1,
+              "title": "Size Bytes",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "name",
+            "media_type",
+            "size_bytes"
+          ],
+          "title": "AttachmentMeta",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "description": "One turn in a conversation. Attachment content is never stored, only its metadata.",
       "properties": {
+        "attachments": {
+          "items": {
+            "$ref": "#/$defs/AttachmentMeta"
+          },
+          "maxItems": 3,
+          "title": "Attachments",
+          "type": "array"
+        },
         "content": {
           "title": "Content",
           "type": "string"
@@ -831,18 +1272,46 @@
       "$defs": {
         "ChatResponse": {
           "additionalProperties": false,
+          "description": "The one shape every chat outcome takes, including validation failures and refusals.\n\nEvery field is always present. A field with no value is null, never omitted.\n  success or stopped: content is the reply (a string), error is null.\n  error:              content is null, error is an ErrorDetail.",
           "properties": {
             "content": {
-              "maxLength": 100000,
-              "title": "Content",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 100000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Content"
             },
             "conversation_id": {
-              "maxLength": 64,
-              "minLength": 1,
-              "pattern": "^[A-Za-z0-9_-]+$",
-              "title": "Conversation Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "pattern": "^[A-Za-z0-9_-]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Conversation Id"
+            },
+            "detail": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The error message as plain text, equal to error.message. Null unless status is error. Clients that read a top-level detail string (the chat page does) show it without parsing error.",
+              "title": "Detail"
             },
             "error": {
               "anyOf": [
@@ -852,20 +1321,33 @@
                 {
                   "type": "null"
                 }
-              ],
-              "default": null
+              ]
             },
             "mode": {
-              "maxLength": 64,
-              "minLength": 1,
-              "title": "Mode",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Mode"
             },
             "model": {
-              "maxLength": 64,
-              "minLength": 1,
-              "title": "Model",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model"
             },
             "status": {
               "$ref": "#/$defs/ChatStatus"
@@ -876,14 +1358,16 @@
             "model",
             "mode",
             "content",
-            "status"
+            "status",
+            "error"
           ],
           "title": "ChatResponse",
           "type": "object"
         },
         "ChatStatus": {
+          "description": "success: a complete reply. stopped: the user stopped it; content is the partial reply.\nerror: no reply; see error.",
           "enum": [
-            "completed",
+            "success",
             "stopped",
             "error"
           ],
@@ -892,22 +1376,24 @@
         },
         "ErrorCode": {
           "enum": [
-            "validation_error",
-            "not_found",
-            "method_not_allowed",
-            "payload_too_large",
-            "bad_request",
-            "unauthorized",
-            "rate_limited",
-            "generation_failed",
-            "generation_timeout",
-            "model_unavailable",
-            "conversation_not_found",
-            "version_conflict",
-            "conversation_busy",
-            "capacity_exceeded",
-            "internal_error",
-            "http_error"
+            "VALIDATION_ERROR",
+            "NOT_FOUND",
+            "METHOD_NOT_ALLOWED",
+            "PAYLOAD_TOO_LARGE",
+            "UNSUPPORTED_MEDIA_TYPE",
+            "BAD_REQUEST",
+            "FORBIDDEN",
+            "UNAUTHORIZED",
+            "RATE_LIMITED",
+            "GENERATION_FAILED",
+            "GENERATION_TIMEOUT",
+            "MODEL_UNAVAILABLE",
+            "CONVERSATION_NOT_FOUND",
+            "VERSION_CONFLICT",
+            "CONVERSATION_BUSY",
+            "CAPACITY_EXCEEDED",
+            "INTERNAL_ERROR",
+            "HTTP_ERROR"
           ],
           "title": "ErrorCode",
           "type": "string"
@@ -957,13 +1443,21 @@
               "type": "string"
             },
             "message": {
+              "description": "Human-readable reason. Never the submitted value.",
               "maxLength": 500,
               "title": "Message",
+              "type": "string"
+            },
+            "type": {
+              "description": "Stable machine-readable error type, e.g. string_too_short or missing.",
+              "maxLength": 100,
+              "title": "Type",
               "type": "string"
             }
           },
           "required": [
             "field",
+            "type",
             "message"
           ],
           "title": "FieldIssue",
@@ -1069,9 +1563,114 @@
       ]
     },
     "TaskRequest": {
+      "$defs": {
+        "Attachment": {
+          "additionalProperties": false,
+          "description": "A text file sent with a message. Content is sent to the model for that turn only.\n\nThe page sends `type` (the browser's media type), `size`, and `kind`. Those names are accepted.\n`size` and `kind` are informational and are not trusted: the size is measured from the content.",
+          "properties": {
+            "content": {
+              "description": "The file's text, UTF-8. At most 64000 characters.",
+              "maxLength": 64000,
+              "minLength": 1,
+              "title": "Content",
+              "type": "string"
+            },
+            "kind": {
+              "anyOf": [
+                {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Informational. Not used.",
+              "title": "Kind"
+            },
+            "media_type": {
+              "description": "The file's media type.",
+              "enum": [
+                "text/plain",
+                "text/markdown",
+                "text/csv",
+                "application/json"
+              ],
+              "title": "Media Type",
+              "type": "string"
+            },
+            "name": {
+              "description": "File name, for example notes.md.",
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Name",
+              "type": "string"
+            },
+            "size": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Informational. Not trusted.",
+              "title": "Size"
+            }
+          },
+          "required": [
+            "name",
+            "media_type",
+            "content"
+          ],
+          "title": "Attachment",
+          "type": "object"
+        },
+        "ToolFlags": {
+          "additionalProperties": false,
+          "description": "The page's tool switches. Web search is not available here and is refused when on.\nThe other switches do not change the answer, so they are accepted and not acted on.",
+          "properties": {
+            "files": {
+              "default": false,
+              "title": "Files",
+              "type": "boolean"
+            },
+            "images": {
+              "default": false,
+              "title": "Images",
+              "type": "boolean"
+            },
+            "voice": {
+              "default": false,
+              "title": "Voice",
+              "type": "boolean"
+            },
+            "webSearch": {
+              "default": false,
+              "title": "Websearch",
+              "type": "boolean"
+            }
+          },
+          "title": "ToolFlags",
+          "type": "object"
+        }
+      },
       "additionalProperties": false,
-      "description": "Input shared by every chat-style endpoint. A task endpoint fixes the mode itself.",
+      "description": "Input for the chat and task endpoints. A task endpoint fixes the mode itself.\n\n`mode` is optional on a task endpoint. If sent, it must be that endpoint's own mode.",
       "properties": {
+        "attachments": {
+          "description": "Text files for this turn. At most 3, and 128000 characters in total.",
+          "items": {
+            "$ref": "#/$defs/Attachment"
+          },
+          "maxItems": 3,
+          "title": "Attachments",
+          "type": "array"
+        },
         "conversation_id": {
           "anyOf": [
             {
@@ -1095,12 +1694,25 @@
           "title": "Message",
           "type": "string"
         },
+        "mode": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional on a task endpoint. If sent, it must be that endpoint's mode.",
+          "title": "Mode"
+        },
         "model": {
           "anyOf": [
             {
               "maxLength": 64,
               "minLength": 1,
-              "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$",
               "type": "string"
             },
             {
@@ -1110,6 +1722,18 @@
           "default": null,
           "description": "Model id from GET /api/chat/options. Omit to use rapid.",
           "title": "Model"
+        },
+        "tools": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolFlags"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The page's tool switches."
         }
       },
       "required": [

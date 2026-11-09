@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from backend.schemas.chat import Message
+from backend.schemas.response import Message
 from backend.services.conversation_store import ConversationStore
 from backend.services.errors import (
     CapacityExceededError,

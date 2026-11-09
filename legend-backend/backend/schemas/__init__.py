@@ -1,13 +1,4 @@
 """Pydantic models that define the frontend/backend contract. Import from here."""
-from backend.schemas.chat import (
-    ChatOptions,
-    ChatRequest,
-    ChatResponse,
-    ChatStatus,
-    Message,
-    StopResponse,
-    TaskRequest,
-)
 from backend.schemas.conversations import (
     Conversation,
     ConversationClear,
@@ -22,6 +13,14 @@ from backend.schemas.events import (
     StreamStartEvent,
 )
 from backend.schemas.options import configure_allowed_options
+from backend.schemas.request import ChatRequest, TaskRequest
+from backend.schemas.response import (
+    ChatOptions,
+    ChatResponse,
+    ChatStatus,
+    Message,
+    StopResponse,
+)
 
 __all__ = [
     "ChatOptions",

@@ -36,6 +36,57 @@ server before it was fixed, and each fix has a regression test in `backend/tests
 | Conversation read size | Always up to 200 messages | `?limit=` with `message_count` | `test_pagination.py` |
 | Key in logs | Not logged (verified) | Still not logged; checked again after the change | live server check |
 
+## Attachments (contract change)
+
+| Risk | Control | Evidence |
+|---|---|---|
+| Oversized or hostile file content | 3 files, 64000 characters each, 128000 in total; text types only; control characters rejected | `test_attachments.py` |
+| Path traversal in file names | `/ \` and `..` rejected; Windows-invalid characters rejected | `test_attachments.py` |
+| Images and binary content reaching a text-only model | Only four text media types are accepted | `test_attachments.py`; live check |
+| Body size exceeded by escaped JSON | Default body limit 2 MiB, sized for the worst case of 12-byte escapes | `test_worst_case_attachment_payload_fits_the_default_body_limit` |
+| Attachment content kept in memory | Only metadata is stored; content is used for the turn that carries it | `test_history_keeps_attachment_metadata_but_not_content` |
+| Attachment content echoed in errors | Errors name the field and reason, never the value | `test_error_messages_do_not_echo_attachment_content` |
+
+Residual: attachment text is user input. It can contain instructions that try to change the
+model's behaviour (prompt injection). It is clearly delimited, but it is not filtered.
+
+## Contract security audit (version 3)
+
+The audit probed the live API with hostile requests and recorded each response. Each finding below was
+reproduced before it was fixed. Each fix has a regression test in `backend/tests/test_contract_security.py`,
+which has 189 cases. The suite reads its limits from the published contract, so it enforces what the contract says.
+
+| Finding | Before | Fix |
+|---|---|---|
+| Invisible and bidirectional characters in file names | `report\u202egnp.txt` (displays as `reportpng.txt`) and zero-width spaces were accepted. | Names reject all format characters (`Cf`). Bidi overrides and isolates are refused in messages, titles, and attachment content. |
+| Lenient identifiers | `"rapid "` was accepted as `rapid`. | Model and mode names are matched exactly. |
+| Body parsed by a guessing parser | UTF-16 bodies and bodies with NUL bytes were accepted. | Bodies must be strict UTF-8 JSON, checked once before any route. Failures get 422 `json_invalid`. |
+| Inconsistent malformed-body errors | Invalid UTF-8 and oversized integers returned a framework 400 with a plain message. | Same 422 envelope as every other malformed body. |
+| Oversized model reply | A reply over `reply_max_chars` returned 500 `internal_error`. | Refused as `generation_failed` (502), with empty content. Nothing is saved. |
+| Plain-text CORS refusal | A preflight from an unlisted origin got a plain-text 400. | Refused with the envelope, 403 `forbidden`, and no CORS headers. |
+| No content policy on API responses | No Content-Security-Policy. | `default-src 'none'; frame-ancestors 'none'; base-uri 'none'`. The page and the docs keep their own policy. |
+| One rate limit for everything | A reply costs a model call, but counted the same as a health check. | Generation endpoints have their own limit, `RATE_LIMIT_GENERATION_PER_MINUTE` (default 30). |
+
+Checked and found correct, with no change: body size on the bytes received (chunked included); message,
+title, identifier, name, and count limits at their exact boundaries; the attachment media type allowlist;
+every forbidden name character; the model and mode allowlists; task endpoints refusing a `mode` field;
+strict types and unknown fields on every chat-style endpoint; error bodies with no traceback, no provider
+or internal text, and no key; the access key compared in constant time and redacted in `repr`, errors, the
+schema, and the contract; failed key attempts counting towards the rate limit; the Host allowlist; CORS with
+exact origins only, no wildcard, no `null` origin, no credentials, and only the methods the API uses; and docs
+off by default.
+
+Probing also showed that frontend checks are convenience only: every rule above is enforced by the server
+on raw requests, so a modified or missing frontend cannot bypass it.
+
+Residual, accepted or out of scope for the application:
+- Media types must match exactly. `text/plain; charset=utf-8` is refused. This is strict by design and is documented.
+- Attachment text is user input. It can still carry instructions aimed at the model (prompt injection).
+- Rate limits are per process and per client address. Behind a proxy, set `TRUST_FORWARDED_FOR` only if the proxy sets the header, and enforce a shared limit there for several workers.
+- Health responses include the version string.
+- Unexpected errors are logged with a traceback on the server, for operators only. Restrict access to the logs.
+- The chat page as shipped has no access-key field, so it cannot send a bearer key. A deployment that sets `API_ACCESS_KEY` cannot be used from that page until the page is changed. The key must never be placed in a browser page.
+
 ## Residual risks (not fixed in this tree)
 
 These need decisions or infrastructure outside this code. None is silently accepted.
@@ -51,6 +102,62 @@ These need decisions or infrastructure outside this code. None is silently accep
 9. **Future provider messages must be safe.** `ProviderError` text is logged. Any provider must keep credentials and response bodies out of its error messages.
 10. **Ephemeral state.** Restarts and multiple workers lose or split state, as documented in the README.
 11. **Python 3.15 is not verified.** The alpha cannot load the compiled Pydantic and FastAPI dependencies yet.
+
+## Audit pass: origins, check order, log redaction
+
+Probed against a live server with hostile requests. Findings and fixes:
+
+| # | Finding | Fix | Regression test |
+|---|---|---|---|
+| 1 | An unauthenticated 3 MiB body was read and size-checked before the key was checked (413, not 401). | The body is now read by its own layer, innermost, after authentication, host, and rate checks. | `test_an_unauthenticated_oversized_body_is_refused_before_it_is_read` |
+| 2 | A request from a foreign origin with a valid key was processed; only the CORS header was withheld. | Any browser request from an origin that is neither listed nor the request's own site is refused with 403, for every method, with or without CORS configured. | `test_a_browser_request_from_a_foreign_origin_is_refused_even_with_a_valid_key` |
+| 3 | Log lines could carry a provider's error text, and with it any credential it echoed. | The access key is registered with a redactor. Every log line (JSON and plain) is scrubbed, including the JSON-escaped form. | `test_the_key_is_redacted_even_inside_an_exception_message_in_logs` |
+
+Checked and found correct: the key is compared in constant time and never logged; wrong and missing keys
+get the same generic refusal; unknown routes are not distinguishable without a key; a foreign Host gets 400;
+a crashing provider returns a fixed message and no traceback; deep JSON, invalid UTF-8, lone surrogates,
+NUL characters, and truncated JSON all get 422; attachment and model and mode rules are enforced on the
+server; rate limits return 429 with Retry-After; docs are off in production.
+
+Residual risks, accepted and documented:
+- The shared access key authenticates the client, not a user. Anyone holding it has full access.
+- A key entered in the page is visible to anyone who can use the page. Put the API behind real authentication before exposing it.
+- TLS and HSTS are the reverse proxy's job. The app sends no HSTS header.
+- Rate limits are per process. Run one worker, or limit at the proxy.
+- Logs keep tracebacks for operators. The redactor covers credentials, not other sensitive text a provider might echo.
+- The page uses inline scripts, so it cannot carry a strict Content-Security-Policy. It is still framed-denied and escapes model text.
+- Trusted forwarded addresses are used for rate limits only when TRUST_FORWARDED_FOR is set. Enable it only behind a proxy that overwrites the header.
+- `backend/tests/test_contract_security.py` (189 parametrized tests) overlaps with `test_security_audit.py`. Both pass. The second covers the ordering, origin, and redaction guarantees the first does not.
+
+## Integration verification (contract version 4)
+
+`backend/tests/test_integration.py` (49 tests) exercises the reference contract end to end through the
+real app. It covers valid requests, missing fields, invalid types, oversized inputs, invalid and retired
+model and mode names, attachment errors, API failures (provider crash, timeout, no route, busy, rate limit,
+access key, content type), and mismatches between the page and the server.
+
+Defects found and fixed in this round:
+
+| # | Defect | Fix |
+|---|---|---|
+| 1 | Chat success status was `completed`; the reference says `success`. | Renamed. The page's status list follows. |
+| 2 | Error codes were lowercase; the reference says uppercase. | All 18 server codes are uppercase. The page's error table follows. |
+| 3 | Mode names were `standard`, `code`, `write`, `creative`; the reference says `general`, `research`, `coding`, `writing`. | Renamed. `creative` removed. The page sent its own mode names through a mapping table that would now have sent unknown modes; the mapping is removed. |
+| 4 | A failed chat reply had `content: ""`. | `content` is `null` on every error. |
+| 5 | Refusals and validation failures on chat endpoints used the generic envelope, so a client had to handle two shapes. | Every chat outcome is a ChatResponse. |
+| 6 | Validation messages were raw Pydantic text ("Field required"). | Sentences such as "The message field is required." Field paths keep the `body.` prefix. |
+| 7 | The page expected `completed` and lowercase codes, and sent a mode mapping the server no longer accepted. | Page updated. Its status list, error table, and mode ids now match the server. Covered by page-to-server tests. |
+| 8 | Type checking reported 19 errors after the shape change (optional fields read as required). | Explicit checks in code and tests. `mypy` is clean. |
+
+Changes to existing tests, all deliberate: error bodies on chat endpoints are read with a helper that
+accepts either shape; expectations of `""` content became `null`; the request id on chat errors is read
+from the `X-Request-ID` header; three schema tests now describe the new rules. Each was checked against
+the contract, not loosened to pass.
+
+Deviations from the reference, each documented in CONTRACT.md: a third status `stopped`; a server-issued
+conversation id (an unknown id returns 404); `details` present as a key on every error.
+
+Not verified: Python 3.15 (the stack runs on 3.14.4), and real browser rendering (the page was tested in jsdom).
 
 ## How to re-check
 

@@ -1,0 +1,12 @@
+{
+  "name": "chatify-ai-frontend-tests",
+  "private": true,
+  "description": "Tests for the Chatify AI chat page. The page itself has no build step.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0"
+  }
+}

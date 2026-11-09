@@ -6,7 +6,7 @@ from backend.config import DEFAULT_MODEL, DEFAULT_MODELS, DEFAULT_MODES, Setting
 from backend.main import create_app
 from backend.tests.fakes import client_with, replying
 
-CONTRACT_KEYS = {"conversation_id", "model", "mode", "content", "status", "error"}
+CONTRACT_KEYS = {"conversation_id", "model", "mode", "content", "status", "error", "detail"}
 
 
 def test_health_reports_version_and_component_checks() -> None:
@@ -20,10 +20,10 @@ def test_health_reports_version_and_component_checks() -> None:
 
 def test_chat_returns_contract_shaped_reply_from_provider() -> None:
     body = client_with(replying("hello from the provider")).post(
-        "/api/chat", json={"message": "  hello  ", "model": "sonet", "mode": "standard"}
+        "/api/chat", json={"message": "  hello  ", "model": "sonet", "mode": "general"}
     ).json()
     assert set(body) == CONTRACT_KEYS
-    assert body["status"] == "completed"
+    assert body["status"] == "success"
     assert body["model"] == "sonet"
     assert body["content"] == "hello from the provider"
     assert body["error"] is None
@@ -33,7 +33,7 @@ def test_missing_model_resolves_to_rapid() -> None:
     provider = replying("ok")
     body = client_with(provider).post("/api/chat", json={"message": "hi"}).json()
     assert body["model"] == DEFAULT_MODEL == "rapid"
-    assert body["mode"] == "standard"
+    assert body["mode"] == "general"
 
 
 def test_model_routing_selects_the_provider_model() -> None:
@@ -71,8 +71,8 @@ def test_unrouted_model_is_503_and_never_success() -> None:
     body = response.json()
     assert response.status_code == 503
     assert body["status"] == "error"
-    assert body["error"]["code"] == "model_unavailable"
-    assert body["content"] == ""
+    assert body["error"]["code"] == "MODEL_UNAVAILABLE"
+    assert body["content"] is None
 
 
 def test_stream_emits_start_delta_done_with_contract_response() -> None:
@@ -86,7 +86,7 @@ def test_stream_emits_start_delta_done_with_contract_response() -> None:
     final = json.loads(frames[-1].split("data: ", 1)[1])
     assert final["type"] == "done"
     assert set(final["response"]) == CONTRACT_KEYS
-    assert final["response"]["status"] == "completed"
+    assert final["response"]["status"] == "success"
 
 
 def test_stream_rejects_unknown_model_before_streaming() -> None:
@@ -106,7 +106,7 @@ def test_options_lists_catalog_and_configured_routes() -> None:
     assert body["available_models"] == list(DEFAULT_MODELS)
     assert body["default_model"] == "rapid"
     assert body["modes"] == list(DEFAULT_MODES)
-    assert body["default_mode"] == "standard"
+    assert body["default_mode"] == "general"
 
 
 def test_options_reports_no_available_models_without_routes() -> None:

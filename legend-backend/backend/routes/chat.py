@@ -10,9 +10,10 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 from backend.config import DEFAULT_MODE, DEFAULT_MODEL
 from backend.routes.responses import CHAT_RESPONSES, chat_json_response
-from backend.schemas.chat import ChatOptions, ChatRequest, ChatResponse, StopResponse
 from backend.schemas.errors import ErrorEnvelope
 from backend.schemas.options import allowed_models, allowed_modes
+from backend.schemas.request import ChatRequest
+from backend.schemas.response import ChatOptions, ChatResponse, StopResponse
 from backend.services.chat import ChatService
 from backend.utils.sse import format_sse
 
@@ -76,9 +77,9 @@ async def chat(payload: ChatRequest, request: Request) -> JSONResponse:
         "before the stream starts, as normal HTTP errors."
     ),
     responses={
-        404: {"model": ErrorEnvelope, "description": "conversation_not_found"},
-        409: {"model": ErrorEnvelope, "description": "conversation_busy"},
-        503: {"model": ErrorEnvelope, "description": "capacity_exceeded"},
+        404: {"model": ErrorEnvelope, "description": "CONVERSATION_NOT_FOUND"},
+        409: {"model": ErrorEnvelope, "description": "CONVERSATION_BUSY"},
+        503: {"model": ErrorEnvelope, "description": "CAPACITY_EXCEEDED"},
     },
 )
 async def chat_stream(payload: ChatRequest, request: Request) -> StreamingResponse:
@@ -103,7 +104,7 @@ async def chat_stream(payload: ChatRequest, request: Request) -> StreamingRespon
     response_model=StopResponse,
     summary="Stop an in-flight stream",
     description="Keeps the partial reply. Returns 404 when no active turn has this id.",
-    responses={404: {"model": ErrorEnvelope, "description": "not_found"}},
+    responses={404: {"model": ErrorEnvelope, "description": "NOT_FOUND"}},
 )
 async def stop(request_id: RequestIdPath, request: Request) -> StopResponse:
     if not _service(request).stop(request_id):

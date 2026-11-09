@@ -1236,7 +1236,6 @@ dialog::backdrop { background: rgba(4,4,10,.64); backdrop-filter: blur(4px); }
 </dialog>
 
 <script>
-/* ===== inlined from api.js ===== */
 /**
  * Novis AI / Novis — centralized API client
  *
@@ -1710,10 +1709,8 @@ if (typeof module !== "undefined" && module.exports) {
     chatApi, initializeApi
   };
 }
-
 </script>
 <script>
-/* ===== inlined from StateStore.js ===== */
 /**
  * Novis / Novis — application state store
  *
@@ -2064,9 +2061,9 @@ if (typeof module !== "undefined" && module.exports) {
   module.exports = StateStore;
 }
 
+
 </script>
 <script>
-/* ===== inlined from ModelPicker.js ===== */
 /**
  * ModelPicker — compact model and mode selector for the chat header.
  *
@@ -2187,12 +2184,12 @@ class ModelPicker {
     this.container.innerHTML = `
       <div class="model-picker">
         <button type="button" class="model-picker-trigger chip chip-model" aria-haspopup="menu" aria-expanded="false"
-                title="Change model">
+                title="Change model" aria-label="Change model">
           <span class="model-picker-icon" aria-hidden="true"></span>
           <span class="model-picker-name"></span>
           <svg class="icon chevron" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
         </button>
-        <div class="mp-menu" role="menu" aria-label="Models and modes" hidden>
+        <div class="mp-menu" role="menu" hidden>
           <div class="mp-section">
             <div class="mp-label">Models</div>
             <div class="mp-model-list"></div>
@@ -2217,10 +2214,6 @@ class ModelPicker {
     // Delegated handlers live on the container, which persists across renders.
     if (!this._bound) {
       this.container.addEventListener("click", this._onContainerClick);
-      this.container.addEventListener("keydown", (event) => this._onMenuKeys(event));
-      this.container.addEventListener("focusout", (event) => {
-        if (this.isOpen && !this.container.contains(event.relatedTarget)) this.close();
-      });
       this._bound = true;
     }
 
@@ -2243,21 +2236,6 @@ class ModelPicker {
           <span class="mp-item-check" aria-hidden="true"></span>
         </button>`;
     }).join("");
-  }
-
-  /** Arrow / Home / End move through menu items, the way a native menu does. */
-  _onMenuKeys(event) {
-    if (!this.isOpen || !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
-    const items = Array.from(this.menu.querySelectorAll('[role="menuitemradio"]'));
-    if (!items.length) return;
-    event.preventDefault();
-    const i = items.indexOf(document.activeElement);
-    const last = items.length - 1;
-    const target = event.key === 'Home' ? 0
-      : event.key === 'End' ? last
-      : event.key === 'ArrowDown' ? (i + 1) % items.length
-      : (i <= 0 ? last : i - 1);
-    items[target].focus();
   }
 
   _onClick(event) {
@@ -2284,7 +2262,6 @@ class ModelPicker {
     if (model && this._activeModelId !== model.id) {
       this._activeModelId = model.id;
       this.nameEl.textContent = model.name;
-      this.trigger.setAttribute("aria-label", `Model: ${model.name}. Change model`);
       this.iconEl.textContent = model.icon || "";
       this._markActive(this.modelList, "data-model-id", model.id);
     }
@@ -2329,9 +2306,7 @@ class ModelPicker {
 
   close() {
     if (!this.trigger || !this.isOpen) return;
-    const hadFocus = this.menu.contains(document.activeElement);
     this.menu.hidden = true;
-    if (hadFocus) this.trigger.focus({ preventScroll: true });
     this.trigger.setAttribute("aria-expanded", "false");
     this.trigger.classList.remove("open");
     this.isOpen = false;
@@ -2356,12 +2331,8 @@ class ModelPicker {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = ModelPicker;
 }
-
 </script>
 <script>
-(() => {
-"use strict";
-
 /* ========================================================================
    CONFIG — backend-ready, single source of API truth
 ====================================================================== */
@@ -5773,7 +5744,6 @@ function initializeApp() {
 }
 
 initializeApp();
-})();
 </script>
 </body>
 </html>

@@ -33,7 +33,7 @@ def test_validation_error_uses_envelope_without_echoing_input() -> None:
     response = _client().post("/api/chat", json={"message": "", "model": "rapid"})
     body = response.json()
     assert response.status_code == 422
-    assert body["error"]["code"] == "validation_error"
+    assert body["error"]["code"] == "VALIDATION_ERROR"
     assert body["error"]["details"]
     assert "input" not in str(body)
 
@@ -42,14 +42,14 @@ def test_unknown_option_uses_envelope_with_field_path() -> None:
     response = _client().post("/api/chat", json={"message": "hi", "model": "nope"})
     body = response.json()
     assert response.status_code == 422
-    assert body["error"]["code"] == "validation_error"
+    assert body["error"]["code"] == "VALIDATION_ERROR"
     assert any(issue["field"] == "body.model" for issue in body["error"]["details"])
 
 
 def test_not_found_uses_envelope() -> None:
     response = _client().get("/does-not-exist")
     assert response.status_code == 404
-    assert response.json()["error"]["code"] == "not_found"
+    assert response.json()["error"]["code"] == "NOT_FOUND"
 
 
 def test_oversized_body_is_rejected() -> None:
@@ -58,7 +58,7 @@ def test_oversized_body_is_rejected() -> None:
         "/api/chat", content=b"x" * 2048, headers={"Content-Type": "application/json"}
     )
     assert response.status_code == 413
-    assert response.json()["error"]["code"] == "payload_too_large"
+    assert response.json()["error"]["code"] == "PAYLOAD_TOO_LARGE"
 
 
 def test_docs_disabled_by_default_and_enabled_on_request() -> None:
@@ -107,5 +107,5 @@ def test_unhandled_error_returns_generic_500() -> None:
     client = TestClient(app, raise_server_exceptions=False)
     response = client.get("/boom")
     assert response.status_code == 500
-    assert response.json()["error"]["code"] == "internal_error"
+    assert response.json()["error"]["code"] == "INTERNAL_ERROR"
     assert "secret internals" not in response.text

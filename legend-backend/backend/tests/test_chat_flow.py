@@ -5,8 +5,8 @@ import json
 from fastapi.testclient import TestClient
 
 from backend.config import DEFAULT_MODELS, DEFAULT_MODES, Settings
-from backend.schemas.chat import ChatRequest
 from backend.schemas.options import configure_allowed_options
+from backend.schemas.request import ChatRequest
 from backend.services.chat import ChatService
 from backend.services.conversation_store import ConversationStore
 from backend.tests.fakes import (
@@ -35,7 +35,7 @@ def test_success_returns_200_completed_with_selected_mode() -> None:
     response = _send(client_with(replying("hello there")), mode="research")
     assert response.status_code == 200
     body = response.json()
-    assert body["status"] == "completed"
+    assert body["status"] == "success"
     assert body["content"] == "hello there"
     assert body["mode"] == "research"
     assert body["error"] is None
@@ -45,12 +45,12 @@ def test_context_carries_prior_turns_and_selected_mode() -> None:
     provider = replying("ok")
     client = client_with(provider)
     first = _send(client, message="first").json()
-    _send(client, conversation_id=first["conversation_id"], message="second", mode="code")
+    _send(client, conversation_id=first["conversation_id"], message="second", mode="coding")
 
     messages = provider.calls[1]
     assert [m["role"] for m in messages] == ["system", "user", "assistant", "user"]
     assert messages[-1]["content"] == "second"
-    assert "Mode: code" in messages[0]["content"]
+    assert "Mode: coding" in messages[0]["content"]
 
 
 def test_timeout_returns_504_with_error_status() -> None:
@@ -58,8 +58,8 @@ def test_timeout_returns_504_with_error_status() -> None:
     assert response.status_code == 504
     body = response.json()
     assert body["status"] == "error"
-    assert body["content"] == ""
-    assert body["error"]["code"] == "generation_timeout"
+    assert body["content"] is None
+    assert body["error"]["code"] == "GENERATION_TIMEOUT"
 
 
 def test_provider_error_returns_502_and_hides_detail() -> None:
@@ -67,7 +67,7 @@ def test_provider_error_returns_502_and_hides_detail() -> None:
     assert response.status_code == 502
     body = response.json()
     assert body["status"] == "error"
-    assert body["error"]["code"] == "generation_failed"
+    assert body["error"]["code"] == "GENERATION_FAILED"
     assert "rejected the request" not in response.text
 
 
@@ -83,7 +83,7 @@ def test_empty_reply_is_an_error_not_a_success() -> None:
     assert response.status_code == 502
     body = response.json()
     assert body["status"] == "error"
-    assert body["error"]["code"] == "generation_failed"
+    assert body["error"]["code"] == "GENERATION_FAILED"
 
 
 def test_failed_turn_is_dropped_from_later_context() -> None:
@@ -156,6 +156,6 @@ def test_concurrent_requests_on_separate_conversations_stay_isolated() -> None:
 
     conversations, responses = asyncio.run(scenario())
     for conversation, response in zip(conversations, responses, strict=True):
-        assert response.status.value == "completed"
+        assert response.status.value == "success"
         assert response.conversation_id == conversation.id
         assert response.content.strip() == "answer"

@@ -8,12 +8,12 @@ from pydantic import TypeAdapter
 
 from backend.config import Settings
 from backend.main import create_app
-from backend.schemas.chat import ChatOptions, ChatResponse, ChatStatus
 from backend.schemas.conversations import Conversation
 from backend.schemas.errors import ErrorEnvelope
 from backend.schemas.events import StreamEvent
 from backend.schemas.health import HealthReport, ProbeReport
 from backend.schemas.models import ModelList
+from backend.schemas.response import ChatOptions, ChatResponse, ChatStatus
 from backend.tests.fakes import app_with, crashing, replying
 
 _EVENT_ADAPTER = TypeAdapter(StreamEvent)
@@ -34,18 +34,19 @@ def test_success_chat_response_matches_contract() -> None:
 
     response = _run(scenario())
     parsed = ChatResponse.model_validate_json(response.text)
-    assert parsed.status is ChatStatus.COMPLETED
+    assert parsed.status is ChatStatus.SUCCESS
 
 
 def test_every_error_body_matches_its_documented_shape() -> None:
-    """Request-level errors are ErrorEnvelope. Chat outcomes are ChatResponse with status error."""
+    """Chat endpoints answer every error with a ChatResponse, including refusals and validation
+    failures. Every other endpoint answers with the ErrorEnvelope."""
 
     async def scenarios():
         async with _client(app_with(crashing())) as c:
             return [
-                (await c.post("/api/chat", json={"message": "hi", "model": "gpt-9"}), "envelope"),
+                (await c.post("/api/chat", json={"message": "hi", "model": "gpt-9"}), "chat"),
                 (await c.post("/api/chat", json={"message": "hi"}), "chat"),
-                (await c.get("/api/chat"), "envelope"),
+                (await c.get("/api/chat"), "chat"),
                 (await c.get("/api/missing"), "envelope"),
                 (await c.post("/api/conversations/bad%20id/clear", json={"expected_version": 1}), "envelope"),
             ]
@@ -71,7 +72,7 @@ def test_chat_stream_frames_match_stream_event_schema() -> None:
         _EVENT_ADAPTER.validate_json(payload)
     assert json.loads(payloads[-1])["type"] == "done"
     done_response = json.dumps(json.loads(payloads[-1])["response"])
-    assert ChatResponse.model_validate_json(done_response).status is ChatStatus.COMPLETED
+    assert ChatResponse.model_validate_json(done_response).status is ChatStatus.SUCCESS
 
 
 def test_models_health_and_options_match_their_contracts() -> None:

@@ -620,7 +620,7 @@ html[data-motion="reduced"] *,html[data-motion="reduced"] *::before,html[data-mo
       </div>
 
       <div class="profile-grid">
-        <form class="card" id="profileForm" Novislidate aria-labelledby="pf-title">
+        <form class="card" id="profileForm" novislidate aria-labelledby="pf-title">
           <h3 class="card-title" id="pf-title">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-5.5 8-5.5s6.5 1.5 8 5.5"/></svg>
             Profile details
@@ -2322,33 +2322,42 @@ function migrateToNovis() {
 // Execute migration before the app reads state
 migrateToNovis();
 
-  if(saved){
-    if(saved.profile)  mergeDeep(state.profile, saved.profile);
-    if(saved.settings) mergeDeep(state.settings, saved.settings);
-    if(typeof saved.theme==='string') state.theme = saved.theme;
-    if(typeof saved.model==='string' && MODELS[saved.model]) state.model = saved.model;
-    if(typeof saved.mode==='string'  && MODES[saved.mode])  state.mode  = saved.mode;
-  }
-  if(!saved && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+if (saved) {
+    if (saved.profile) mergeDeep(state.profile, saved.profile);
+    if (saved.settings) mergeDeep(state.settings, saved.settings);
+    if (typeof saved.theme === 'string') state.theme = saved.theme;
+    if (typeof saved.model === 'string' && MODELS[saved.model]) state.model = saved.model;
+    if (typeof saved.mode === 'string' && MODES[saved.mode]) state.mode = saved.mode;
+} else if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    // Safely ensure the nested accessibility object exists before setting the property
+    state.settings = state.settings || {};
+    state.settings.accessibility = state.settings.accessibility || {};
     state.settings.accessibility.reducedMotion = true;
-  }
-  snapshot = { settings:clone(state.settings), theme:state.theme, model:state.model, mode:state.mode };
+}
 
-  applyAppearance();
-  syncControls();
-  fillProfileForm();
-  renderProfileHero();
-  renderUsage();
-  renderActivity();
-  renderSessions();
-  renderSignins();
-  updateCookieUI();
-  updateSaveUI();
-  setSaveState('Local-only build', false);
+// Ensure snapshot is properly declared if not done globally
+snapshot = {
+    settings: clone(state.settings),
+    theme: state.theme,
+    model: state.model,
+    mode: state.mode
+};
 
-  const fromHash = location.hash.replace('#','');
-  showSection($(`[data-panel="${fromHash}"]`) ? fromHash : 'profile', true);
-})();
+applyAppearance();
+syncControls();
+fillProfileForm();
+renderProfileHero();
+renderUsage();
+renderActivity();
+renderSessions();
+renderSignins();
+updateCookieUI();
+updateSaveUI();
+setSaveState('Local-only build', false);
+const fromHash = location.hash.replace('#', '');
+// Fixed the selection logic: check if the element actually exists in the DOM first
+const targetPanel = $(`[data-panel="${fromHash}"]`);
+showSection(targetPanel && targetPanel.length ? fromHash : 'profile', true);
 </script>
 </body>
 </html>

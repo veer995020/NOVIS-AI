@@ -7,7 +7,8 @@ from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints
 
-from backend.schemas.chat import ConversationId, Message, reject_unsafe_characters
+from backend.schemas.common import ConversationId, reject_unsafe_characters
+from backend.schemas.response import Message
 
 ConversationTitle = Annotated[
     str,

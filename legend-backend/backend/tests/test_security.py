@@ -8,7 +8,7 @@ from starlette.types import Message
 
 from backend.config import Settings
 from backend.middleware import RequestContextMiddleware
-from backend.schemas.chat import ChatRequest
+from backend.schemas.request import ChatRequest
 from backend.services.chat import ChatService
 from backend.services.conversation_store import ConversationStore
 from backend.services.errors import CapacityExceededError
@@ -61,7 +61,7 @@ def test_chunked_body_over_the_limit_is_rejected_before_the_app_runs() -> None:
     chunks = (b"x" * 600 for _ in range(4))  # no Content-Length: sent chunked
     response = client.post("/api/chat", content=chunks, headers={"Content-Type": "application/json"})
     assert response.status_code == 413
-    assert response.json()["error"]["code"] == "payload_too_large"
+    assert response.json()["error"]["code"] == "PAYLOAD_TOO_LARGE"
 
 
 def test_chunked_body_under_the_limit_still_works() -> None:
@@ -132,7 +132,7 @@ def test_server_software_is_not_advertised() -> None:
                     "headers": [(b"server", b"uvicorn/0.99"), (b"content-type", b"text/plain")]})
         await send({"type": "http.response.body", "body": b"ok"})
 
-    middleware = RequestContextMiddleware(leaky_app, max_request_bytes=1024)
+    middleware = RequestContextMiddleware(leaky_app)
     sent: list[Message] = []
 
     async def receive() -> Message:
@@ -203,4 +203,4 @@ def test_turn_cap_is_enforced_over_http_as_503() -> None:
     asyncio.run(hold_one_slot())  # the slot stays held after this loop ends
     response = TestClient(app).post("/api/chat", json={"message": "blocked"})
     assert response.status_code == 503
-    assert response.json()["error"]["code"] == "capacity_exceeded"
+    assert response.json()["error"]["code"] == "CAPACITY_EXCEEDED"

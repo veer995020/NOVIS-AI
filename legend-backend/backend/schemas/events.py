@@ -10,7 +10,8 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.config import MAX_REPLY_CHARS
-from backend.schemas.chat import ChatResponse, ConversationId
+from backend.schemas.common import ConversationId
+from backend.schemas.response import ChatResponse
 
 
 class StreamStartEvent(BaseModel):

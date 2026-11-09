@@ -19,10 +19,10 @@ def test_all_six_endpoints_succeed_over_a_real_socket() -> None:
         models = client.get("/api/models")
         health = client.get("/health")
 
-    for response, mode in [(chat, "standard"), (research, "research"), (code, "code"), (write, "write")]:
+    for response, mode in [(chat, "general"), (research, "research"), (code, "coding"), (write, "writing")]:
         assert response.status_code == 200
         body = response.json()
-        assert body["status"] == "completed"
+        assert body["status"] == "success"
         assert body["content"] == "live reply"
         assert body["model"] == "rapid"
         assert body["mode"] == mode
@@ -46,6 +46,6 @@ def test_all_six_endpoints_fail_honestly_over_a_real_socket() -> None:
         assert response.status_code == 502
         body = response.json()
         assert body["status"] == "error"
-        assert body["content"] == ""
-        assert body["error"]["code"] == "generation_failed"
+        assert body["content"] is None
+        assert body["error"]["code"] == "GENERATION_FAILED"
         assert "internal-detail-99" not in response.text

@@ -7,7 +7,7 @@ from backend.tests.fakes import client_with, crashing, replying, timing_out
 
 TASK_PATHS = [spec.path for spec in TASK_SPECS]
 CHAT_PATH = "/api/chat"
-CONTRACT_KEYS = {"conversation_id", "model", "mode", "content", "status", "error"}
+CONTRACT_KEYS = {"conversation_id", "model", "mode", "content", "status", "error", "detail"}
 
 
 def test_each_task_runs_with_its_fixed_mode() -> None:
@@ -18,15 +18,20 @@ def test_each_task_runs_with_its_fixed_mode() -> None:
         assert response.status_code == 200
         body = response.json()
         assert body["mode"] == spec.mode
-        assert body["status"] == "completed"
+        assert body["status"] == "success"
         assert f"Mode: {spec.mode}." in provider.calls[-1][0]["content"]
 
 
+OWN_MODE = {"/api/research": "research", "/api/code": "coding", "/api/write": "writing"}
+
+
 @pytest.mark.parametrize("path", TASK_PATHS)
-def test_task_endpoints_reject_a_mode_field(path: str) -> None:
-    response = client_with(replying("ok")).post(path, json={"message": "hi", "mode": "code"})
-    assert response.status_code == 422
-    assert any(issue["field"] == "body.mode" for issue in response.json()["error"]["details"])
+def test_task_endpoints_accept_only_their_own_mode(path: str) -> None:
+    client = client_with(replying("ok"))
+    assert client.post(path, json={"message": "hi", "mode": OWN_MODE[path]}).status_code == 200
+    refused = client.post(path, json={"message": "hi", "mode": "general"})
+    assert refused.status_code == 422
+    assert any(issue["field"] == "body.mode" for issue in refused.json()["error"]["details"])
 
 
 @pytest.mark.parametrize("path", TASK_PATHS)
@@ -36,7 +41,7 @@ def test_task_endpoints_validate_like_chat(path: str) -> None:
     blank_message = client.post(path, json={"message": "   "})
     assert unknown_model.status_code == 422
     assert blank_message.status_code == 422
-    assert unknown_model.json()["error"]["code"] == "validation_error"
+    assert unknown_model.json()["error"]["code"] == "VALIDATION_ERROR"
 
 
 @pytest.mark.parametrize("path", TASK_PATHS)
@@ -45,8 +50,8 @@ def test_task_timeout_is_504(path: str) -> None:
     assert response.status_code == 504
     body = response.json()
     assert body["status"] == "error"
-    assert body["error"]["code"] == "generation_timeout"
-    assert body["content"] == ""
+    assert body["error"]["code"] == "GENERATION_TIMEOUT"
+    assert body["content"] is None
 
 
 @pytest.mark.parametrize("path", TASK_PATHS)

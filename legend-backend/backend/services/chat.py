@@ -8,7 +8,7 @@
            together in one commit, and only when a reply was produced.
   The lease is released on every exit path.
 
-Outcomes are never reported as "completed" unless text was generated and
+Outcomes are never reported as "success" unless text was generated and
 committed under the lease.
 """
 from __future__ import annotations
@@ -22,11 +22,13 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from backend.config import Settings
-from backend.prompts.system import build_messages
-from backend.schemas.chat import ChatRequest, ChatResponse, ChatStatus, Message
+from backend.config import MAX_REPLY_CHARS, Settings
+from backend.prompts.system import build_messages, render_turn
+from backend.schemas.attachments import AttachmentMeta
 from backend.schemas.errors import ErrorCode, ErrorDetail
 from backend.schemas.events import StreamDeltaEvent, StreamDoneEvent, StreamStartEvent
+from backend.schemas.request import ChatRequest
+from backend.schemas.response import ChatResponse, ChatStatus, Message
 from backend.services.conversation_store import ConversationStore
 from backend.services.errors import CapacityExceededError, ConversationError
 from backend.services.model_router import (
@@ -43,6 +45,13 @@ GENERATION_FAILED_MESSAGE = "The reply could not be generated. Please try again.
 GENERATION_TIMEOUT_MESSAGE = "The reply took too long to generate. Please try again."
 EMPTY_REPLY_MESSAGE = "The model returned an empty reply. Please try again."
 MODEL_UNAVAILABLE_MESSAGE = "The requested model is not available. Choose another model or try later."
+
+REPLY_TOO_LONG_MESSAGE = "The reply was longer than the server allows, so it was not saved. Please try again."
+
+
+class _ReplyTooLongError(Exception):
+    """Raised inside the generation loop when a model returns more than the contract allows."""
+
 
 # Extra time a lease outlives the generation timeout, to cover commit and cleanup.
 LEASE_MARGIN_SECONDS = 30.0
@@ -71,11 +80,6 @@ class ChatService:
         self._settings = settings
         self._models = models
         self._active: dict[str, _ActiveTurn] = {}
-
-    @property
-    def active_request_count(self) -> int:
-        self._prune_active()
-        return len(self._active)
 
     def stop(self, request_id: str) -> bool:
         active = self._active.get(request_id)
@@ -112,7 +116,8 @@ class ChatService:
             if req.conversation_id is None:
                 conversation_id = (await self._store.create()).id
             else:
-                conversation_id = req.conversation_id
+                # Created on first use if the page names a conversation it has not used yet.
+                conversation_id = (await self._store.ensure(req.conversation_id)).id
             token = await self._store.acquire_turn(conversation_id, lease)
         except BaseException:
             self._active.pop(request_id, None)
@@ -123,7 +128,11 @@ class ChatService:
             conversation_id=conversation_id,
             request_id=request_id,
             token=token,
-            user_message=Message(role="user", content=req.message),
+            user_message=Message(
+                role="user",
+                content=req.message,
+                attachments=[AttachmentMeta.from_attachment(a) for a in req.attachments],
+            ),
             cancel=cancel,
         )
 
@@ -134,6 +143,7 @@ class ChatService:
 
             parts: list[str] = []
             error: ErrorDetail | None = None
+            total_chars = 0
             try:
                 history = await self._store.history(turn.conversation_id)
             except ConversationError as exc:
@@ -142,10 +152,15 @@ class ChatService:
                 error = ErrorDetail(code=exc.code, message=str(exc))
                 history = []
 
-            # The current question is part of the prompt but is not saved yet.
+            # The current question is part of the prompt but is not saved yet. Attachment
+            # content is included here only; history keeps the metadata.
+            prompt_message = Message(
+                role="user",
+                content=render_turn(req.message, req.attachments),
+            )
             messages = build_messages(
                 mode=req.mode,
-                history=[*history, turn.user_message],
+                history=[*history, prompt_message],
                 max_context=self._settings.max_context_messages,
             )
 
@@ -167,8 +182,14 @@ class ChatService:
                             messages=messages,
                             cancel=turn.cancel,
                         ):
+                            total_chars += len(piece)
+                            if total_chars > MAX_REPLY_CHARS:
+                                raise _ReplyTooLongError()
                             parts.append(piece)
                             yield StreamDeltaEvent(text=piece)
+                except _ReplyTooLongError:
+                    logger.warning("Model reply exceeded %d characters (request %s)", MAX_REPLY_CHARS, turn.request_id)
+                    error = ErrorDetail(code=ErrorCode.GENERATION_FAILED, message=REPLY_TOO_LONG_MESSAGE)
                 except TimeoutError:
                     logger.warning("Reply generation timed out (request %s)", turn.request_id)
                     error = ErrorDetail(
@@ -196,7 +217,7 @@ class ChatService:
             elif turn.cancel.is_set():
                 status = ChatStatus.STOPPED
             else:
-                status = ChatStatus.COMPLETED
+                status = ChatStatus.SUCCESS
 
             # Commit the question and answer together, under the lease.
             # A turn with no reply saves nothing.
@@ -219,7 +240,7 @@ class ChatService:
                 conversation_id=turn.conversation_id,
                 model=turn.model_id,
                 mode=req.mode,
-                content=content,
+                content=None if status is ChatStatus.ERROR else content,
                 status=status,
                 error=error,
             )

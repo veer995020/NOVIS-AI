@@ -14,6 +14,7 @@ EXPECTED_ROUTES = {
     ("POST", "/api/code"),
     ("POST", "/api/write"),
     ("GET", "/api/models"),
+    ("GET", "/api/contract"),
     ("GET", "/health"),
     ("GET", "/health/live"),
     ("GET", "/health/ready"),

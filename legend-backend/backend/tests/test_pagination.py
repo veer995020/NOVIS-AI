@@ -39,7 +39,7 @@ def test_invalid_limits_are_validation_errors(limit) -> None:
     client, cid = _seeded_conversation(1)
     response = client.get(f"/api/conversations/{cid}", params={"limit": limit})
     assert response.status_code == 422
-    assert response.json()["error"]["code"] == "validation_error"
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
 
 
 def test_empty_conversation_reports_zero() -> None:

@@ -10,8 +10,14 @@ import logging
 import sys
 
 from backend.utils.clock import utcnow
+from backend.utils.redaction import redact_text
 
 STRUCTURED_FIELDS = ("event", "request_id", "method", "path", "status_code", "duration_ms")
+
+
+class PlainFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        return redact_text(super().format(record))
 
 
 class JsonFormatter(logging.Formatter):
@@ -28,7 +34,7 @@ class JsonFormatter(logging.Formatter):
                 payload[field_name] = value
         if record.exc_info:
             payload["exception"] = self.formatException(record.exc_info)
-        return json.dumps(payload, default=str)
+        return redact_text(json.dumps(payload, default=str))
 
 
 def configure_logging(level: str, log_format: str) -> None:
@@ -36,9 +42,7 @@ def configure_logging(level: str, log_format: str) -> None:
     if log_format == "json":
         handler.setFormatter(JsonFormatter())
     else:
-        handler.setFormatter(
-            logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
-        )
+        handler.setFormatter(PlainFormatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
 
     root = logging.getLogger()
     root.handlers.clear()

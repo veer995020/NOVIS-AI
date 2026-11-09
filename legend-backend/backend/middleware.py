@@ -12,18 +12,20 @@ that orchestrator probes keep working.
 from __future__ import annotations
 
 import hmac
+import json
 import logging
 import math
 import re
 import time
 from collections import OrderedDict, deque
 from collections.abc import Callable
+from urllib.parse import urlsplit
 
 from starlette.datastructures import Headers, MutableHeaders
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from backend.error_handlers import REQUEST_ID_HEADER, build_error_response
-from backend.schemas.errors import ErrorCode
+from backend.schemas.errors import ErrorCode, FieldIssue
 from backend.utils.ids import new_id
 from backend.utils.redaction import safe_path
 
@@ -32,7 +34,8 @@ logger = logging.getLogger("backend.request")
 _VALID_REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 _BODY_METHODS = frozenset({"POST", "PUT", "PATCH"})
 _HEALTH_PREFIX = "/health"
-_PUBLIC_PATHS = frozenset({"/docs", "/openapi.json"})
+_PUBLIC_PATHS = frozenset({"/docs", "/openapi.json", "/api/contract"})
+_PUBLIC_PREFIXES = ("/app/",)
 _RATE_WINDOW_SECONDS = 60.0
 MAX_TRACKED_CLIENTS = 10_000
 SECURITY_HEADERS = {
@@ -41,6 +44,39 @@ SECURITY_HEADERS = {
     "Referrer-Policy": "no-referrer",
     "Cache-Control": "no-store",
 }
+# API responses are data, never a page: they load nothing and run nothing.
+API_CONTENT_SECURITY_POLICY = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+
+
+def _serves_a_page(path: str) -> bool:
+    """The chat page and the API docs need their own policy, so the API policy is not applied to them."""
+    return path == "/app" or path.startswith("/app/") or path in ("/docs", "/openapi.json")
+
+
+def _is_public(path: str) -> bool:
+    """Public: API documentation, the contract, and the static chat page. Not the API itself."""
+    return path in _PUBLIC_PATHS or path == "/app" or path.startswith(_PUBLIC_PREFIXES)
+
+
+def _json_body_problem(body: bytes) -> str | None:
+    """None if the body is strict UTF-8 JSON, otherwise a short reason the client can act on.
+
+    JSON over HTTP is UTF-8. Parsers that guess the encoding accept UTF-16 and similar, and
+    a NUL byte is never valid outside an escape, so both are refused here.
+    """
+    if b"\x00" in body:
+        return "The body contains a NUL byte. Send UTF-8 JSON."
+    try:
+        text = body.decode("utf-8")
+    except UnicodeDecodeError:
+        return "The body is not valid UTF-8. Send UTF-8 JSON."
+    try:
+        json.loads(text)
+    except RecursionError:
+        return "The JSON is nested too deeply."
+    except ValueError:
+        return "The JSON could not be parsed. Check its syntax and number sizes."
+    return None
 
 
 class _BodyTooLarge(Exception):
@@ -68,9 +104,10 @@ async def _read_limited_body(receive: Receive, limit: int) -> bytes:
 
 
 class RequestContextMiddleware:
-    def __init__(self, app: ASGIApp, max_request_bytes: int) -> None:
+    """Outermost layer: request id, security headers, and the access log line. It reads no body."""
+
+    def __init__(self, app: ASGIApp) -> None:
         self.app = app
-        self.max_request_bytes = max_request_bytes
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -87,6 +124,10 @@ class RequestContextMiddleware:
         status_code = 500
         started = time.perf_counter()
 
+        policy_headers = dict(SECURITY_HEADERS)
+        if not _serves_a_page(scope["path"]):
+            policy_headers["Content-Security-Policy"] = API_CONTENT_SECURITY_POLICY
+
         async def send_wrapper(message: Message) -> None:
             nonlocal status_code
             if message["type"] == "http.response.start":
@@ -96,48 +137,13 @@ class RequestContextMiddleware:
                 # Do not advertise the server software.
                 if "server" in response_headers:
                     del response_headers["server"]
-                for name, value in SECURITY_HEADERS.items():
+                for name, value in policy_headers.items():
                     if name not in response_headers:
                         response_headers[name] = value
             await send(message)
 
-        async def reject_too_large() -> None:
-            response = build_error_response(
-                413,
-                ErrorCode.PAYLOAD_TOO_LARGE,
-                f"Request body exceeds {self.max_request_bytes} bytes.",
-                request_id,
-            )
-            await response(scope, receive, send_wrapper)
-
         try:
-            if method in _BODY_METHODS:
-                declared = headers.get("content-length", "")
-                if declared.isdigit() and int(declared) > self.max_request_bytes:
-                    await reject_too_large()
-                    return
-                try:
-                    body = await _read_limited_body(receive, self.max_request_bytes)
-                except _BodyTooLarge:
-                    await reject_too_large()
-                    return
-                except _ClientDisconnected:
-                    status_code = 499  # client closed the request; nothing to send
-                    return
-
-                # Hand the application the buffered body once, then the real receive.
-                replayed = False
-
-                async def replay_receive() -> Message:
-                    nonlocal replayed
-                    if not replayed:
-                        replayed = True
-                        return {"type": "http.request", "body": body, "more_body": False}
-                    return await receive()
-
-                await self.app(scope, replay_receive, send_wrapper)
-            else:
-                await self.app(scope, receive, send_wrapper)
+            await self.app(scope, receive, send_wrapper)
         finally:
             duration_ms = round((time.perf_counter() - started) * 1000, 2)
             logger.info(
@@ -151,6 +157,107 @@ class RequestContextMiddleware:
                     "duration_ms": duration_ms,
                 },
             )
+
+
+class BodyLimitMiddleware:
+    """Reads and checks the request body. It sits inside authentication, host, and rate checks,
+    so a caller who is refused is never made to send, or the server to buffer, a body.
+    Responses it sends pass through the request-context layer, so they carry the same headers."""
+
+    def __init__(self, app: ASGIApp, max_request_bytes: int) -> None:
+        self.app = app
+        self.max_request_bytes = max_request_bytes
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http" or scope["method"] not in _BODY_METHODS:
+            await self.app(scope, receive, send)
+            return
+
+        headers = Headers(scope=scope)
+        request_id = scope.get("state", {}).get("request_id", "")
+
+        async def reject(status: int, code: ErrorCode, message: str, details: list[FieldIssue] | None = None) -> None:
+            response = build_error_response(status, code, message, request_id, details, path=scope["path"])
+            await response(scope, receive, send)
+
+        declared = headers.get("content-length", "")
+        if declared.isdigit() and int(declared) > self.max_request_bytes:
+            await reject(413, ErrorCode.PAYLOAD_TOO_LARGE, f"Request body exceeds {self.max_request_bytes} bytes.")
+            return
+        try:
+            body = await _read_limited_body(receive, self.max_request_bytes)
+        except _BodyTooLarge:
+            await reject(413, ErrorCode.PAYLOAD_TOO_LARGE, f"Request body exceeds {self.max_request_bytes} bytes.")
+            return
+        except _ClientDisconnected:
+            return  # the client closed the request; nothing to send
+
+        # A body must be JSON. An empty body needs no content type.
+        media_type = headers.get("content-type", "").split(";", 1)[0].strip().lower()
+        if body and media_type != "application/json":
+            await reject(415, ErrorCode.UNSUPPORTED_MEDIA_TYPE, "Request body must be sent as application/json.")
+            return
+
+        problem = _json_body_problem(body) if body else None
+        if problem is not None:
+            await reject(
+                422,
+                ErrorCode.VALIDATION_ERROR,
+                "Request body is not valid JSON.",
+                [FieldIssue(field="body", type="json_invalid", message=problem)],
+            )
+            return
+
+        # Hand the application the buffered body once, then the real receive.
+        replayed = False
+
+        async def replay_receive() -> Message:
+            nonlocal replayed
+            if not replayed:
+                replayed = True
+                return {"type": "http.request", "body": body, "more_body": False}
+            return await receive()
+
+        await self.app(scope, replay_receive, send)
+
+
+class CorsOriginGuardMiddleware:
+    """Refuses any browser request from an origin that is neither listed in CORS_ORIGINS nor the
+    site the request was sent to. A request without an Origin header (a non-browser client) is not
+    affected. The refusal uses the error envelope, with the same headers as every other response.
+
+    Runs inside the request-context layer, outside CORS, so a refused preflight is answered in the
+    envelope rather than by the CORS middleware.
+    """
+
+    def __init__(self, app: ASGIApp, allowed_origins: frozenset[str]) -> None:
+        self.app = app
+        self._allowed = allowed_origins
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http":
+            headers = Headers(scope=scope)
+            origin = headers.get("origin")
+            if origin is not None and not self._origin_allowed(origin, headers.get("host", "")):
+                request_id = scope.get("state", {}).get("request_id", "")
+                response = build_error_response(
+                    403,
+                    ErrorCode.FORBIDDEN,
+                    "This origin is not allowed to call the API.",
+                    request_id,
+                    path=scope["path"],
+                )
+                await response(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
+
+    def _origin_allowed(self, origin: str, host: str) -> bool:
+        if origin in self._allowed:
+            return True
+        # The page is served from the same site as the API. Compare the host and port, which the
+        # Host allowlist has already checked; the scheme can differ behind a TLS-terminating proxy.
+        parts = urlsplit(origin)
+        return bool(host) and parts.scheme in ("http", "https") and parts.netloc.lower() == host.lower()
 
 
 class _RateLimiter:
@@ -183,6 +290,13 @@ class _RateLimiter:
         return None
 
 
+# POST endpoints that generate a reply. Each costs a model call, so they get a stricter limit.
+_GENERATION_PATHS = frozenset({
+    "/api/chat", "/api/chat/stream", "/api/research", "/api/code", "/api/write",
+    "/chat", "/research", "/code", "/write",
+})
+
+
 class AccessControlMiddleware:
     def __init__(
         self,
@@ -193,12 +307,16 @@ class AccessControlMiddleware:
         rate_limit_per_minute: int,
         trust_forwarded_for: bool,
         clock: Callable[[], float] = time.monotonic,
+        generation_limit_per_minute: int = 0,
     ) -> None:
         self.app = app
         self._key = api_key.encode("utf-8") if api_key else None
         self._hosts = frozenset(allowed_hosts)
         self._trust_forwarded = trust_forwarded_for
         self._limiter = _RateLimiter(rate_limit_per_minute, clock) if rate_limit_per_minute > 0 else None
+        self._generation_limiter = (
+            _RateLimiter(generation_limit_per_minute, clock) if generation_limit_per_minute > 0 else None
+        )
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http" or scope["path"].startswith(_HEALTH_PREFIX):
@@ -225,7 +343,17 @@ class AccessControlMiddleware:
                 )
                 return
 
-        if self._key is not None and scope["path"] not in _PUBLIC_PATHS and not self._authorized(headers):
+        if self._generation_limiter is not None and scope["method"] == "POST" and scope["path"] in _GENERATION_PATHS:
+            wait = self._generation_limiter.take(self._client_key(scope, headers))
+            if wait is not None:
+                await self._reject(
+                    scope, receive, send, 429, ErrorCode.RATE_LIMITED,
+                    "Too many replies requested. Wait before asking again.", request_id,
+                    extra={"Retry-After": str(max(1, math.ceil(wait)))},
+                )
+                return
+
+        if self._key is not None and not _is_public(scope["path"]) and not self._authorized(headers):
             await self._reject(
                 scope, receive, send, 401, ErrorCode.UNAUTHORIZED,
                 "A valid bearer token is required.", request_id,
@@ -266,5 +394,5 @@ class AccessControlMiddleware:
         request_id: str | None,
         extra: dict[str, str] | None = None,
     ) -> None:
-        response = build_error_response(status, code, message, request_id, extra_headers=extra)
+        response = build_error_response(status, code, message, request_id, extra_headers=extra, path=scope["path"])
         await response(scope, receive, send)

@@ -11,14 +11,23 @@ import logging
 import time
 from collections.abc import AsyncIterator, Mapping
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from backend.config import DEFAULT_MODELS, Settings, get_settings, validate_settings
 from backend.error_handlers import register_error_handlers
-from backend.middleware import AccessControlMiddleware, RequestContextMiddleware
+from backend.middleware import (
+    AccessControlMiddleware,
+    BodyLimitMiddleware,
+    CorsOriginGuardMiddleware,
+    RequestContextMiddleware,
+)
+from backend.routes.aliases import router as aliases_router
 from backend.routes.chat import router as chat_router
+from backend.routes.contract import router as contract_router
 from backend.routes.conversations import router as conversations_router
 from backend.routes.health import router as health_router
 from backend.routes.models import router as models_router
@@ -29,6 +38,7 @@ from backend.services.conversation_store import ConversationStore
 from backend.services.model_router import build_model_router
 from backend.services.providers import Provider, default_providers
 from backend.utils.logging_setup import configure_logging
+from backend.utils.redaction import register_secret
 
 API_DESCRIPTION = """
 Chat backend for Legend Inc.
@@ -65,6 +75,8 @@ CORS_METHODS = ["GET", "POST", "PATCH"]
 CORS_HEADERS = ["Content-Type", "Authorization", "X-Request-ID"]
 
 logger = logging.getLogger("backend.app")
+
+FRONTEND_DIR = Path(__file__).resolve().parents[1] / "frontend"
 
 
 @asynccontextmanager
@@ -121,17 +133,23 @@ def create_app(
     app.state.started_at = None
     app.state.model_router = model_router
 
-    # Middleware added last runs first: CORS, then request context, then access control.
-    # Access control is innermost, so its rejections carry the request id and security headers.
-    # CORS answers preflight before any of them, so browsers can send the access key.
+    # Added last = outermost. Outermost to innermost:
+    #   request context  request id, security headers, access log. Reads no body.
+    #   origin guard     refuses browser requests from foreign origins, in the envelope.
+    #   CORS             answers allowed preflights, so browsers can send the access key.
+    #   access control   key, host, rate limit: refuses before any body is read.
+    #   body limit       reads, size-checks, and validates JSON. Only authorised requests get here.
+    # Every refusal therefore carries the request id and security headers, and an unauthenticated
+    # caller never makes the server buffer a body.
+    app.add_middleware(BodyLimitMiddleware, max_request_bytes=settings.max_request_bytes)
     app.add_middleware(
         AccessControlMiddleware,
         api_key=settings.api_access_key.reveal() if settings.api_access_key else None,
         allowed_hosts=settings.allowed_hosts,
         rate_limit_per_minute=settings.rate_limit_per_minute,
+        generation_limit_per_minute=settings.rate_limit_generation_per_minute,
         trust_forwarded_for=settings.trust_forwarded_for,
     )
-    app.add_middleware(RequestContextMiddleware, max_request_bytes=settings.max_request_bytes)
     if settings.cors_origins:
         # No origins configured means no CORS headers at all. Never "*".
         app.add_middleware(
@@ -143,6 +161,11 @@ def create_app(
             expose_headers=["X-Request-ID"],
             max_age=600,
         )
+    # Always on. With no origins configured, every browser request from another origin is refused.
+    app.add_middleware(CorsOriginGuardMiddleware, allowed_origins=frozenset(settings.cors_origins))
+    app.add_middleware(RequestContextMiddleware)
+    if settings.api_access_key is not None:
+        register_secret(settings.api_access_key.reveal())
 
     register_error_handlers(app)
 
@@ -159,6 +182,11 @@ def create_app(
     app.include_router(chat_router)
     app.include_router(tasks_router)
     app.include_router(conversations_router)
+    app.include_router(contract_router)
+    app.include_router(aliases_router)
+    if settings.serve_frontend:
+        # Same origin as the API, so the page needs no CORS. Static files only.
+        app.mount("/app", StaticFiles(directory=FRONTEND_DIR, html=False), name="app")
     return app
 
 

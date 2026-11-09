@@ -120,9 +120,9 @@ def test_integer_out_of_range_is_reported() -> None:
 
 def test_modes_must_include_required_modes() -> None:
     with pytest.raises(ConfigError) as info:
-        validate_settings(Settings(modes=("research", "code")))
-    assert any("standard" in problem for problem in info.value.problems)
-    assert any("write" in problem for problem in info.value.problems)
+        validate_settings(Settings(modes=("research", "coding")))
+    assert any("general" in problem for problem in info.value.problems)
+    assert any("writing" in problem for problem in info.value.problems)
 
 
 def test_generation_timeout_is_bounded() -> None:

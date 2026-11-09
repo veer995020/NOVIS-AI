@@ -26,7 +26,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from backend.schemas.chat import Message
+from backend.schemas.response import Message
 from backend.services.errors import (
     CapacityExceededError,
     ConversationBusyError,
@@ -146,6 +146,32 @@ class ConversationStore:
             record = _Record(
                 id=new_conversation_id(),
                 title=title,
+                version=1,
+                created_at=stamp,
+                updated_at=stamp,
+                last_access=now,
+            )
+            self._records[record.id] = record
+            return self._snapshot(record)
+
+    async def ensure(self, conversation_id: str) -> ConversationSnapshot:
+        """Return the conversation, creating it under the given id if it does not exist yet.
+
+        The id is checked by the request model. Creation obeys the same capacity limit as create().
+        Conversation ids are names, not secrets: access is controlled by the access key.
+        """
+        async with self._lock:
+            now = self._clock()
+            self._expire_idle(now)
+            if conversation_id in self._records:
+                return self._snapshot(self._find(conversation_id, now))
+            while len(self._records) >= self._max_conversations:
+                if not self._evict_least_recent_idle(now):
+                    raise CapacityExceededError()
+            stamp = utcnow()
+            record = _Record(
+                id=conversation_id,
+                title=None,
                 version=1,
                 created_at=stamp,
                 updated_at=stamp,

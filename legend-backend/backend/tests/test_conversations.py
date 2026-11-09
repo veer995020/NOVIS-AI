@@ -25,10 +25,10 @@ def test_create_read_and_chat_round_trip() -> None:
     assert read["messages"][0]["content"] == "hello"
 
 
-def test_chat_with_unknown_conversation_id_is_not_found() -> None:
+def test_chat_with_unknown_conversation_id_creates_it() -> None:
     response = _client().post("/api/chat", json={"conversation_id": "made-up-id", "message": "hi"})
-    assert response.status_code == 404
-    assert response.json()["error"]["code"] == "conversation_not_found"
+    assert response.status_code == 200
+    assert response.json()["conversation_id"] == "made-up-id"
 
 
 def test_read_unknown_conversation_is_404_and_bad_id_is_422() -> None:
@@ -46,7 +46,7 @@ def test_update_title_requires_the_current_version() -> None:
     assert ok.json()["version"] == 2
     stale = client.patch(f"/api/conversations/{cid}", json={"title": "Stale", "expected_version": 1})
     assert stale.status_code == 409
-    assert stale.json()["error"]["code"] == "version_conflict"
+    assert stale.json()["error"]["code"] == "VERSION_CONFLICT"
 
 
 def test_update_rejects_control_characters_and_long_titles() -> None:

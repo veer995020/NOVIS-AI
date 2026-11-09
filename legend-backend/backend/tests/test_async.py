@@ -59,7 +59,7 @@ def test_turn_cap_holds_under_concurrency() -> None:
     codes, bodies = _run(scenario())
     assert codes.count(200) == 2
     assert codes.count(503) == 3
-    refused = [b for b in bodies if b.get("error") and b["error"]["code"] == "capacity_exceeded"]
+    refused = [b for b in bodies if b.get("error") and b["error"]["code"] == "CAPACITY_EXCEEDED"]
     assert len(refused) == 3
 
 

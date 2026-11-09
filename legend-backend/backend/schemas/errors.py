@@ -7,29 +7,35 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class ErrorCode(StrEnum):
-    VALIDATION_ERROR = "validation_error"
-    NOT_FOUND = "not_found"
-    METHOD_NOT_ALLOWED = "method_not_allowed"
-    PAYLOAD_TOO_LARGE = "payload_too_large"
-    BAD_REQUEST = "bad_request"
-    UNAUTHORIZED = "unauthorized"
-    RATE_LIMITED = "rate_limited"
-    GENERATION_FAILED = "generation_failed"
-    GENERATION_TIMEOUT = "generation_timeout"
-    MODEL_UNAVAILABLE = "model_unavailable"
-    CONVERSATION_NOT_FOUND = "conversation_not_found"
-    VERSION_CONFLICT = "version_conflict"
-    CONVERSATION_BUSY = "conversation_busy"
-    CAPACITY_EXCEEDED = "capacity_exceeded"
-    INTERNAL_ERROR = "internal_error"
-    HTTP_ERROR = "http_error"
+    VALIDATION_ERROR = "VALIDATION_ERROR"
+    NOT_FOUND = "NOT_FOUND"
+    METHOD_NOT_ALLOWED = "METHOD_NOT_ALLOWED"
+    PAYLOAD_TOO_LARGE = "PAYLOAD_TOO_LARGE"
+    UNSUPPORTED_MEDIA_TYPE = "UNSUPPORTED_MEDIA_TYPE"
+    BAD_REQUEST = "BAD_REQUEST"
+    FORBIDDEN = "FORBIDDEN"
+    UNAUTHORIZED = "UNAUTHORIZED"
+    RATE_LIMITED = "RATE_LIMITED"
+    GENERATION_FAILED = "GENERATION_FAILED"
+    GENERATION_TIMEOUT = "GENERATION_TIMEOUT"
+    MODEL_UNAVAILABLE = "MODEL_UNAVAILABLE"
+    CONVERSATION_NOT_FOUND = "CONVERSATION_NOT_FOUND"
+    VERSION_CONFLICT = "VERSION_CONFLICT"
+    CONVERSATION_BUSY = "CONVERSATION_BUSY"
+    CAPACITY_EXCEEDED = "CAPACITY_EXCEEDED"
+    INTERNAL_ERROR = "INTERNAL_ERROR"
+    HTTP_ERROR = "HTTP_ERROR"
 
 
 class FieldIssue(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
 
     field: str = Field(max_length=200, description="Dotted location, e.g. body.message")
-    message: str = Field(max_length=500)
+    type: str = Field(
+        max_length=100,
+        description="Stable machine-readable error type, e.g. string_too_short or missing.",
+    )
+    message: str = Field(max_length=500, description="Human-readable reason. Never the submitted value.")
 
 
 class ErrorDetail(BaseModel):

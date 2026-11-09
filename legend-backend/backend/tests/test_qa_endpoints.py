@@ -18,13 +18,13 @@ from backend.main import create_app
 from backend.tests.fakes import app_with, crashing, replying, timing_out
 
 CHAT_POSTS = ["/api/chat", "/api/research", "/api/code", "/api/write"]
-EXPECTED_MODE = {"/api/chat": "standard", "/api/research": "research", "/api/code": "code", "/api/write": "write"}
+EXPECTED_MODE = {"/api/chat": "general", "/api/research": "research", "/api/code": "coding", "/api/write": "writing"}
 
 
 @pytest.mark.parametrize("path", CHAT_POSTS)
 def test_post_success_returns_200_with_completed_reply(path: str) -> None:
     body = TestClient(app_with(replying("the reply"))).post(path, json={"message": "hello"}).json()
-    assert body["status"] == "completed"
+    assert body["status"] == "success"
     assert body["content"] == "the reply"
     assert body["model"] == "rapid"
     assert body["mode"] == EXPECTED_MODE[path]
@@ -38,15 +38,15 @@ def test_post_without_a_provider_is_503_and_never_a_success(path: str) -> None:
     assert response.status_code == 503
     body = response.json()
     assert body["status"] == "error"
-    assert body["content"] == ""
-    assert body["error"]["code"] == "model_unavailable"
+    assert body["content"] is None
+    assert body["error"]["code"] == "MODEL_UNAVAILABLE"
 
 
 @pytest.mark.parametrize("path", CHAT_POSTS)
 def test_post_provider_crash_is_502_and_hides_the_cause(path: str) -> None:
     response = TestClient(app_with(crashing())).post(path, json={"message": "hello"})
     assert response.status_code == 502
-    assert response.json()["error"]["code"] == "generation_failed"
+    assert response.json()["error"]["code"] == "GENERATION_FAILED"
     assert "internal-detail-99" not in response.text
 
 
@@ -56,7 +56,7 @@ def test_post_timeout_is_504(path: str) -> None:
         path, json={"message": "hello"}
     )
     assert response.status_code == 504
-    assert response.json()["error"]["code"] == "generation_timeout"
+    assert response.json()["error"]["code"] == "GENERATION_TIMEOUT"
 
 
 @pytest.mark.parametrize("path", CHAT_POSTS)
@@ -80,14 +80,15 @@ def test_post_rejects_non_json_bodies(path: str) -> None:
         path, content=b"not json", headers={"Content-Type": "application/json"}
     )
     assert response.status_code == 422
-    assert response.json()["error"]["code"] == "validation_error"
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
 
 
-def test_task_endpoints_reject_the_mode_field() -> None:
+def test_task_endpoints_accept_only_their_own_mode() -> None:
     client = TestClient(app_with(replying("ok")))
+    own = {"/api/research": "research", "/api/code": "coding", "/api/write": "writing"}
     for path in CHAT_POSTS[1:]:
-        response = client.post(path, json={"message": "hi", "mode": "code"})
-        assert response.status_code == 422, path
+        assert client.post(path, json={"message": "hi", "mode": own[path]}).status_code == 200, path
+        assert client.post(path, json={"message": "hi", "mode": "general"}).status_code == 422, path
 
 
 def test_models_success_lists_all_models_and_availability() -> None:
@@ -129,11 +130,11 @@ def test_health_failure_before_startup_is_503_down() -> None:
 def test_wrong_method_on_an_endpoint_is_405_envelope() -> None:
     response = TestClient(app_with(replying("ok"))).get("/api/chat")
     assert response.status_code == 405
-    assert response.json()["error"]["code"] == "method_not_allowed"
+    assert response.json()["error"]["code"] == "METHOD_NOT_ALLOWED"
 
 
 def test_unknown_path_is_404_envelope() -> None:
     response = TestClient(app_with(replying("ok"))).get("/api/does-not-exist")
     assert response.status_code == 404
-    assert response.json()["error"]["code"] == "not_found"
+    assert response.json()["error"]["code"] == "NOT_FOUND"
     assert response.json()["request_id"]
