@@ -15,13 +15,12 @@ import hmac
 import json
 import logging
 import math
-import re
 import time
 from collections import OrderedDict, deque
 from collections.abc import Callable
 from urllib.parse import urlsplit
 
-from starlette.datastructures import Headers, MutableHeaders
+from starlette.datastructures import Headers
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from backend.error_handlers import REQUEST_ID_HEADER, build_error_response
@@ -31,7 +30,6 @@ from backend.utils.redaction import safe_path
 
 logger = logging.getLogger("backend.request")
 
-_VALID_REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 _BODY_METHODS = frozenset({"POST", "PUT", "PATCH"})
 _HEALTH_PREFIX = "/health"
 _PUBLIC_PATHS = frozenset({"/docs", "/openapi.json", "/api/contract"})
@@ -46,6 +44,17 @@ SECURITY_HEADERS = {
 }
 # API responses are data, never a page: they load nothing and run nothing.
 API_CONTENT_SECURITY_POLICY = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+# The chat page is one file: its own inline script and style. It loads nothing from another origin, and
+# its requests go to its own server (apiBase is empty by default). Anything else is refused.
+CHAT_PAGE_CONTENT_SECURITY_POLICY = (
+    "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
+    "img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; "
+    "frame-ancestors 'none'; object-src 'none'"
+)
+
+
+def _is_chat_page(path: str) -> bool:
+    return path == "/app" or path.startswith("/app/")
 
 
 def _serves_a_page(path: str) -> bool:
@@ -103,6 +112,30 @@ async def _read_limited_body(receive: Receive, limit: int) -> bytes:
             return b"".join(chunks)
 
 
+# The security headers, as ordered pairs, built once. The API gets a strict content security policy;
+# the served page does not, because it runs its own script.
+_API_HEADERS: tuple[tuple[str, str], ...] = tuple(
+    {**SECURITY_HEADERS, "Content-Security-Policy": API_CONTENT_SECURITY_POLICY}.items()
+)
+_PAGE_HEADERS: tuple[tuple[str, str], ...] = tuple(SECURITY_HEADERS.items())
+_CHAT_PAGE_HEADERS: tuple[tuple[str, str], ...] = tuple(
+    {**SECURITY_HEADERS, "Content-Security-Policy": CHAT_PAGE_CONTENT_SECURITY_POLICY}.items()
+)
+
+# ASGI header names are lowercase bytes. Encoding them once keeps the per-response work to list operations.
+_REQUEST_ID_NAME = REQUEST_ID_HEADER.lower().encode("latin-1")
+_SERVER_NAME = b"server"
+
+
+def _raw(headers: tuple[tuple[str, str], ...]) -> tuple[tuple[bytes, bytes], ...]:
+    return tuple((name.lower().encode("latin-1"), value.encode("latin-1")) for name, value in headers)
+
+
+_API_RAW = _raw(_API_HEADERS)
+_PAGE_RAW = _raw(_PAGE_HEADERS)
+_CHAT_PAGE_RAW = _raw(_CHAT_PAGE_HEADERS)
+
+
 class RequestContextMiddleware:
     """Outermost layer: request id, security headers, and the access log line. It reads no body."""
 
@@ -114,32 +147,41 @@ class RequestContextMiddleware:
             await self.app(scope, receive, send)
             return
 
-        headers = Headers(scope=scope)
-        incoming = headers.get(REQUEST_ID_HEADER, "")
-        request_id = incoming if _VALID_REQUEST_ID.match(incoming) else new_id()
+        # Always server-generated. A client-chosen id could collide with another turn's id.
+        request_id = new_id()
         scope.setdefault("state", {})["request_id"] = request_id
 
         method = scope["method"]
-        path = safe_path(scope["path"])
+        raw_path = scope["path"]
+        # The log and every response carry the placeholder form. The raw path only decides which policy applies.
+        path = safe_path(raw_path)
         status_code = 500
         started = time.perf_counter()
 
-        policy_headers = dict(SECURITY_HEADERS)
-        if not _serves_a_page(scope["path"]):
-            policy_headers["Content-Security-Policy"] = API_CONTENT_SECURITY_POLICY
+        if _is_chat_page(raw_path):
+            policy_headers = _CHAT_PAGE_RAW
+        elif _serves_a_page(raw_path):
+            policy_headers = _PAGE_RAW  # the API docs load their own assets, so they get no policy here
+        else:
+            policy_headers = _API_RAW
+        request_id_raw = request_id.encode("ascii")
 
         async def send_wrapper(message: Message) -> None:
             nonlocal status_code
             if message["type"] == "http.response.start":
                 status_code = message["status"]
-                response_headers = MutableHeaders(scope=message)
-                response_headers[REQUEST_ID_HEADER] = request_id
-                # Do not advertise the server software.
-                if "server" in response_headers:
-                    del response_headers["server"]
-                for name, value in policy_headers.items():
-                    if name not in response_headers:
-                        response_headers[name] = value
+                # Drop the server software name and any request id the app set; ours replaces it.
+                headers = [
+                    (name, value)
+                    for name, value in message.get("headers", ())
+                    if name != _SERVER_NAME and name != _REQUEST_ID_NAME
+                ]
+                present = {name for name, _ in headers}
+                headers.append((_REQUEST_ID_NAME, request_id_raw))
+                for name, value in policy_headers:
+                    if name not in present:
+                        headers.append((name, value))
+                message["headers"] = headers
             await send(message)
 
         try:

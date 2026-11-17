@@ -106,16 +106,70 @@ live("a server with no route shows its reason, not an object", async () => {
   assert.doesNotMatch(text, /\[object Object\]/);
 });
 
-live("a validation failure shows the field and the rule", async () => {
+const posts = (ui) => ui.requests.filter((r) => r.method === "POST");
+const toastText = (ui) => ui.doc.getElementById("toastRegion")?.textContent ?? "";
+const trayText = (ui) => ui.doc.getElementById("attachmentTray")?.textContent ?? "";
+
+live("a text attachment is sent with its name, media type, and content", async () => {
   const ui = await open(SERVERS.ok);
   attach(ui, new ui.window.File(["hello from notes"], "notes.txt", { type: "text/plain" }));
-  await waitFor(() => ui.doc.getElementById("attachmentTray")?.textContent.includes("notes.txt"));
+  await waitFor(() => trayText(ui).includes("notes.txt") && trayText(ui).includes("Ready"));
   send(ui, "summarise");
-  const text = await waitFor(() => /attachments\.0\.content|content field/.test(ui.doc.querySelector(".message-assistant")?.textContent ?? "") && ui.doc.querySelector(".message-assistant").textContent);
-  assert.match(text, /content/);
-  assert.doesNotMatch(text, /\[object Object\]/);
-  const sent = ui.requests.find((r) => r.method === "POST");
-  assert.equal(sent.status, 422);
+  await waitFor(() => lastAssistant(ui));
+  const sent = posts(ui)[0];
+  assert.equal(sent.status, 200);
+  assert.deepEqual(sent.body.attachments, [{ name: "notes.txt", type: "text/plain", content: "hello from notes" }]);
+});
+
+live("a markdown file is sent with its own media type", async () => {
+  const ui = await open(SERVERS.ok);
+  attach(ui, new ui.window.File(["# Plan"], "plan.md", { type: "" }));
+  await waitFor(() => trayText(ui).includes("Ready"));
+  send(ui, "read this");
+  await waitFor(() => lastAssistant(ui));
+  assert.equal(posts(ui)[0].body.attachments[0].type, "text/markdown");
+});
+
+live("a PDF is refused before anything is sent", async () => {
+  const ui = await open(SERVERS.ok);
+  attach(ui, new ui.window.File(["%PDF-1.4"], "report.pdf", { type: "application/pdf" }));
+  await waitFor(() => toastText(ui).includes("Unsupported file type"));
+  assert.equal(ui.doc.getElementById("attachmentTray").hidden, true);
+  assert.equal(posts(ui).length, 0);
+});
+
+live("an image is refused with the reason, not sent and failed later", async () => {
+  const ui = await open(SERVERS.ok);
+  attach(ui, new ui.window.File(["\u0089PNG"], "photo.png", { type: "image/png" }));
+  await waitFor(() => toastText(ui).includes("Images cannot be sent yet"));
+  assert.equal(posts(ui).length, 0);
+});
+
+live("a file over the server's size limit is refused", async () => {
+  const ui = await open(SERVERS.ok);
+  attach(ui, new ui.window.File(["x".repeat(70000)], "big.txt", { type: "text/plain" }));
+  await waitFor(() => toastText(ui).includes("Exceeds the"));
+  assert.equal(posts(ui).length, 0);
+});
+
+live("no more than three attachments can be added", async () => {
+  const ui = await open(SERVERS.ok);
+  for (const name of ["a.txt", "b.txt", "c.txt", "d.txt"]) {
+    attach(ui, new ui.window.File(["text"], name, { type: "text/plain" }));
+  }
+  await waitFor(() => toastText(ui).includes("Attachment limit (3)"));
+  assert.equal((trayText(ui).match(/\.txt/g) ?? []).length, 3);
+});
+
+live("attachments that are too long together are not sent", async () => {
+  const ui = await open(SERVERS.ok);
+  for (const name of ["one.txt", "two.txt", "three.txt"]) {
+    attach(ui, new ui.window.File(["y".repeat(60000)], name, { type: "text/plain" }));
+  }
+  await waitFor(() => (trayText(ui).match(/Ready/g) ?? []).length === 3);
+  send(ui, "summarise all three");
+  await waitFor(() => toastText(ui).includes("too long together"));
+  assert.equal(posts(ui).length, 0);
 });
 
 live("nothing is shown as a reply while the server is still working", async () => {
@@ -170,4 +224,23 @@ live("reply text is shown as text, never as markup", async () => {
   await waitFor(() => assistantTexts(ui).some((t) => t.includes("img")) && lastAssistant(ui));
   assert.equal(ui.doc.querySelector("img"), null, "no image element is created from reply text");
   assert.equal(ui.doc.querySelector("[onerror]"), null, "no event handler survives");
+});
+
+live("the sidebar mode and model items select what they name", async () => {
+  const ui = await open(SERVERS.ok);
+  const research = ui.doc.querySelector('.nav-item[data-nav-mode="research"]');
+  const brainstormer = ui.doc.querySelector('.nav-item[data-nav-model="brainstormer"]');
+  assert.ok(research && brainstormer, "the sidebar items exist");
+  research.click();
+  await waitFor(() => research.getAttribute("aria-current") === "true");
+  brainstormer.click();
+  await waitFor(() => brainstormer.getAttribute("aria-current") === "true");
+  assert.equal(research.getAttribute("aria-current"), "true", "the mode stays selected when the model changes");
+});
+
+live("the page names itself Novis AI and has one top-level heading", async () => {
+  const ui = await open(SERVERS.ok);
+  assert.equal(ui.doc.title.includes("Novis"), false);
+  assert.equal(ui.doc.querySelectorAll("h1").length, 1);
+  assert.equal(ui.doc.querySelector("h1").textContent.trim(), "Novis AI");
 });

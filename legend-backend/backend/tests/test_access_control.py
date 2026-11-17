@@ -68,7 +68,8 @@ def test_cors_preflight_is_not_blocked_by_the_key() -> None:
 def test_access_control_rejections_carry_request_id_and_security_headers() -> None:
     response = _keyed().get("/api/models", headers={"X-Request-ID": "trace-401"})
     assert response.status_code == 401
-    assert response.headers["x-request-id"] == "trace-401"
+    assert len(response.headers["x-request-id"]) == 32
+    assert response.headers["x-request-id"] != "trace-401"
     assert response.headers["x-content-type-options"] == "nosniff"
     assert response.headers["cache-control"] == "no-store"
 

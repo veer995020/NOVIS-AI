@@ -67,8 +67,8 @@ def timing_out() -> ScriptedProvider:
 
 def empty() -> ScriptedProvider:
     async def script(messages, cancel):
-        if False:  # pragma: no cover
-            yield ""
+        return
+        yield  # pragma: no cover
 
     return ScriptedProvider(script)
 

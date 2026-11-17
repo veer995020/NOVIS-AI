@@ -77,6 +77,13 @@ class ConversationStore:
         self._records: OrderedDict[str, _Record] = OrderedDict()
         self._lock = asyncio.Lock()
 
+    # The in-memory store holds nothing outside the process, so there is nothing to open or close.
+    async def open(self) -> None:
+        return None
+
+    async def close(self) -> None:
+        return None
+
     # ---- helpers. Call only while holding the lock. ----
 
     def _is_busy(self, record: _Record, now: float) -> bool:
@@ -217,17 +224,9 @@ class ConversationStore:
     # ---- turns ----
 
     async def acquire_turn(self, conversation_id: str, lease_seconds: float) -> str:
-        """Take the conversation for one turn. Returns the lease token."""
-        async with self._lock:
-            now = self._clock()
-            self._expire_idle(now)
-            record = self._find(conversation_id, now)
-            if self._is_busy(record, now):
-                raise ConversationBusyError()
-            token = new_id()
-            record.lease_token = token
-            record.lease_expires = now + lease_seconds
-            return token
+        """The lease alone. Same rules as start_turn, which does the work."""
+        token, _ = await self.start_turn(conversation_id, lease_seconds, history_limit=0)
+        return token
 
     async def release_turn(self, conversation_id: str, token: str) -> None:
         async with self._lock:
@@ -238,8 +237,8 @@ class ConversationStore:
 
     async def commit_turn(
         self, conversation_id: str, token: str, messages: Sequence[Message]
-    ) -> None:
-        """Save a finished turn's messages together. Requires the lease."""
+    ) -> int:
+        """Save a finished turn's messages together. Requires the lease. Returns the new version."""
         async with self._lock:
             now = self._clock()
             self._expire_idle(now)
@@ -250,12 +249,41 @@ class ConversationStore:
             if overflow > 0:
                 del record.messages[:overflow]
             self._touch(record)
+            return record.version
 
-    async def history(self, conversation_id: str) -> list[Message]:
+    async def history(self, conversation_id: str, limit: int | None = None) -> list[Message]:
         async with self._lock:
             now = self._clock()
             self._expire_idle(now)
-            return list(self._find(conversation_id, now).messages)
+            messages = self._find(conversation_id, now).messages
+            if limit is None:
+                return list(messages)
+            return list(messages[-limit:]) if limit > 0 else []
+
+    async def ensure_id(self, conversation_id: str) -> str:
+        return (await self.ensure(conversation_id)).id
+
+    async def start_turn(
+        self, conversation_id: str, lease_seconds: float, history_limit: int
+    ) -> tuple[str, list[Message]]:
+        """acquire_turn and the newest history_limit messages, in one step under the lock."""
+        async with self._lock:
+            now = self._clock()
+            self._expire_idle(now)
+            record = self._find(conversation_id, now)
+            if self._is_busy(record, now):
+                raise ConversationBusyError()
+            token = new_id()
+            record.lease_token = token
+            record.lease_expires = now + lease_seconds
+            recent = list(record.messages[-history_limit:]) if history_limit > 0 else []
+            return token, recent
+
+    async def version(self, conversation_id: str) -> int:
+        async with self._lock:
+            now = self._clock()
+            self._expire_idle(now)
+            return self._find(conversation_id, now).version
 
     async def count(self) -> int:
         """Number of live conversations. Used by the health check."""

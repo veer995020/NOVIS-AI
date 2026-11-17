@@ -31,6 +31,7 @@ logger = logging.getLogger("backend.errors")
 REQUEST_ID_HEADER = "X-Request-ID"
 
 _CONVERSATION_ID = re.compile(CONVERSATION_ID_PATTERN)
+_REQUEST_ID = re.compile(r"[0-9a-f]{32}")
 
 _HTTP_CODES: dict[int, ErrorCode] = {
     404: ErrorCode.NOT_FOUND,
@@ -72,6 +73,7 @@ def build_error_response(
             content=None,
             status=ChatStatus.ERROR,
             error=error,
+            request_id=request_id if request_id and _REQUEST_ID.fullmatch(request_id) else None,
         ).model_dump(mode="json")
     else:
         body = ErrorEnvelope(error=error, request_id=request_id).model_dump(mode="json")

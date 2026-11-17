@@ -101,7 +101,7 @@ These need decisions or infrastructure outside this code. None is silently accep
 8. **Internal logs contain tracebacks.** Unexpected errors are logged with a traceback for operators. Restrict access to the log store.
 9. **Future provider messages must be safe.** `ProviderError` text is logged. Any provider must keep credentials and response bodies out of its error messages.
 10. **Ephemeral state.** Restarts and multiple workers lose or split state, as documented in the README.
-11. **Python 3.15 is not verified.** The alpha cannot load the compiled Pydantic and FastAPI dependencies yet.
+11. **Python 3.15 is a beta.** The stack passes its full suite on 3.15.0b4. Re-verify when 3.15 is released; the alpha could not load the compiled Pydantic and FastAPI dependencies.
 
 ## Audit pass: origins, check order, log redaction
 
@@ -128,6 +128,14 @@ Residual risks, accepted and documented:
 - The page uses inline scripts, so it cannot carry a strict Content-Security-Policy. It is still framed-denied and escapes model text.
 - Trusted forwarded addresses are used for rate limits only when TRUST_FORWARDED_FOR is set. Enable it only behind a proxy that overwrites the header.
 - `backend/tests/test_contract_security.py` (189 parametrized tests) overlaps with `test_security_audit.py`. Both pass. The second covers the ordering, origin, and redaction guarantees the first does not.
+
+## Ported from the release (contract version 6)
+
+Two fields from the upload's release were ported as additions: `request_id` and `conversation_version`.
+Porting `request_id` exposed a defect in the release's approach, which this tree does not copy: honouring a
+client-supplied `X-Request-ID` as the turn id lets two clients choose the same id, and the turn map is keyed by
+that id, so one client could overwrite or stop another's turn. The server now generates every request id and
+the turn uses it. Tests that asserted the old echo were changed to assert the new rule.
 
 ## Integration verification (contract version 4)
 
@@ -157,7 +165,31 @@ the contract, not loosened to pass.
 Deviations from the reference, each documented in CONTRACT.md: a third status `stopped`; a server-issued
 conversation id (an unknown id returns 404); `details` present as a key on every error.
 
-Not verified: Python 3.15 (the stack runs on 3.14.4), and real browser rendering (the page was tested in jsdom).
+Verified on Python 3.15.0b4 (a beta; re-verify on the final release). Real browser rendering was tested in jsdom.
+
+## Database (PostgreSQL)
+
+Conversations can be stored in PostgreSQL. The review covered:
+- **Credentials.** The connection string is a `Secret`. It is registered with the log redactor, with its decoded
+  password. Startup failures report a fixed message and the exception type, never the message, which can carry
+  connection details. Configuration errors name the rule, never the value. The repository holds no credential.
+- **Injection.** Every query takes its values as parameters. The only literal SQL is the schema file and fixed
+  strings with no input. Identifiers come from the code, not from requests.
+- **Concurrency.** Each read-then-change runs under a row lock. Creation runs under one advisory lock, so the
+  capacity limit holds across processes. The lease and expiry are compared with the database clock.
+- **Parity.** `test_store_parity.py` runs fourteen scenarios against both stores. `test_postgres_app.py` checks a
+  conversation across a restart, health with a healthy and a lost database, and the startup failure.
+- **Action required.** A database password was pasted into a chat during this work. Treat it as exposed:
+  rotate it in Supabase, then set the new value in the environment. The old value must not be reused.
+
+## Reliability layer (contract version 7)
+
+Reviewed: credentials in replies and inputs, prompt injection, claim classification, contradictions, the reply gate, error categories, and the tool gate.
+
+- **Fail closed.** Analysis errors withhold the reply. Tested end to end.
+- **Credentials.** Withheld from replies. Known key formats are detected (the `sk-` family, with the `sk-ant-` format under the neutral label `model_provider_key`). Findings report kinds, never values.
+- **Known limits.** No external verification exists, so `sources_checked` is always false. Injection detection is a list of phrases and will miss paraphrases. The contradiction and claim checks are heuristics: they miss simple restatements and can misfire on unusual phrasing. The tool gate has no tools behind it. Each of these needs a measurement on real traffic before it is relied on.
+- **Not yet measured.** How often the unverified-details note fires on correct answers. Check this with `scripts/eval_prompts.py` against a live model.
 
 ## How to re-check
 

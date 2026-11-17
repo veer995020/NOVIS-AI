@@ -452,13 +452,19 @@ def test_api_responses_carry_the_restrictive_policy_and_no_server_header() -> No
     assert "server" not in response.headers
 
 
-def test_the_chat_page_keeps_its_own_policy_not_the_api_policy() -> None:
+def test_the_chat_page_has_its_own_policy_that_allows_only_its_own_origin() -> None:
     response = client().get("/app/chat.html")
     assert response.status_code == 200
-    assert "content-security-policy" not in response.headers
+    policy = response.headers["content-security-policy"]
+    assert policy.startswith("default-src 'none'")
+    assert "script-src 'self' 'unsafe-inline'" in policy
+    assert "connect-src 'self'" in policy
+    assert "object-src 'none'" in policy and "frame-ancestors 'none'" in policy
+    assert response.headers["x-frame-options"] == "DENY"
 
 
 def test_every_refusal_carries_the_request_id_and_the_policy() -> None:
     response = client().post("/api/chat", json={"message": ""}, headers={"X-Request-ID": "audit-trace-1"})
-    assert response.headers["x-request-id"] == "audit-trace-1"
+    assert len(response.headers["x-request-id"]) == 32
+    assert response.json()["request_id"] == response.headers["x-request-id"]
     assert response.headers["content-security-policy"].startswith("default-src 'none'")

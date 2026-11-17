@@ -19,6 +19,10 @@ Environment variables:
   MAX_CONVERSATIONS        conversations kept in memory       (default: 1000)
   GENERATION_TIMEOUT_SECONDS  longest allowed reply generation (default: 60)
   CONVERSATION_IDLE_SECONDS   idle time before a conversation is dropped (default: 3600)
+  DATABASE_URL               postgresql://... connection string. Unset: in-memory conversations
+  DATABASE_POOL_MAX          connections to the database, 1 to 100 (default: 10)
+  PROVIDER_MAX_ATTEMPTS      total upstream attempts per turn, 1 to 5 (default: 3)
+  PROVIDER_READ_TIMEOUT_SECONDS  longest silence from the provider between chunks, 1 to 600 (default: 60)
   MAX_CONCURRENT_TURNS        replies generating at once, across all clients (default: 32)
   API_ACCESS_KEY              shared bearer key for every API call; required in production
   ALLOWED_HOSTS               comma-separated Host names accepted; required in production
@@ -77,6 +81,9 @@ _INT_SETTINGS: tuple[tuple[str, str, int, int, int], ...] = (
     ("GENERATION_TIMEOUT_SECONDS", "generation_timeout_seconds", 1, 600, 60),
     ("CONVERSATION_IDLE_SECONDS", "conversation_idle_seconds", 60, 604800, 3600),
     ("MAX_CONCURRENT_TURNS", "max_concurrent_turns", 1, 1000, 32),
+    ("DATABASE_POOL_MAX", "database_pool_max", 1, 100, 10),
+    ("PROVIDER_MAX_ATTEMPTS", "provider_max_attempts", 1, 5, 3),
+    ("PROVIDER_READ_TIMEOUT_SECONDS", "provider_read_timeout_seconds", 1, 600, 60),
     ("RATE_LIMIT_PER_MINUTE", "rate_limit_per_minute", 0, 100000, 120),
     ("RATE_LIMIT_GENERATION_PER_MINUTE", "rate_limit_generation_per_minute", 0, 100000, 30),
 )
@@ -113,7 +120,7 @@ class Secret:
 
 @dataclass(frozen=True)
 class Settings:
-    app_name: str = "Legend Inc. - Chatify AI Backend"
+    app_name: str = "Legend Inc. - Novis AI Backend"
     version: str = APP_VERSION
     environment: str = "development"
     log_level: str = "INFO"
@@ -129,6 +136,11 @@ class Settings:
     generation_timeout_seconds: int = 60
     conversation_idle_seconds: int = 3600
     max_concurrent_turns: int = 32
+    database_pool_max: int = 10
+    provider_max_attempts: int = 3
+    provider_read_timeout_seconds: int = 60
+    # PostgreSQL connection string. Unset: conversations live in memory, in one process only.
+    database_url: Secret | None = None
     api_access_key: Secret | None = None
     allowed_hosts: tuple[str, ...] = ()
     rate_limit_per_minute: int = 120
@@ -246,6 +258,12 @@ def _origin_problems(origin: str, production: bool) -> list[str]:
 def _settings_problems(settings: Settings) -> list[str]:
     problems: list[str] = []
 
+    if settings.database_url is not None:
+        # Name the rule, never the value: the string holds the password.
+        url = settings.database_url.reveal()
+        if not (url.startswith("postgresql://") or url.startswith("postgres://")):
+            problems.append("DATABASE_URL must be a postgresql:// connection string")
+
     if settings.environment not in ENVIRONMENTS:
         problems.append(f"environment must be one of: {', '.join(ENVIRONMENTS)}")
     if settings.log_level not in LOG_LEVELS:
@@ -318,6 +336,7 @@ def load_settings(source: Mapping[str, str] | None = None) -> Settings:
         model_routes=bindings,
         modes=env.csv("CHAT_MODES", DEFAULT_MODES),
         api_access_key=env.secret("API_ACCESS_KEY"),
+        database_url=env.secret("DATABASE_URL"),
         allowed_hosts=tuple(host.lower() for host in env.csv("ALLOWED_HOSTS", ())),
         trust_forwarded_for=env.flag("TRUST_FORWARDED_FOR", False),
         serve_frontend=env.flag("SERVE_FRONTEND", True),

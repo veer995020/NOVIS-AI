@@ -1,4 +1,4 @@
-"""Response schema: the six fields, status rules, and strict structures across both modules."""
+"""Response schema: the contract fields, status rules, and strict structures across both modules."""
 import importlib
 import inspect
 import json
@@ -32,11 +32,11 @@ def _parse(data: dict) -> ChatResponse:
     return ChatResponse.model_validate_json(json.dumps(data))
 
 
-def test_response_has_exactly_the_six_contract_fields() -> None:
-    assert set(ChatResponse.model_fields) == {"conversation_id", "model", "mode", "content", "status", "error", "detail"}
+def test_response_has_exactly_the_contract_fields() -> None:
+    assert set(ChatResponse.model_fields) == {"conversation_id", "model", "mode", "content", "status", "error", "detail", "request_id", "conversation_version", "reliability"}
 
 
-def test_all_six_fields_are_required_except_error() -> None:
+def test_all_contract_fields_are_required_except_error() -> None:
     schema = ChatResponse.model_json_schema()
     assert set(schema["required"]) == {"conversation_id", "model", "mode", "content", "status", "error"}
 

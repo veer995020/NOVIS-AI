@@ -12,7 +12,23 @@ import sys
 from backend.utils.clock import utcnow
 from backend.utils.redaction import redact_text
 
-STRUCTURED_FIELDS = ("event", "request_id", "method", "path", "status_code", "duration_ms")
+STRUCTURED_FIELDS = (
+    "category",
+    "event",
+    "request_id",
+    "method",
+    "path",
+    "status_code",
+    "duration_ms",
+    "provider",
+    "model",
+    "attempt",
+    "upstream_status",
+    "error_type",
+    "stop_reason",
+    "input_tokens",
+    "output_tokens",
+)
 
 
 class PlainFormatter(logging.Formatter):

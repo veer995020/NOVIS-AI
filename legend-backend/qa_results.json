@@ -1,0 +1,150 @@
+{
+  "environment": {
+    "python": "3.14.6",
+    "cpus": "see report"
+  },
+  "latency_pipeline_ms": {
+    "n": 400,
+    "p50": 0.5997250000291388,
+    "p95": 0.9161219999214154,
+    "p99": 1.3677079999752095,
+    "success_rate": 1.0
+  },
+  "concurrency_distinct": [
+    {
+      "concurrency": 1,
+      "requests": 200,
+      "ok": 200,
+      "throughput_rps": 19.14531431362431,
+      "p50_ms": 52.059598999903756,
+      "p95_ms": 52.719242999955895,
+      "refused": {}
+    },
+    {
+      "concurrency": 8,
+      "requests": 200,
+      "ok": 200,
+      "throughput_rps": 151.33537689615312,
+      "p50_ms": 51.92848399997274,
+      "p95_ms": 53.129341000044406,
+      "refused": {}
+    },
+    {
+      "concurrency": 32,
+      "requests": 200,
+      "ok": 200,
+      "throughput_rps": 519.2774941193255,
+      "p50_ms": 52.00441900001351,
+      "p95_ms": 58.40646599995125,
+      "refused": {}
+    },
+    {
+      "concurrency": 64,
+      "requests": 200,
+      "ok": 32,
+      "throughput_rps": 180.91968225056502,
+      "p50_ms": 151.49473600001784,
+      "p95_ms": 156.35046299996702,
+      "refused": {
+        "503 CAPACITY_EXCEEDED": 168
+      }
+    }
+  ],
+  "concurrency_same_conversation": {
+    "requests": 32,
+    "ok": 1,
+    "busy_409": 31,
+    "other": 0,
+    "version": 2,
+    "invariant_holds": true
+  },
+  "reliability": [
+    {
+      "failure_rate_per_attempt": 0.0,
+      "max_attempts": 1,
+      "requests": 500,
+      "success_rate": 1.0
+    },
+    {
+      "failure_rate_per_attempt": 0.0,
+      "max_attempts": 3,
+      "requests": 500,
+      "success_rate": 1.0
+    },
+    {
+      "failure_rate_per_attempt": 0.1,
+      "max_attempts": 1,
+      "requests": 500,
+      "success_rate": 0.904
+    },
+    {
+      "failure_rate_per_attempt": 0.1,
+      "max_attempts": 3,
+      "requests": 500,
+      "success_rate": 1.0
+    },
+    {
+      "failure_rate_per_attempt": 0.3,
+      "max_attempts": 1,
+      "requests": 500,
+      "success_rate": 0.678
+    },
+    {
+      "failure_rate_per_attempt": 0.3,
+      "max_attempts": 3,
+      "requests": 500,
+      "success_rate": 0.964
+    }
+  ],
+  "rate_limit_upstream": [
+    {
+      "attempt_rate_limit_probability": 0.2,
+      "outcomes": {
+        "200": 396,
+        "429": 4
+      }
+    },
+    {
+      "attempt_rate_limit_probability": 0.6,
+      "outcomes": {
+        "200": 298,
+        "429": 102
+      }
+    }
+  ],
+  "context": [
+    {
+      "stored_turns": 0,
+      "prompt_messages_max": 21,
+      "prompt_messages_min": 2,
+      "p50_ms": 0.8211720000872447
+    },
+    {
+      "stored_turns": 10,
+      "prompt_messages_max": 21,
+      "prompt_messages_min": 21,
+      "p50_ms": 0.7634609999058739
+    },
+    {
+      "stored_turns": 50,
+      "prompt_messages_max": 21,
+      "prompt_messages_min": 21,
+      "p50_ms": 0.7608710000113206
+    },
+    {
+      "stored_turns": 100,
+      "prompt_messages_max": 21,
+      "prompt_messages_min": 21,
+      "p50_ms": 0.7642890000170155
+    }
+  ],
+  "structured_output": {
+    "requests": 300,
+    "valid_chat_response_schema": 300,
+    "json_reply_identical": 300
+  },
+  "timeout": {
+    "requests": 10,
+    "returned_504": 10
+  }
+}

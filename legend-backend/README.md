@@ -1,13 +1,12 @@
-# Legend Inc. - Chatify AI Backend
+# Legend Inc. - Novis AI Backend
 
-FastAPI backend. In-memory only (no database). Stack: Python, FastAPI, Pydantic, Uvicorn, asyncio.
+FastAPI backend. Conversations are stored in PostgreSQL when `DATABASE_URL` is set, and in process memory when it is not.
+Stack: Python, FastAPI, Pydantic, Uvicorn, asyncio, psycopg.
 
 ## Verified environment
-- Python 3.14.4 (see `.python-version`): full suite passes (753 tests, including the browser test when its packages are installed).
-- Python 3.15.0a8: `config.py` and the logging module pass their tests (19 tests, with `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`) and the
-  package compiles. FastAPI and Pydantic can't run yet: the alpha can't load the compiled
-  `pydantic-core` wheel (`undefined symbol: PyType_FromSlots`). Retest on a 3.15 beta or
-  final, then update `.python-version`.
+- Python 3.15.0b4 (see `.python-version`): full suite passes (825 tests with the database and the browser test; 808 passed and 17 skipped without a database). 3.15 is a beta, so re-verify on the final release.
+- Python 3.15.0a8 (superseded): the alpha could not load the compiled `pydantic-core` wheel. The beta above runs the whole
+  stack, so the alpha is no longer a target.
 
 ## Setup (from project root)
     uv venv --python 3.14 .venv
@@ -20,8 +19,30 @@ FastAPI backend. In-memory only (no database). Stack: Python, FastAPI, Pydantic,
 `--no-server-header` stops Uvicorn from advertising its name and version. The application cannot
 remove that header itself, so this flag is part of the deployment.
 
-Use a single worker. Conversations live in process memory. Startup fails with a
-`ConfigError` that lists every problem, including a route to a provider that can't run.
+Without `DATABASE_URL`, conversations live in process memory: use a single worker. With `DATABASE_URL`, several
+workers and several servers can share the conversations. Startup fails with a `ConfigError` that lists every
+problem, including a route to a provider that can't run.
+
+## Database
+Set `DATABASE_URL` to a `postgresql://` connection string. Supabase requires TLS, so add `?sslmode=require`:
+
+    export DATABASE_URL='postgresql://USER:PASSWORD@HOST:5432/postgres?sslmode=require'
+
+The server creates its tables at startup (`backend/db/schema.sql`, idempotent). `DATABASE_POOL_MAX` sets the
+number of connections, 1 to 100, default 10. The connection string is a credential. It is never printed, logged,
+or returned, and the password is scrubbed from every log line. Put it in your environment or secret store, never
+in a file in the repository.
+
+What the database changes:
+- Conversations and their messages survive a restart, a deploy, and a crash.
+- Every worker and every server sees the same conversations. Leases, versions, capacity, and expiry are enforced
+  by the database, using its clock, not the process's.
+- `GET /health` reports `conversations: down` and returns 503 when the database cannot be reached.
+- Startup stops with `conversation storage is unavailable` when the database cannot be reached. The message names
+  no credential.
+
+Tests: `TEST_DATABASE_URL` points the database tests at a database that tests may reset. Without it those tests
+are skipped, and the skip is printed. Never point it at production.
 
 ## Models and routing
 Four model ids are accepted: `brainstormer`, `mythical`, `sonet`, and `rapid`. A request that
@@ -92,7 +113,8 @@ Types are strict and unknown fields are rejected. Clients should load the option
 | `error` | object or null | `{code, message, details}`; non-null only when `status` is `error`. Every field is always present, as a key |
 
 Every chat endpoint returns this shape for every outcome, including refusals and validation failures.
-The request id for those is in the `X-Request-ID` header.
+The request id for those is in the `X-Request-ID` header and in the body's `request_id`. Every chat response also carries
+`conversation_version`, the conversation's version after the turn, for optimistic updates.
 
 ### Endpoints
 - Root aliases for the chat page: `POST /chat`, `/research`, `/code`, `/write`, and `GET /models`. Same behaviour as the `/api` routes; left out of `/docs`.
@@ -119,13 +141,13 @@ The JSON endpoints return these status codes, and a failure is never reported as
 |---|---|
 | 200 | `success` or `stopped` |
 | 422 | the request failed validation |
-| 502 | `error` with `GENERATION_FAILED` (provider error, empty reply, or a reply over the size limit) |
+| 502 | `error` with `GENERATION_FAILED` (provider error after the retries, empty reply, or a reply over the size limit) |
 | 404 | `CONVERSATION_NOT_FOUND`: the conversation id is unknown, or was dropped |
 | 409 | `CONVERSATION_BUSY`: an earlier turn is still running on this conversation. Or `VERSION_CONFLICT`: the version you sent is stale |
 | 503 | `error` with `MODEL_UNAVAILABLE` (no route for the model). Or `CAPACITY_EXCEEDED`: the server is full of busy conversations |
 | 400 | `BAD_REQUEST`: the Host header is not in `ALLOWED_HOSTS` |
 | 401 | `UNAUTHORIZED`: `API_ACCESS_KEY` is set and the bearer key is missing or wrong. The response carries `WWW-Authenticate: Bearer` |
-| 429 | `RATE_LIMITED`: the client is over `RATE_LIMIT_PER_MINUTE`. The response carries `Retry-After` in seconds |
+| 429 | `RATE_LIMITED`: the client is over `RATE_LIMIT_PER_MINUTE`, or the model provider stayed rate-limited after the retries. The response carries `Retry-After` in seconds |
 | 504 | `error` with `GENERATION_TIMEOUT` |
 
 On the streaming endpoint the HTTP status is sent before generation starts, so failures arrive in the
@@ -141,7 +163,8 @@ Invalid requests get **422** with `VALIDATION_ERROR`, a sentence for the first p
 On chat endpoints that envelope is the ChatResponse shape. Every other endpoint uses the ErrorEnvelope
 `{"error": {...}, "request_id": "..."}`, including `NOT_FOUND`, `PAYLOAD_TOO_LARGE` (413), and
 `INTERNAL_ERROR` (500). Provider details never reach the response. They are logged with the request ID
-and the response is generic. Every response carries an `X-Request-ID` header.
+and the response is generic. Every response carries an `X-Request-ID` header. The server generates it; a client's
+`X-Request-ID` is not echoed, so a client-chosen id cannot collide with another turn's id.
 
 ## Chat flow and outcomes
 Each request is validated, then routed to a model. The flow takes the conversation's lease, builds the
@@ -183,11 +206,10 @@ Worst-case memory is roughly `MAX_CONVERSATIONS x MAX_HISTORY_MESSAGES x 8 KB`. 
 defaults, so lower those limits for any deployment with real traffic. A `GET` of a full conversation returns
 up to 200 messages in one response.
 
-**Restart and scaling.** A restart, crash, or deploy erases every conversation and every in-flight turn.
-Their ids return 404 afterwards, and clients must create new conversations. Nothing is written to disk, so
-there are no backups. Each worker process has its own state, so run a single worker. Behind a load balancer
-with several workers, a conversation created in one worker is unknown to the others. Clients should treat
-conversations as disposable and must be able to start a new one.
+**Restart and scaling.** Without `DATABASE_URL`, a restart, crash, or deploy erases every conversation and every
+in-flight turn, and each worker has its own state: run a single worker. With `DATABASE_URL`, conversations and their
+history persist and are shared by every worker. An in-flight turn is still lost on a crash, because its reply is
+saved only when it completes. Clients must still handle a 404 for a conversation that has expired.
 
 ## Logging
 One JSON object per line on stdout. Each request logs its method, redacted path, status, duration, and
@@ -210,17 +232,26 @@ The full audit, with each finding, its fix, the test that pins it, and the resid
 `AUDIT.md`. Read the residual risks before exposing the service to users.
 
 ## Performance
-Measured with `python scripts/benchmark.py` on the test machine. Compare runs on the same machine.
 
-- Conversation store, cost of one `get()`: 1.77 µs with 100 conversations, 1.81 µs with 1,000, and 1.86 µs with 5,000.
-  Before the optimisation the same operation took 9.3 µs, 81 µs, and 462 µs at those sizes, because every
-  operation scanned every conversation for expiry. Expiry now stops at the first fresh conversation.
-- Request path, `GET /api/models` over the ASGI transport: about 2,400 requests/s with the rate limiter off and
-  about 2,300 with it on (about 3% in this run).
-- Chat request path, `POST /api/chat` with a 400-character message and a test provider: about 720 µs per request
-  (ASGI transport, no network). It was about 1,000 µs before the unsafe-character check became one pass over the text.
-- Largest legal request (two full 64,000-character attachments, 131 KB of JSON): about 2 ms when the reply is short.
-- Reads return at most 200 messages. Use `?limit=` to send less.
+Measured on a 1-vCPU sandbox with the load client on the same CPU, so the numbers are relative, not absolute. Measure
+on the target hardware before relying on a figure.
+
+- Store, PostgreSQL (local, one chat turn in an existing conversation: check the id, take the lease and read the newest
+  20 messages, commit, release): about 2.5 ms. Before, the same turn read all 200 messages just to get the id, and took
+  about 4.6 ms. A full snapshot of a conversation with 200 messages takes about 2 ms, most of it the database returning
+  the rows.
+- Store, in memory: a chat turn takes well under a millisecond of store time.
+- Running server, chat, 16 keep-alive connections, one worker, each connection chatting in its own conversation:
+  - in memory: about 800 requests/s, about 1.1 ms of server CPU per request;
+  - PostgreSQL: about 270 requests/s, about 2.4 ms of server CPU per request. The cost is the database round trips,
+    which share the CPU with the server here. A chat turn makes four round trips: the id check, the lease with the
+    context, the commit, and the release.
+- With a new conversation on every request, PostgreSQL manages about 200 requests/s, because creation adds steps.
+- In-process, the reply guards cost about 0.1 ms per reply. The policy-fragment check was about 1.6 ms per reply and now
+  caches its windows per policy and makes one pass over the reply. Its output is unchanged, and a test compares it
+  with the original algorithm.
+- The optional `uvloop` and `httptools` were measured and not adopted: server CPU per chat request was no lower.
+- The uvicorn access log is silenced in favour of the application's access log, so each request is logged once.
 
 ## Layout
     backend/
@@ -243,7 +274,7 @@ Measured with `python scripts/benchmark.py` on the test machine. Compare runs on
       tests/               unit and HTTP tests; fakes.py holds the scripted test provider
     CONTRACT.md                    the API contract: types, defaults, constraints, error formats
     contracts/chat.contract.json   generated contract for the frontend
-    backend/requirements.lock.txt  full transitive dependency tree that was tested (3.14.4)
+    backend/requirements.lock.txt  full transitive dependency tree that was tested (3.15.0b4)
     requirements.txt       runtime dependencies (pinned)
     requirements-dev.txt   adds pytest and httpx for testing
 
@@ -272,3 +303,33 @@ servers that the Python suite starts.
 
 ## Test (from project root)
     python -m pytest -q
+
+## Response quality
+
+The instructions the model receives live in `backend/prompts/system.py`: one shared policy, a short addendum per mode, and a depth hint chosen per request (`brief`, `standard`, or `detailed`) from the size and content of the message and whether attachments are present. The current date (UTC) is included so the model can reason about time-relative questions.
+
+The policy states only what this server does. The model has no web access, code execution, or file or account access in a conversation. Replies are Markdown, and math is written as plain text because the page does not render LaTeX.
+
+Checks that run without a model:
+- `backend/prompts/quality.py`: `lint_all_prompts()` fails on forbidden phrases (for example, a request for hidden reasoning or a claim of web access) and on missing rules (uncertainty, continuity, the injection guard, the date). `check_reply()` reports leaked reasoning markers, LaTeX, raw HTML, unclosed code fences, code outside a fence, filler openers, closing offers, repeated sentences, and over-long brief answers.
+- The same checks run in `backend/tests/test_prompt_quality.py` on every test run.
+
+Checks that need a running server and a model:
+```bash
+python scripts/eval_prompts.py --base-url http://127.0.0.1:8000 --model rapid
+```
+The script sends each case in `scripts/eval_cases.json` (single and multi-turn, including an injected instruction in an attachment and a request for a capability the server lacks), applies the reply checks, and exits with status 1 on any failure. It has no quality threshold of its own: the cases are a starting set, to extend with real questions from your users.
+
+## Reliability and security
+
+The reliability layer is in `backend/reliability/`. Every check is a pure function. None of them fetches a page, runs a tool, or claims to verify a fact.
+
+- **Traceable and unverified claims.** Each sentence of a reply is classed as traceable (every specific detail, such as a link, year, percentage, currency amount, or attribution, appears in the user's own messages or attachments), inference (hedged, or a general statement), or unverified (specific details that appear nowhere in the conversation). Nothing is labelled verified. A reply with unverified details gets a visible note.
+- **Contradictions.** A heuristic finds simple "subject is value" statements that conflict with the user's own statements. It finds only simple cases.
+- **Credentials.** Registered credentials and common key formats are withheld from replies. Inputs are checked for credential formats, and the kinds are reported, not the values.
+- **Prompt injection.** Known instruction-override phrases in messages and attachments are flagged, not blocked. Any run of 40 or more characters of the system policy in a reply is withheld.
+- **Tool gate.** `backend/reliability/tools.py` decides whether a model-requested call may run. No tools are registered, so every call is refused. Nothing executes tools.
+- **Fail closed.** If reply analysis raises an exception, the reply is not delivered and the request returns `GENERATION_FAILED`.
+- **Error categories.** Each provider failure has one category (configuration, capacity, transient, rejected, timeout, client input, internal). Only the transient categories are retryable. The category is written to the logs.
+
+Limits: the server has no web or source access, so nothing is checked against an external source, and `sources_checked` is always false. The contradiction, claim, and injection checks are heuristics. They miss cases and can misfire. They are tested on the cases in `backend/tests/test_reliability.py`, not on real traffic.

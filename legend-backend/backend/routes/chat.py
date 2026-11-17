@@ -63,7 +63,7 @@ async def options(request: Request) -> ChatOptions:
     },
 )
 async def chat(payload: ChatRequest, request: Request) -> JSONResponse:
-    response = await _service(request).complete(payload)
+    response = await _service(request).complete(payload, request.state.request_id)
     return chat_json_response(response)
 
 
@@ -86,7 +86,7 @@ async def chat_stream(payload: ChatRequest, request: Request) -> StreamingRespon
     service = _service(request)
     # Leasing the conversation happens before the stream starts, so a busy or
     # missing conversation is an HTTP error rather than a broken stream.
-    turn = await service.begin(payload)
+    turn = await service.begin(payload, request.state.request_id)
 
     async def events() -> AsyncIterator[str]:
         async for event in service.stream_turn(turn):

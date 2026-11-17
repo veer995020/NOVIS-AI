@@ -1,9 +1,8 @@
 import secrets
-import uuid
 
 
 def new_id() -> str:
-    return uuid.uuid4().hex
+    return secrets.token_hex(16)
 
 
 def new_conversation_id() -> str:

@@ -35,7 +35,8 @@ def test_stop_cancels_stream_and_reports_stopped() -> None:
         service, _ = _service()
         req = ChatRequest(message="go", model="rapid")
         events: list[dict] = []
-        async for event in service.stream(req):
+        turn = await service.begin(req)
+        async for event in service.stream_turn(turn):
             events.append(event)
             if event["type"] == "start":
                 assert service.stop(event["request_id"]) is True

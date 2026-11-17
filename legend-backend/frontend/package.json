@@ -1,10 +1,10 @@
 {
-  "name": "chatify-ai-frontend-tests",
+  "name": "novis-ai-frontend-tests",
   "private": true,
-  "description": "Tests for the Chatify AI chat page. The page itself has no build step.",
+  "description": "Tests for the Novis AI chat page. The page itself has no build step.",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/"
+    "test": "node --test tests/*.mjs"
   },
   "devDependencies": {
     "jsdom": "^26.1.0"

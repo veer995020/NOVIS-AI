@@ -6,6 +6,7 @@ GET /health/ready   the app has started and is not shutting down (200 or 503)
 """
 from __future__ import annotations
 
+import logging
 import time
 from typing import Literal
 
@@ -14,6 +15,7 @@ from fastapi.responses import JSONResponse
 
 from backend.schemas.health import CheckStatus, HealthReport, ProbeReport
 
+logger = logging.getLogger("backend.health")
 router = APIRouter(tags=["health"])
 
 _CONVERSATION_DEGRADED_AT = 0.9
@@ -24,16 +26,24 @@ def _uptime_seconds(request: Request) -> float:
     return round(time.monotonic() - started, 1) if started is not None else 0.0
 
 
-async def _conversations_have_room(request: Request) -> bool:
-    count = await request.app.state.conversation_store.count()
-    return count < _CONVERSATION_DEGRADED_AT * request.app.state.settings.max_conversations
+async def _conversations_check(request: Request) -> CheckStatus:
+    """ok while there is room, degraded when nearly full, down when storage cannot be reached.
+    Chat cannot work without storage, so an unreachable database is down, not merely degraded."""
+    try:
+        count = await request.app.state.conversation_store.count()
+    except Exception as exc:
+        # The type only. The message can carry connection details.
+        logger.error("conversation storage check failed: %s", type(exc).__name__, extra={"event": "health"})
+        return "down"
+    room = count < _CONVERSATION_DEGRADED_AT * request.app.state.settings.max_conversations
+    return "ok" if room else "degraded"
 
 
 @router.get(
     "/health",
     response_model=HealthReport,
     summary="Service health with component checks",
-    responses={503: {"model": HealthReport, "description": "down: not started, or shutting down."}},
+    responses={503: {"model": HealthReport, "description": "down: not started, shutting down, or conversation storage unreachable."}},
 )
 async def health(request: Request) -> JSONResponse:
     state = request.app.state
@@ -41,10 +51,10 @@ async def health(request: Request) -> JSONResponse:
     checks: dict[str, CheckStatus] = {
         "server": "ok" if ready else "down",
         "models": "ok" if state.model_router.available_models() else "degraded",
-        "conversations": "ok" if await _conversations_have_room(request) else "degraded",
+        "conversations": await _conversations_check(request),
     }
     overall: Literal["ok", "degraded", "down"]
-    if not ready:
+    if not ready or checks["conversations"] == "down":
         overall, code = "down", 503
     elif all(value == "ok" for value in checks.values()):
         overall, code = "ok", 200

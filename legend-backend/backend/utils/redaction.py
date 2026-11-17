@@ -16,19 +16,27 @@ def safe_path(path: str) -> str:
 
 
 _SECRETS: set[str] = set()
+_FORMS: tuple[str, ...] = ()  # every registered credential, raw and JSON-escaped, longest first
 _REPLACEMENT = "[redacted]"
 
 
 def register_secret(value: str) -> None:
     """Add a credential to the set that is scrubbed from every log line. Call once at startup."""
-    if value:
+    global _FORMS
+    if value and value not in _SECRETS:
         _SECRETS.add(value)
+        forms = {form for secret in _SECRETS for form in (secret, json.dumps(secret)[1:-1])}
+        _FORMS = tuple(sorted(forms, key=len, reverse=True))
+
+
+def registered_secrets() -> tuple[str, ...]:
+    """The raw credentials registered at startup. Used by the reply scanner; never logged."""
+    return tuple(_SECRETS)
 
 
 def redact_text(text: str) -> str:
     """Replace every registered credential in a log line, including its JSON-escaped form."""
-    for secret in sorted(_SECRETS, key=len, reverse=True):
-        for form in {secret, json.dumps(secret)[1:-1]}:
-            if form in text:
-                text = text.replace(form, _REPLACEMENT)
+    for form in _FORMS:
+        if form in text:
+            text = text.replace(form, _REPLACEMENT)
     return text

@@ -12,7 +12,8 @@ def _pins(filename: str) -> dict[str, str]:
         if not line or line.startswith(("#", "-r")):
             continue
         name, _, version = line.partition("==")
-        pins[name.strip().lower()] = version.strip()
+        bare = name.split("[", 1)[0].strip().lower()  # psycopg[binary] is installed as psycopg
+        pins[bare] = version.strip()
     return pins
 
 
@@ -21,8 +22,9 @@ def test_runtime_pins_match_installed_versions() -> None:
         assert metadata.version(name) == version, name
 
 
-def test_runtime_dependencies_are_only_the_three_required() -> None:
-    assert set(_pins("requirements.txt")) == {"fastapi", "pydantic", "uvicorn"}
+# The runtime set is minimal and fixed: web framework, validation, server, PostgreSQL driver, and the provider SDK.
+def test_runtime_dependencies_are_exactly_the_required_set() -> None:
+    assert set(_pins("requirements.txt")) == {"fastapi", "pydantic", "uvicorn", "psycopg", "psycopg-pool"}
 
 
 def test_dev_pins_match_installed_versions() -> None:

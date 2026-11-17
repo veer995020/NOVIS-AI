@@ -39,6 +39,24 @@ CHAT_PATHS = frozenset({
 })
 
 
+class Reliability(BaseModel):
+    """What the server checked about one reply. It never says a fact is verified.
+
+    `traceable_claims` counts sentences whose specific details appear in the user's own messages.
+    `unverified_claims` counts sentences with specific details that appear nowhere in the conversation.
+    `sources_checked` is always false: the server does not fetch or check sources.
+    """
+
+    model_config = ConfigDict(strict=True, extra="forbid", frozen=True)
+
+    sources_checked: Literal[False] = False
+    traceable_claims: int = Field(ge=0)
+    unverified_claims: int = Field(ge=0)
+    injection_suspected: bool
+    content_redacted: bool
+    flags: list[str] = Field(default_factory=list)
+
+
 class ChatResponse(BaseModel):
     """The one shape every chat outcome takes, including validation failures and refusals.
 
@@ -59,6 +77,23 @@ class ChatResponse(BaseModel):
         default=None,
         description="The error message as plain text, equal to error.message. Null unless status is error. "
         "Clients that read a top-level detail string (the chat page does) show it without parsing error.",
+    )
+    request_id: str | None = Field(
+        default=None,
+        pattern=r"^[0-9a-f]{32}$",
+        description="The id of the request that produced this response. The same value as the X-Request-ID header. "
+        "Quote it when reporting a problem.",
+    )
+    reliability: Reliability | None = Field(
+        default=None,
+        description="What the server checked about the reply. Null when there is no reply. "
+        "Not a verification: sources_checked is always false.",
+    )
+    conversation_version: int | None = Field(
+        default=None,
+        ge=1,
+        description="The conversation's version after this turn. A turn that saves a reply increases it by one. "
+        "Null when the request did not reach a conversation. Use it for optimistic updates (expected_version).",
     )
 
     @model_validator(mode="after")

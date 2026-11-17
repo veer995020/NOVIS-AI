@@ -32,7 +32,7 @@ from backend.tests.reference_contract import (
 )
 
 PAGE = Path(__file__).resolve().parents[2] / "frontend" / "chat.html"
-CHAT_FIELDS = {"conversation_id", "model", "mode", "content", "status", "error", "detail"}
+CHAT_FIELDS = {"conversation_id", "model", "mode", "content", "status", "error", "detail", "request_id", "conversation_version", "reliability"}
 CLIENT_ONLY_CODES = {"INVALID_RESPONSE"}  # produced by the page itself, never by the server
 
 

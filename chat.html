@@ -968,6 +968,7 @@ dialog::backdrop { background: rgba(4,4,10,.64); backdrop-filter: blur(4px); }
 </style>
 </head>
 <body data-sidebar="open" data-right="open">
+<h1 class="visually-hidden">Novis AI</h1>
 <a class="skip-link" href="#composerInput">Skip to message composer</a>
 
 <svg style="display:none" aria-hidden="true">
@@ -1050,7 +1051,7 @@ dialog::backdrop { background: rgba(4,4,10,.64); backdrop-filter: blur(4px); }
         <input id="chatSearch" type="search" placeholder="Search chats" autocomplete="off" />
       </div>
 
-      <div class="history" id="chatHistory" aria-label="Chat history"></div>
+      <div class="history" id="chatHistory" role="log" aria-label="Chat history"></div>
 
       <div class="sidebar-footer">
         <button type="button" class="btn" data-action="profile">Profile</button>
@@ -1128,7 +1129,7 @@ dialog::backdrop { background: rgba(4,4,10,.64); backdrop-filter: blur(4px); }
         </div>
       </div>
 
-      <div class="attachment-tray" id="attachmentTray" aria-label="Attachments" hidden></div>
+      <div class="attachment-tray" id="attachmentTray" role="group" aria-label="Attachments" hidden></div>
       <div class="composer-shell">
         <label class="visually-hidden" for="composerInput">Message Novis AI</label>
         <textarea id="composerInput" rows="1" placeholder="Ask Novis anything…"></textarea>
@@ -1216,7 +1217,7 @@ dialog::backdrop { background: rgba(4,4,10,.64); backdrop-filter: blur(4px); }
   <div class="dialog-card">
     <h3 id="renameDialogTitle">Rename chat</h3>
     <p>Give this conversation a clearer name.</p>
-    <input id="renameInput" type="text" maxlength="120" autocomplete="off" />
+    <input id="renameInput" type="text" maxlength="120" autocomplete="off" aria-labelledby="renameDialogTitle" />
     <div class="dialog-actions">
       <button type="button" class="btn btn-ghost" id="renameCancelBtn">Cancel</button>
       <button type="button" class="btn btn-primary" id="renameSaveBtn">Save</button>
@@ -1236,6 +1237,7 @@ dialog::backdrop { background: rgba(4,4,10,.64); backdrop-filter: blur(4px); }
 </dialog>
 
 <script>
+/* ===== inlined from api.js ===== */
 /**
  * Novis AI / Novis — centralized API client
  *
@@ -1436,7 +1438,7 @@ function buildPayload({
     model: typeof model === "string" ? model : model?.id || "sonet",
     mode: typeof mode === "string" ? mode : mode?.id || "general",
     message: message || "",
-    attachments: attachments.map(({ name, size, type, kind }) => ({ name, size, type, kind })),
+    attachments: attachments.map(({ name, type, content }) => ({ name, type, content: content ?? "" })),
     tools: {
       webSearch: Boolean(tools.webSearch),
       files: Boolean(tools.files),
@@ -1709,8 +1711,10 @@ if (typeof module !== "undefined" && module.exports) {
     chatApi, initializeApi
   };
 }
+
 </script>
 <script>
+/* ===== inlined from StateStore.js ===== */
 /**
  * Novis / Novis — application state store
  *
@@ -2061,9 +2065,9 @@ if (typeof module !== "undefined" && module.exports) {
   module.exports = StateStore;
 }
 
-
 </script>
 <script>
+/* ===== inlined from ModelPicker.js ===== */
 /**
  * ModelPicker — compact model and mode selector for the chat header.
  *
@@ -2184,12 +2188,12 @@ class ModelPicker {
     this.container.innerHTML = `
       <div class="model-picker">
         <button type="button" class="model-picker-trigger chip chip-model" aria-haspopup="menu" aria-expanded="false"
-                title="Change model" aria-label="Change model">
+                title="Change model">
           <span class="model-picker-icon" aria-hidden="true"></span>
           <span class="model-picker-name"></span>
           <svg class="icon chevron" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
         </button>
-        <div class="mp-menu" role="menu" hidden>
+        <div class="mp-menu" role="menu" aria-label="Models and modes" hidden>
           <div class="mp-section">
             <div class="mp-label">Models</div>
             <div class="mp-model-list"></div>
@@ -2214,6 +2218,10 @@ class ModelPicker {
     // Delegated handlers live on the container, which persists across renders.
     if (!this._bound) {
       this.container.addEventListener("click", this._onContainerClick);
+      this.container.addEventListener("keydown", (event) => this._onMenuKeys(event));
+      this.container.addEventListener("focusout", (event) => {
+        if (this.isOpen && !this.container.contains(event.relatedTarget)) this.close();
+      });
       this._bound = true;
     }
 
@@ -2236,6 +2244,21 @@ class ModelPicker {
           <span class="mp-item-check" aria-hidden="true"></span>
         </button>`;
     }).join("");
+  }
+
+  /** Arrow / Home / End move through menu items, the way a native menu does. */
+  _onMenuKeys(event) {
+    if (!this.isOpen || !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    const items = Array.from(this.menu.querySelectorAll('[role="menuitemradio"]'));
+    if (!items.length) return;
+    event.preventDefault();
+    const i = items.indexOf(document.activeElement);
+    const last = items.length - 1;
+    const target = event.key === 'Home' ? 0
+      : event.key === 'End' ? last
+      : event.key === 'ArrowDown' ? (i + 1) % items.length
+      : (i <= 0 ? last : i - 1);
+    items[target].focus();
   }
 
   _onClick(event) {
@@ -2262,6 +2285,7 @@ class ModelPicker {
     if (model && this._activeModelId !== model.id) {
       this._activeModelId = model.id;
       this.nameEl.textContent = model.name;
+      this.trigger.setAttribute("aria-label", `Model: ${model.name}. Change model`);
       this.iconEl.textContent = model.icon || "";
       this._markActive(this.modelList, "data-model-id", model.id);
     }
@@ -2306,7 +2330,9 @@ class ModelPicker {
 
   close() {
     if (!this.trigger || !this.isOpen) return;
+    const hadFocus = this.menu.contains(document.activeElement);
     this.menu.hidden = true;
+    if (hadFocus) this.trigger.focus({ preventScroll: true });
     this.trigger.setAttribute("aria-expanded", "false");
     this.trigger.classList.remove("open");
     this.isOpen = false;
@@ -2331,8 +2357,12 @@ class ModelPicker {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = ModelPicker;
 }
+
 </script>
 <script>
+(() => {
+"use strict";
+
 /* ========================================================================
    CONFIG — backend-ready, single source of API truth
 ====================================================================== */
@@ -2344,8 +2374,10 @@ const CONFIG = Object.freeze({
   }),
   requestTimeoutMs: 60000,
   healthTimeoutMs: 5000,
-  maxAttachments: 5,
-  maxFileSize: 10 * 1024 * 1024,
+  maxAttachments: 3,
+  maxFileSize: 64 * 1000,
+  maxAttachmentChars: 64000,
+  maxTotalAttachmentChars: 128000,
   maxMessageChars: 8000
 });
 
@@ -2380,14 +2412,8 @@ const FALLBACK_MODE_ID = "general";
 
 /* Centralized model/mode resolution — unknown values fall back safely. */
 function resolveModel(id) { return store.resolveModel(id); }
-function resolveMode(id) { return store.resolveMode(id); }
 
-const DOCUMENT_EXTENSIONS = /\.(pdf|txt|md|csv|json|js|ts|py|html|css)$/i;
-const DOCUMENT_TYPES = new Set([
-  "application/pdf", "text/plain", "text/markdown", "text/csv",
-  "application/json", "application/javascript", "text/javascript",
-  "text/typescript", "text/x-python", "text/python", "text/html", "text/css"
-]);
+const DOCUMENT_EXTENSIONS = /\.(txt|md|csv|json|js|ts|py|html|css)$/i;
 
 const ICONS = {
   sparkles: '<svg class="icon" aria-hidden="true"><use href="#i-sparkles"></use></svg>',
@@ -2447,11 +2473,15 @@ function sanitizeContent(html) {
   const dangerous = temp.querySelectorAll('script, iframe, object, embed, form, base, link, style, meta');
   dangerous.forEach(el => el.remove());
   
-  // Strip all event handlers (on* attributes)
+  // Strip all event handlers (on* attributes) and script-capable URLs
   const allElements = temp.querySelectorAll('*');
   allElements.forEach(el => {
     Array.from(el.attributes).forEach(attr => {
-      if (attr.name.startsWith('on')) {
+      const name = attr.name.toLowerCase();
+      const value = attr.value.replace(/[\u0000-\u0020]/g, "").toLowerCase();
+      if (name.startsWith('on') || name === 'srcdoc' ||
+          ((name === 'href' || name === 'src' || name === 'xlink:href' || name === 'action') &&
+           /^(javascript|vbscript|data):/.test(value))) {
         el.removeAttribute(attr.name);
       }
     });
@@ -2713,7 +2743,7 @@ window.__novisManager = manager;
 ====================================================================== */
 let els = {};
 let activeRequest = null;      // { controller, messageId, cancelled }
-let codeRegistry = new Map();
+const codeRegistry = new Map();
 let codeCounter = 0;
 let dragDepth = 0;
 let codeMode = false;
@@ -2723,7 +2753,6 @@ let speakingId = null;
 let voiceSupported = false;
 let recognition = null;
 let voiceState = "idle";
-let userScrolledUp = false;
 let streamPaintScheduled = false;
 let modelPicker = null;
 
@@ -3746,9 +3775,6 @@ const ScrollManager = (() => {
 })();
 
 // Delegate to ScrollManager (keep old names for compatibility)
-function isNearBottom() {
-  return ScrollManager.isNearBottom();
-}
 function scrollToBottom(force = false) {
   return ScrollManager.scrollToBottom(force);
 }
@@ -3794,7 +3820,7 @@ async function validateRemoteModels() {
 ====================================================================== */
 
 function createConversation(options = {}) {
-  if (store.isLoading()) stopGeneration(true);
+  if (store.isLoading()) stopGeneration();
   const current = manager.getCurrentConversation();
   if (options.reuseEmpty !== false && current && !current.messages.length) {
     renderConversation();
@@ -3811,7 +3837,7 @@ function createConversation(options = {}) {
 }
 
 function openConversation(id) {
-  if (store.isLoading()) stopGeneration(true);
+  if (store.isLoading()) stopGeneration();
   if (!manager.openConversation(id)) return false;
   renderHeader();
   renderConversation();
@@ -3857,15 +3883,20 @@ const SendMessageFlow = (() => {
       showToast(NOTIFICATIONS.ATTACHMENTS_FAILED);
       return null;
     }
+    const totalChars = attachments.reduce((sum, a) => sum + (a.content ? a.content.length : 0), 0);
+    if (totalChars > CONFIG.maxTotalAttachmentChars) {
+      showToast(`Attachments are too long together: at most ${CONFIG.maxTotalAttachmentChars} characters.`, "error");
+      return null;
+    }
 
     return { text: composerState.input, attachments };
   };
 
-  const createUserMessage = (text, attachments) => {
-    if (codeMode && text && !text.includes("```")) {
-      text = "```\n" + text + "\n```";
-    }
+  /** Wrap the composer text in a code fence when code mode is on, before it is sent. */
+  const applyCodeMode = (text) =>
+    codeMode && text && !text.includes("```") ? "```\n" + text + "\n```" : text;
 
+  const createUserMessage = (text, attachments) => {
     const attachmentMeta = attachments.map(a => ({
       id: a.id, 
       name: a.name, 
@@ -3882,7 +3913,7 @@ const SendMessageFlow = (() => {
     };
   };
 
-  const updateUIAfterSend = (userMessage) => {
+  const updateUIAfterSend = () => {
     store.clearAttachments();
     setCodeMode(false);
     ComposerValidator.clearComposer();
@@ -3891,7 +3922,7 @@ const SendMessageFlow = (() => {
     renderSidebar();
     renderHeader();
     scrollToBottom(true);
-    userScrolledUp = false;
+   
   };
 
   const makeSendPayload = (text, attachments) => {
@@ -3908,7 +3939,7 @@ const SendMessageFlow = (() => {
     });
   };
 
-  const send = async (rawText) => {
+  const send = async () => {
     const validated = validateBeforeSend();
     if (!validated) return;
 
@@ -3917,15 +3948,17 @@ const SendMessageFlow = (() => {
       const { text, attachments } = validated;
       
       // Create and render user message
-      const userMessage = createUserMessage(text, attachments);
+      // Fence once, before the UI resets code mode, so the server gets what the user sees.
+      const outgoing = applyCodeMode(text);
+      const userMessage = createUserMessage(outgoing, attachments);
       manager.addMessage(userMessage);
-      
+
       // Update UI state
-      updateUIAfterSend(userMessage);
-      
+      updateUIAfterSend();
+
       // Build payload and send
-      const payload = makeSendPayload(text, attachments);
-      await runAssistantTurn(text, payload.attachments, payload);
+      const payload = makeSendPayload(outgoing, attachments);
+      await runAssistantTurn(outgoing, payload.attachments, payload);
     } catch (err) {
       console.error("Send message error:", err);
       showToast("Failed to send message. Please try again.", "error");
@@ -3943,8 +3976,8 @@ const SendMessageFlow = (() => {
   return { send, setSending, isSendingMessage };
 })();
 
-function sendMessage(rawText) {
-  SendMessageFlow.send(rawText);
+function sendMessage() {
+  SendMessageFlow.send();
 }
 
 async function runAssistantTurn(prompt, attachmentsMeta, explicitPayload = null) {
@@ -3978,7 +4011,6 @@ async function runAssistantTurn(prompt, attachmentsMeta, explicitPayload = null)
   let accumulated = "";
   let thinkingAccumulated = "";
   let thinkingPhaseEnded = false;
-  let hasReceivedContent = false;
   
   // Optimized delta handler - unified logic for thinking and content
   const onDelta = (delta) => {
@@ -4062,7 +4094,6 @@ async function runAssistantTurn(prompt, attachmentsMeta, explicitPayload = null)
     
     if (validated.valid) {
       // ✓ Response is valid - render AI message with actual content
-      hasReceivedContent = true;
       manager.updateMessage(assistant.id, {
         content: validated.content,
         pending: false,
@@ -4192,7 +4223,7 @@ async function runAssistantTurn(prompt, attachmentsMeta, explicitPayload = null)
   }
 }
 
-function stopGeneration(silent = false) {
+function stopGeneration() {
   if (!activeRequest) return;
   // Just abort - api.js and runAssistantTurn handle cleanup
   activeRequest.controller.abort();
@@ -4472,19 +4503,24 @@ function insertTextAtCursor(text) {
 /* ========================================================================
    UPLOADS
 ====================================================================== */
+/** The media type the server accepts for a text file. Unknown text files are sent as plain text. */
+function mediaTypeFor(fileName) {
+  if (/\.md$/i.test(fileName)) return "text/markdown";
+  if (/\.csv$/i.test(fileName)) return "text/csv";
+  if (/\.json$/i.test(fileName)) return "application/json";
+  return "text/plain";
+}
+
 function validateFile(file, isImageMode = false) {
   if (file.size === 0) return { valid: false, error: `${file.name}: File is empty.` };
   if (file.size > CONFIG.maxFileSize) {
-    return { valid: false, error: `${file.name}: Exceeds the 10 MB limit (${formatBytes(file.size)}).` };
+    return { valid: false, error: `${file.name}: Exceeds the ${formatBytes(CONFIG.maxFileSize)} limit (${formatBytes(file.size)}).` };
   }
   const isImage = file.type.startsWith("image/");
-  if (isImageMode && !isImage) return { valid: false, error: `${file.name}: Not an image file.` };
-  if (!isImage) {
-    const extensionOk = DOCUMENT_EXTENSIONS.test(file.name);
-    const typeOk = !file.type || DOCUMENT_TYPES.has(file.type) || file.type.startsWith("text/");
-    if (!extensionOk || !typeOk) {
-      return { valid: false, error: `${file.name}: Unsupported file type. Allowed: PDF, TXT, MD, CSV, JSON, JS, TS, PY, HTML, CSS.` };
-    }
+  // The model receives text only. Images are refused here, not sent and failed later.
+  if (isImage || isImageMode) return { valid: false, error: `${file.name}: Images cannot be sent yet. Attach a text file instead.` };
+  if (!DOCUMENT_EXTENSIONS.test(file.name)) {
+    return { valid: false, error: `${file.name}: Unsupported file type. Allowed: TXT, MD, CSV, JSON, JS, TS, PY, HTML, CSS.` };
   }
   return { valid: true };
 }
@@ -4504,9 +4540,7 @@ function handleUpload(fileList, source = "file") {
       errors.push(`Attachment limit (${CONFIG.maxAttachments}) reached. Remove attachments to add more.`);
       break;
     }
-    const isImage = file.type.startsWith("image/");
-    if (isImage && !tools.images) { errors.push(`${file.name}: Images tool is disabled in settings.`); continue; }
-    if (!isImage && !tools.files) { errors.push(`${file.name}: Files tool is disabled in settings.`); continue; }
+    if (!tools.files) { errors.push(`${file.name}: Files tool is disabled in settings.`); continue; }
 
     const validation = validateFile(file, isImageMode);
     if (!validation.valid) { errors.push(validation.error); continue; }
@@ -4516,21 +4550,16 @@ function handleUpload(fileList, source = "file") {
       file,
       name: file.name,
       size: file.size,
-      type: file.type || "application/octet-stream",
-      kind: isImage ? "image" : "file",
+      type: mediaTypeFor(file.name),
+      kind: "file",
       imageUrl: null,
-      status: "ready",
-      statusText: "Ready locally"
+      content: "",
+      status: "processing",
+      statusText: "Reading file…"
     };
 
-    if (attachment.kind === "image") {
-      attachment.status = "processing";
-      attachment.statusText = "Reading image…";
-      store.addAttachment(attachment);
-      readImageAttachment(attachment, file);
-    } else {
-      store.addAttachment(attachment);
-    }
+    store.addAttachment(attachment);
+    readTextAttachment(attachment, file);
     addedCount++;
   }
 
@@ -4541,20 +4570,38 @@ function handleUpload(fileList, source = "file") {
   renderAttachments();
 }
 
-function readImageAttachment(attachment, file) {
+/**
+ * Reads a text file into the attachment, so the request can carry its content.
+ * A file the server would refuse is marked as an error here, and the send is blocked.
+ */
+function readTextAttachment(attachment, file) {
+  const fail = (statusText) => {
+    store.updateAttachment(attachment.id, { status: "error", statusText });
+    renderAttachments();
+  };
   const reader = new FileReader();
   reader.onload = () => {
-    store.updateAttachment(attachment.id, {
-      imageUrl: String(reader.result), status: "ready", statusText: "Ready locally"
-    });
+    const text = String(reader.result ?? "");
+    if (text.length > CONFIG.maxAttachmentChars) {
+      fail(`Too long: at most ${CONFIG.maxAttachmentChars} characters.`);
+      return;
+    }
+    if (attachment.type === "application/json") {
+      try {
+        JSON.parse(text);
+      } catch {
+        fail("Not valid JSON.");
+        return;
+      }
+    }
+    store.updateAttachment(attachment.id, { content: text, status: "ready", statusText: "Ready" });
     renderAttachments();
   };
   reader.onerror = () => {
-    store.updateAttachment(attachment.id, { status: "error", statusText: "Read failed" });
-    renderAttachments();
+    fail("Read failed");
     showToast(`Could not read ${file.name}.`, "error");
   };
-  reader.readAsDataURL(file);
+  reader.readAsText(file, "utf-8");
 }
 
 function removeAttachment(id) {
@@ -4878,7 +4925,7 @@ function bindEvents() {
       case "rename-current": closeMoreMenu(); openRenameDialog(store.getConversationId()); break;
       case "delete-current": closeMoreMenu(); openDeleteDialog(store.getConversationId()); break;
       case "clear-attachments": clearAttachments(); closeMoreMenu(); showToast("Attachments cleared", "info"); break;
-      case "scroll-bottom": scrollToBottom(true); userScrolledUp = false; break;
+      case "scroll-bottom": scrollToBottom(true); break;
       case "suggestion":
         if (!store.isLoading()) {
           els.composerInput.value = actionElement.dataset.prompt || "";
@@ -4895,7 +4942,7 @@ function bindEvents() {
       case "retry-message": retryMessage(getMessageIdFromElement(actionElement)); break;
       case "copy-code": copyCode(actionElement.dataset.codeId); break;
       case "close-toast": actionElement.closest(".toast")?.remove(); break;
-      case "toggle-thinking": 
+      case "toggle-thinking": {
         const messageId = getMessageIdFromElement(actionElement);
         const message = manager.findMessage(messageId);
         if (message) {
@@ -4903,6 +4950,7 @@ function bindEvents() {
           updateMessageElement(message);
         }
         break;
+      }
       default: break;
     }
   });
@@ -4937,6 +4985,14 @@ function bindEvents() {
   els.modeList.addEventListener("click", (event) => {
     const button = event.target.closest("[data-mode-id]");
     if (button) setMode(button.dataset.modeId);
+  });
+
+  // Sidebar navigation: each item selects a mode or a model through the same setters as the picker.
+  document.querySelectorAll(".sidebar .nav-item[data-nav-mode], .sidebar .nav-item[data-nav-model]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (button.dataset.navMode) setMode(button.dataset.navMode);
+      else setModel(button.dataset.navModel);
+    });
   });
 
   els.rightPanel.addEventListener("change", (event) => {
@@ -5043,7 +5099,6 @@ function bindEvents() {
   els.messageScroller.addEventListener("scroll", () => {
     ScrollManager.detectUserScroll();
     // Maintain old variable for compatibility
-    userScrolledUp = !isNearBottom();
   });
 
   els.moreMenu.addEventListener("keydown", (event) => {
@@ -5203,7 +5258,7 @@ const MessageUtilities = (() => {
     try {
       await navigator.clipboard.writeText(text);
       return true;
-    } catch (err) {
+    } catch {
       // Fallback for older browsers or blocked permissions
       return fallbackCopy(text);
     }
@@ -5239,7 +5294,7 @@ const MessageUtilities = (() => {
    * Copy entire conversation to clipboard
    * Formats all messages with role labels
    */
-  const copyConversation = async (conversationId) => {
+  const copyConversation = async () => {
     const conversation = manager.getCurrentConversation();
     if (!conversation || conversation.messages.length === 0) {
       showToast("No messages to copy", "warning");
@@ -5744,6 +5799,7 @@ function initializeApp() {
 }
 
 initializeApp();
+})();
 </script>
 </body>
 </html>

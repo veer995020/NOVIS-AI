@@ -1,6 +1,6 @@
 {
   "api_version": "0.1.0",
-  "contract_version": 5,
+  "contract_version": 8,
   "defaults": {
     "attachments": [],
     "conversation_id": null,
@@ -613,6 +613,51 @@
           ],
           "title": "FieldIssue",
           "type": "object"
+        },
+        "Reliability": {
+          "additionalProperties": false,
+          "description": "What the server checked about one reply. It never says a fact is verified.\n\n`traceable_claims` counts sentences whose specific details appear in the user's own messages.\n`unverified_claims` counts sentences with specific details that appear nowhere in the conversation.\n`sources_checked` is always false: the server does not fetch or check sources.",
+          "properties": {
+            "content_redacted": {
+              "title": "Content Redacted",
+              "type": "boolean"
+            },
+            "flags": {
+              "items": {
+                "type": "string"
+              },
+              "title": "Flags",
+              "type": "array"
+            },
+            "injection_suspected": {
+              "title": "Injection Suspected",
+              "type": "boolean"
+            },
+            "sources_checked": {
+              "const": false,
+              "default": false,
+              "title": "Sources Checked",
+              "type": "boolean"
+            },
+            "traceable_claims": {
+              "minimum": 0,
+              "title": "Traceable Claims",
+              "type": "integer"
+            },
+            "unverified_claims": {
+              "minimum": 0,
+              "title": "Unverified Claims",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "traceable_claims",
+            "unverified_claims",
+            "injection_suspected",
+            "content_redacted"
+          ],
+          "title": "Reliability",
+          "type": "object"
         }
       },
       "additionalProperties": false,
@@ -643,6 +688,20 @@
             }
           ],
           "title": "Conversation Id"
+        },
+        "conversation_version": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The conversation's version after this turn. A turn that saves a reply increases it by one. Null when the request did not reach a conversation. Use it for optimistic updates (expected_version).",
+          "title": "Conversation Version"
         },
         "detail": {
           "anyOf": [
@@ -692,6 +751,32 @@
             }
           ],
           "title": "Model"
+        },
+        "reliability": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Reliability"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "What the server checked about the reply. Null when there is no reply. Not a verification: sources_checked is always false."
+        },
+        "request_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The id of the request that produced this response. The same value as the X-Request-ID header. Quote it when reporting a problem.",
+          "title": "Request Id"
         },
         "status": {
           "$ref": "#/$defs/ChatStatus"
@@ -1300,6 +1385,20 @@
               ],
               "title": "Conversation Id"
             },
+            "conversation_version": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The conversation's version after this turn. A turn that saves a reply increases it by one. Null when the request did not reach a conversation. Use it for optimistic updates (expected_version).",
+              "title": "Conversation Version"
+            },
             "detail": {
               "anyOf": [
                 {
@@ -1348,6 +1447,32 @@
                 }
               ],
               "title": "Model"
+            },
+            "reliability": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Reliability"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "What the server checked about the reply. Null when there is no reply. Not a verification: sources_checked is always false."
+            },
+            "request_id": {
+              "anyOf": [
+                {
+                  "pattern": "^[0-9a-f]{32}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The id of the request that produced this response. The same value as the X-Request-ID header. Quote it when reporting a problem.",
+              "title": "Request Id"
             },
             "status": {
               "$ref": "#/$defs/ChatStatus"
@@ -1461,6 +1586,51 @@
             "message"
           ],
           "title": "FieldIssue",
+          "type": "object"
+        },
+        "Reliability": {
+          "additionalProperties": false,
+          "description": "What the server checked about one reply. It never says a fact is verified.\n\n`traceable_claims` counts sentences whose specific details appear in the user's own messages.\n`unverified_claims` counts sentences with specific details that appear nowhere in the conversation.\n`sources_checked` is always false: the server does not fetch or check sources.",
+          "properties": {
+            "content_redacted": {
+              "title": "Content Redacted",
+              "type": "boolean"
+            },
+            "flags": {
+              "items": {
+                "type": "string"
+              },
+              "title": "Flags",
+              "type": "array"
+            },
+            "injection_suspected": {
+              "title": "Injection Suspected",
+              "type": "boolean"
+            },
+            "sources_checked": {
+              "const": false,
+              "default": false,
+              "title": "Sources Checked",
+              "type": "boolean"
+            },
+            "traceable_claims": {
+              "minimum": 0,
+              "title": "Traceable Claims",
+              "type": "integer"
+            },
+            "unverified_claims": {
+              "minimum": 0,
+              "title": "Unverified Claims",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "traceable_claims",
+            "unverified_claims",
+            "injection_suspected",
+            "content_redacted"
+          ],
+          "title": "Reliability",
           "type": "object"
         },
         "StreamDeltaEvent": {

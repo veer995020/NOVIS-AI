@@ -12,6 +12,7 @@ import time
 from collections.abc import AsyncIterator, Mapping
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -36,7 +37,9 @@ from backend.schemas.options import configure_allowed_options
 from backend.services.chat import ChatService
 from backend.services.conversation_store import ConversationStore
 from backend.services.model_router import build_model_router
+from backend.services.postgres_store import PostgresConversationStore
 from backend.services.providers import Provider, default_providers
+from backend.services.storage import ConversationStorage
 from backend.utils.logging_setup import configure_logging
 from backend.utils.redaction import register_secret
 
@@ -85,18 +88,31 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.started_at = time.monotonic()
     app.state.ready = True
     logger.info(
-        "application started: environment=%s version=%s docs=%s cors_origins=%d available_models=%d",
+        "application started: environment=%s version=%s docs=%s cors_origins=%d available_models=%d storage=%s",
         settings.environment,
         settings.version,
         "enabled" if settings.enable_docs else "disabled",
         len(settings.cors_origins),
         len(app.state.model_router.available_models()),
+        "postgresql" if settings.database_url is not None else "memory",
         extra={"event": "startup"},
     )
+    store: ConversationStorage = app.state.conversation_store
+    try:
+        await store.open()
+    except Exception as exc:
+        # The cause is logged without the connection string. The password is in that string.
+        logger.error("conversation storage unavailable at startup: %s", type(exc).__name__, extra={"event": "startup"})
+        raise RuntimeError("conversation storage is unavailable; check DATABASE_URL and the database") from None
     try:
         yield
     finally:
         app.state.ready = False
+        await store.close()
+        for provider in app.state.providers.values():
+            close = getattr(provider, "aclose", None)
+            if close is not None:
+                await close()
         logger.info("application stopping", extra={"event": "shutdown"})
 
 
@@ -129,6 +145,7 @@ def create_app(
         redoc_url=None,
     )
     app.state.settings = settings
+    app.state.providers = active_providers
     app.state.ready = False
     app.state.started_at = None
     app.state.model_router = model_router
@@ -169,11 +186,27 @@ def create_app(
 
     register_error_handlers(app)
 
-    store = ConversationStore(
-        max_messages=settings.max_history_messages,
-        max_conversations=settings.max_conversations,
-        idle_seconds=settings.conversation_idle_seconds,
-    )
+    store: ConversationStorage
+    if settings.database_url is not None:
+        dsn = settings.database_url.reveal()
+        # The whole string and its decoded password are scrubbed from every log line.
+        register_secret(dsn)
+        password = urlsplit(dsn).password
+        if password:
+            register_secret(unquote(password))
+        store = PostgresConversationStore(
+            dsn=dsn,
+            max_messages=settings.max_history_messages,
+            max_conversations=settings.max_conversations,
+            idle_seconds=settings.conversation_idle_seconds,
+            pool_max=settings.database_pool_max,
+        )
+    else:
+        store = ConversationStore(
+            max_messages=settings.max_history_messages,
+            max_conversations=settings.max_conversations,
+            idle_seconds=settings.conversation_idle_seconds,
+        )
     app.state.conversation_store = store
     app.state.chat_service = ChatService(store=store, settings=settings, models=model_router)
 

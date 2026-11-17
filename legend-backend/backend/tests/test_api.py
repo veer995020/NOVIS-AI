@@ -6,7 +6,7 @@ from backend.config import DEFAULT_MODEL, DEFAULT_MODELS, DEFAULT_MODES, Setting
 from backend.main import create_app
 from backend.tests.fakes import client_with, replying
 
-CONTRACT_KEYS = {"conversation_id", "model", "mode", "content", "status", "error", "detail"}
+CONTRACT_KEYS = {"conversation_id", "model", "mode", "content", "status", "error", "detail", "request_id", "conversation_version", "reliability"}
 
 
 def test_health_reports_version_and_component_checks() -> None:

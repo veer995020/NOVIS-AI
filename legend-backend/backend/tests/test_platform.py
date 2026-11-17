@@ -13,13 +13,15 @@ def _client(**overrides) -> TestClient:
     return TestClient(_app(**overrides))
 
 
-def test_request_id_is_generated_and_echoed() -> None:
+def test_request_id_is_server_generated_and_never_the_clients_value() -> None:
+    # The server makes every request id. A client's X-Request-ID is not used, so it cannot collide
+    # with another turn's id.
+    import re
     client = _client()
-    assert client.get("/health").headers["X-Request-ID"]
-    echoed = client.get("/health", headers={"X-Request-ID": "trace-42"})
-    assert echoed.headers["X-Request-ID"] == "trace-42"
-    rejected = client.get("/health", headers={"X-Request-ID": "bad id with spaces"})
-    assert rejected.headers["X-Request-ID"] != "bad id with spaces"
+    generated = client.get("/health").headers["X-Request-ID"]
+    assert re.fullmatch(r"[0-9a-f]{32}", generated)
+    sent = client.get("/health", headers={"X-Request-ID": "trace-42"}).headers["X-Request-ID"]
+    assert sent != "trace-42" and re.fullmatch(r"[0-9a-f]{32}", sent)
 
 
 def test_security_headers_present() -> None:

@@ -1,10 +1,10 @@
-# Chatify AI API contract
+# Novis AI API contract
 
 The machine-readable source is `contracts/chat.contract.json`, generated from the Pydantic models in
 `backend/schemas/`. A test fails if the file is out of date. Regenerate with
 `python -m backend.schemas.contract` after any change.
 
-Built with Python 3.15, FastAPI, and Pydantic. Verified on Python 3.14.4: the FastAPI and Pydantic
+Built with Python 3.15, FastAPI, and Pydantic. Verified on Python 3.15.0b4 (beta): the FastAPI and Pydantic
 stack does not yet install on the 3.15 alpha.
 
 ## Endpoints
@@ -29,11 +29,22 @@ The task endpoints fix their mode: `/api/research` is `research`, `/api/code` is
 
 ## Versioning
 
-`contract_version` in the contract file (currently **5**). A removed or renamed field, a stricter
+`contract_version` in the contract file (currently **8**). A removed or renamed field, a stricter
 constraint, a new required field, a changed status code, or a changed error code is breaking. Adding
 an optional field with a default is not.
 
 ### Changelog
+- **8**: a changed status code, so breaking for clients that read the status. The provider path. A transient provider failure is retried, up to `PROVIDER_MAX_ATTEMPTS`, but only before any
+  text reached the client, and within one overall generation timeout. An upstream rate limit that outlasts the retries
+  is now `429 RATE_LIMITED` with `Retry-After`, instead of `502 GENERATION_FAILED`. No request or response shape changed.
+- **7**: adds `reliability` to chat responses (additive; the page ignores unknown fields). It reports which claims a reply makes that trace to the user's own messages, which do not, whether an injection was suspected, and whether a credential was withheld. `sources_checked` is always false: the server verifies nothing externally. A reply that cannot be analysed is returned as `GENERATION_FAILED`.
+- **6, storage**: conversations can be stored in PostgreSQL (`DATABASE_URL`). The wire contract is unchanged.
+  `GET /health` returns `down` (503) when the database cannot be reached, and the 503 description says so.
+- **6**: ported from the release. A chat response carries `request_id` (the 32-character id of the request,
+  the same as the `X-Request-ID` header, present on every chat response) and `conversation_version` (the
+  conversation's version after the turn; a saved reply increases it by one; `null` when the request did not
+  reach a conversation). The server now generates every request id. A client's `X-Request-ID` is no longer
+  echoed, because a client-chosen id could collide with another turn's id.
 - **5**: the chat page as shipped. The chat endpoints are also served at the root (`POST /chat`,
   `/research`, `/code`, `/write`, and `GET /models`), with the same behaviour as the `/api` routes.
   An unknown `conversation_id` is created on first use, so the page can name its own conversations
@@ -46,7 +57,7 @@ an optional field with a default is not.
   are `general`, `research`, `coding`, and `writing` (were `standard`, `research`, `code`, `write`, and
   `creative`, which is removed). A chat error has `content: null` (was `""`). Every outcome of a chat
   endpoint is a ChatResponse, including refusals and validation failures. The request id for those is in
-  the `X-Request-ID` header. Validation messages read as sentences, such as "The message field is required."
+  the `X-Request-ID` header and in the body's `request_id`. Validation messages read as sentences, such as "The message field is required."
 - **3**: security hardening. Model and mode names are exact. Bidirectional overrides and invisible format
   characters are refused. Request bodies must be strict UTF-8 JSON. A disallowed browser origin gets a 403.
   A reply over `reply_max_chars` is a `GENERATION_FAILED` error, not a 500.
@@ -94,6 +105,9 @@ Every field is always present. A field with no value is `null`, never omitted.
 | `mode` | string or null | The mode used. Same rule as `model`. The task endpoints report their fixed mode. |
 | `content` | string or null | The reply when `status` is `success` or `stopped`. Always `null` when `status` is `error`. |
 | `detail` | string or null | The error message as plain text, equal to `error.message`. `null` unless `status` is `error`. Added in version 5 for the page, which reads its error text from a top-level string. |
+| `request_id` | string or null | The 32-character id of the request. The same value as the `X-Request-ID` response header. Added in version 6. |
+| `conversation_version` | integer or null | The conversation's version after this turn. A saved reply increases it by one. `null` when no conversation was reached. Use it with `expected_version` for optimistic updates. Added in version 6. |
+| `reliability` | object or null | What the server checked about the reply: `traceable_claims`, `unverified_claims`, `injection_suspected`, `content_redacted`, `flags`. `sources_checked` is always `false`. Null when there is no reply. This is not a verification. Added in version 7. |
 | `status` | enum | `success` (a complete reply), `stopped` (the user stopped it; `content` is the partial reply), or `error`. |
 | `error` | ErrorDetail or null | `null` unless `status` is `error`. |
 
@@ -174,9 +188,9 @@ Chat endpoints return a ChatResponse for every code below.
 | 413 | `error`, `PAYLOAD_TOO_LARGE` | Body over 2 MiB. |
 | 415 | `error`, `UNSUPPORTED_MEDIA_TYPE` | Body not sent as `application/json`. An empty body needs no content type. |
 | 422 | `error`, `VALIDATION_ERROR` | A field fails its constraint. `details` names each field. |
-| 429 | `error`, `RATE_LIMITED` | Over the per-client limit. `Retry-After` is set. |
+| 429 | `error`, `RATE_LIMITED` | Over the per-client limit, or the model provider stayed rate-limited after the retries. `Retry-After` is set (seconds). |
 | 500 | `error`, `INTERNAL_ERROR` | Unexpected failure. No internal detail is returned. |
-| 502 | `error`, `GENERATION_FAILED` | The model failed, returned no text, or the reply exceeded `reply_max_chars`. |
+| 502 | `error`, `GENERATION_FAILED` | The model failed after the retries, returned no text, or the reply exceeded `reply_max_chars`. |
 | 503 | `error`, `MODEL_UNAVAILABLE` | No route serves the model. |
 | 503 | `error`, `CAPACITY_EXCEEDED` | The server is at its turn or conversation limit. |
 | 504 | `error`, `GENERATION_TIMEOUT` | Generation took longer than the server allows. |

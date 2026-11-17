@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi.responses import JSONResponse
+from fastapi.responses import Response
 
 from backend.schemas.errors import ErrorCode, ErrorEnvelope
 from backend.schemas.response import ChatResponse, ChatStatus
@@ -37,7 +37,11 @@ CHAT_RESPONSES: dict[int | str, dict[str, Any]] = {
     },
 }
 
+# How long a client should wait after an upstream rate limit. The provider's own hint is not forwarded yet.
+UPSTREAM_RETRY_AFTER_SECONDS = 5
+
 _STATUS_BY_CODE = {
+    ErrorCode.RATE_LIMITED: 429,
     ErrorCode.GENERATION_TIMEOUT: 504,
     ErrorCode.MODEL_UNAVAILABLE: 503,
     ErrorCode.CONVERSATION_BUSY: 409,
@@ -54,5 +58,15 @@ def http_status_for(response: ChatResponse) -> int:
     return 502
 
 
-def chat_json_response(response: ChatResponse) -> JSONResponse:
-    return JSONResponse(response.model_dump(mode="json"), status_code=http_status_for(response))
+def chat_json_response(response: ChatResponse) -> Response:
+    # Pydantic encodes the model in one pass. Going through a dict and then json.dumps encodes it twice.
+    status_code = http_status_for(response)
+    headers = None
+    if status_code == 429:
+        headers = {"Retry-After": str(UPSTREAM_RETRY_AFTER_SECONDS)}
+    return Response(
+        content=response.model_dump_json(),
+        status_code=status_code,
+        media_type="application/json",
+        headers=headers,
+    )

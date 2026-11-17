@@ -36,7 +36,7 @@ def make_task_endpoint(spec: TaskSpec) -> Callable[[TaskRequest, Request], Await
                 }]
             )
         service = request.app.state.chat_service
-        response = await service.complete(to_chat_request(payload, spec))
+        response = await service.complete(to_chat_request(payload, spec), request.state.request_id)
         return chat_json_response(response)
 
     return endpoint

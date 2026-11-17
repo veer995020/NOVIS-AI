@@ -7,7 +7,7 @@ from backend.tests.fakes import client_with, crashing, replying, timing_out
 
 TASK_PATHS = [spec.path for spec in TASK_SPECS]
 CHAT_PATH = "/api/chat"
-CONTRACT_KEYS = {"conversation_id", "model", "mode", "content", "status", "error", "detail"}
+CONTRACT_KEYS = {"conversation_id", "model", "mode", "content", "status", "error", "detail", "request_id", "conversation_version", "reliability"}
 
 
 def test_each_task_runs_with_its_fixed_mode() -> None:

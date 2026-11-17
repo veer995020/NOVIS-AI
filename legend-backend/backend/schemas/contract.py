@@ -50,7 +50,7 @@ from backend.schemas.response import (
 )
 from backend.services.tasks import TASK_SPECS
 
-CONTRACT_VERSION = 5
+CONTRACT_VERSION = 8
 CONTRACT_PATH = Path(__file__).resolve().parents[2] / "contracts" / "chat.contract.json"
 
 # Status codes shared by every chat-style JSON endpoint.
